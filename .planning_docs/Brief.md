@@ -26,7 +26,7 @@ The Spark is arriving soon, adding another machine to monitor. The ASRock mini h
 Build it in Rust using the same GUI framework as Cosmic (cosmic-lib / iced). Keep it consistent with the Cosmic desktop itself. Use minimon-applet's design and configuration as a reference to steal much of the UI/app design from. Each machine runs a systemd service sending data to the desktop.
 
 ## Resolved Decisions
-- **Protocol**: Binary with rkyv/Cap'n Proto serialization ✅ (lavish review)
+- **Protocol**: UDP push with rkyv serialization, single-direction no retries ✅ (confirmed by Captain in lavish v2 feedback)
 - **Authentication**: mTLS/certificate auth ✅ (self-signed certs, install scripts handle distribution)
 - **Metrics**: CPU/memory/disk/network/uptime/GPU/VRAM/temp all in MVP ✅
 - **UI Layout**: Grid layout confirmed (columns per metric, rows per machine) ✅

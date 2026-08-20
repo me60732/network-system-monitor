@@ -45,7 +45,7 @@ How do you know MVP is complete? What does a working version look like in concre
 ## Dependencies
 What must be true before this project can start?
 
-- [ ] ASRock mini setup and running (needed as first remote test target)
+- [x] Pluto (file server) + Spark available for testing ✅ — no dependency on ASRock Mini
 - [ ] Spark arriving and network-configured (second remote target)
 - [ ] Cosmic desktop environment available on desktop machine
 - [ ] minimon-applet source code reviewed for UI reference patterns

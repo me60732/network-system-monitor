@@ -23,7 +23,7 @@ How do you measure success? Be specific — vague goals are unverifiable.
 ## Secondary Goals
 What else would make this worthwhile, beyond the primary goal?
 
-1. ASRock mini finally gets a purpose as part of the monitoring network
+1. Pluto (file server) + Spark both get integrated into the monitoring network, giving existing idle hardware new purpose
 2. UI consistent with Cosmic desktop — feels native, not bolted-on
 3. Config format compatible with or extendable from minimon-applet's config
 4. Eventually expand to individual per-machine system monitors (direction, not MVP)

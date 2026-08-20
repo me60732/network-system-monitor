@@ -231,7 +231,7 @@
     <h2>🏗️ Architecture Overview</h2>
     <p>The system spans three execution contexts: a Cosmic applet on the desktop, systemd services on each remote machine, and shared metrics collection logic.</p>
 
-    <div class="annotation-hint">📌 Annotate this diagram to confirm component boundaries, data flow direction, or suggest additional components — Updated: UDP push model confirmed by Captain</div>
+    <div class="annotation-hint">📌 Confirm component boundaries and data flow. All communication is network-based between machines — no Unix domain sockets needed.</div>
     <div class="mermaid-container">
         <div class="mermaid">
 flowchart TD
@@ -367,35 +367,89 @@ gantt
         </div>
     </div>
 
-    <div class="annotation-hint">📌 Captain requested a second Gantt breaking down tasks in relation to TNG agent workflow handoffs — Geordi (engineering), Worf (security review), Beverly (testing/QC)</div>
+    <div class="annotation-hint">📌 Detailed task breakdown with TNG agent workflow handoffs: Geordi builds → Beverly tests → Worf security reviews → Troi documents. Each section shows the full pass for one deliverable.</div>
     <div class="mermaid-container">
         <div class="mermaid">
 gantt
     dateFormat  YYYY-MM-DD
-    section Phase 1A — Core Crates (Geordi)
-    Create metrics-core crate          :crit,   a1, 2026-08-27, 5d
-    Create nmd-protocol (rkyv)         :crit,   a2, after a1, 3d
-    Create nmd-config (TOML extend)    :a3,    after a1, 3d
+    title Phase 1A: metrics-core crate lifecycle
 
-    section Phase 1B — Remote Service (Geordi → Worf)
-    Build systemd service binary        :crit,   b1, 2026-09-04, 5d
-    Implement UDP push protocol         :b2,    after b1, 3d
-    <br/>Worf: Security review (UDP auth)  :w1,    after b2, 2d
+    section Geordi — Engineering
+    Scaffold crate structure         :a1, 2026-08-27, 2d
+    Implement sysinfo collection      :a2, after a1, 3d
+    Add procfs detailed stats        :a3, after a2, 2d
 
-    section Phase 1C — Desktop Applet (Geordi → Worf)
-    Build Cosmic panel widget            :crit,   c1, 2026-09-12, 5d
-    Build click-to-expand grid window    :c2,    after c1, 4d
-    Implement config menu UI             :c3,    after c2, 3d
-    <br/>Worf: Applet security review      :w2,    after c3, 2d
+    section Beverly — Testing &amp; QC
+    Unit test metrics accuracy       :b1, after a3, 2d
+    Validate cross-platform (Linux)   :b2, after b1, 1d
 
-    section Phase 1D — Integration &amp; Testing (Beverly)
-    End-to-end integration test          :crit,   d1, 2026-09-24, 4d
-    <br/>Beverly: QC testing              :bv1,   after d1, 3d
-    Write install scripts                :d2,    2026-09-27, 2d
-    MVP ready for testing                :milestone, m2, after bv1, 0d
+    section Worf — Security Review
+    Audit sysinfo/procfs access      :w1, after b2, 1d
+
+    section Troi — Documentation
+    Write crate docs &amp; examples    :t1, after w1, 2d
+
+    <!-- Second Gantt: nmd-service lifecycle -->
+    </div>
+    </div>
+
+    <p style="margin-top: 24px;"><strong>Gantt #2 of 3:</strong> Remote systemd service (nmd-service) — UDP push protocol implementation</p>
+    <div class="mermaid-container">
+        <div class="mermaid">
+gantt
+    dateFormat  YYYY-MM-DD
+    title Phase 1B: nmd-service crate lifecycle
+
+    section Geordi — Engineering
+    Scaffold systemd service binary   :a1, 2026-09-04, 2d
+    Implement UDP packet encoder      :a2, after a1, 3d
+    Add machine ID + metrics payload   :a3, after a2, 2d
+    Systemd unit file creation        :a4, after a3, 1d
+
+    section Beverly — Testing &amp; QC
+    Test UDP packet format            :b1, after a4, 2d
+    Validate systemd service lifecycle :b2, after b1, 1d
+
+    section Worf — Security Review
+    Audit UDP auth strategy           :w1, after b2, 1d
+    Check for privilege escalation      :w2, after w1, 1d
+
+    section Troi — Documentation
+    Write service install docs        :t1, after w2, 2d
+
+    <!-- Third Gantt: cosmic-applet lifecycle -->
+    </div>
+    </div>
+
+    <p style="margin-top: 24px;"><strong>Gantt #3 of 3:</strong> Cosmic desktop applet — panel widget and grid window</p>
+    <div class="mermaid-container">
+        <div class="mermaid">
+gantt
+    dateFormat  YYYY-MM-DD
+    title Phase 1C: cosmic-applet crate lifecycle
+
+    section Geordi — Engineering
+    Scaffold from cosmic-applet-template :a1, 2026-09-12, 3d
+    Build panel widget (desktop stats)   :a2, after a1, 4d
+    Implement click-to-expand grid window :a3, after a2, 5d
+    Config menu UI + TOML integration     :a4, after a3, 3d
+
+    section Beverly — Testing &amp; QC
+    Test panel widget load time (< 1s)    :b1, after a4, 1d
+    Validate grid window with remote data :b2, after b1, 2d
+
+    section Worf — Security Review
+    Audit applet config handling         :w1, after b2, 1d
+
+    section Troi — Documentation
+    Write user guide + config examples    :t1, after w1, 3d
+        </div>
+    </div>
+
     <table>
         <thead>
             <tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation Plan</th></tr>
+        </thead>
         </thead>
         <tbody>
             <tr>

@@ -21,7 +21,7 @@ What is the absolute minimum that makes this worth having?
 
 ## Phase 1 — MVP: Applet + Network Visibility
 **Goal**: Get it working for the primary use case  
-**Done when**: Panel shows desktop stats, click opens window showing remote machines' stats, systemd services running on at least 2 remote targets (ASRock mini + one other)
+**Done when**: Panel shows desktop stats, click opens window showing remote machines' stats, systemd services running on Pluto + Spark (2 remote targets)
 
 | Task | Notes |
 |---|---|

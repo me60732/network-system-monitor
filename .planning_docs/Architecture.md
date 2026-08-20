@@ -1,7 +1,10 @@
 ---
 tags: [pipeline, architecture, network-system-monitor]
 created: 2025-07-13
+updated: 2026-08-20
 ---
+
+> **Development reference**: See [[ImplementationGuide.md]] for detailed module breakdowns, stub requirements, unit test plans, benchmarks, and documentation deliverables per agent. This doc covers high-level architecture; the Implementation Guide is what agents follow during implementation.
 
 # Architecture: Network System Monitor
 
@@ -21,7 +24,7 @@ created: 2025-07-13
 ```
 Remote Machine (each)
   └── systemd service (metrics collector + sender)
-        ↓ Binary (rkyv/Cap'n Proto)
+        ↓ UDP push (rkyv-encoded + machine ID)
 Desktop Machine
   ├── cosmic applet (panel widget)
   │     └── click → expand window showing all remote machines
@@ -56,8 +59,8 @@ Things that need a spike or research before starting.
 
 - [x] minimon-applet source code reviewed for UI patterns and config format → Phase 0 reference
 - [x] cosmic-lib applet API confirmed well-documented (v1.3-v1.4) → Panel widget creation pattern established
-- [ ] systemd service: push vs pull? (push = simpler desktop, pull = simpler remote)
-- [x] Network discovery: auto-discovery approved ✅
+- [x] Push model confirmed ✅ — UDP push with rkyv serialization. No retries needed.
+- [x] No auto-discovery needed — each remote machine pre-configured with host IP, auto-registers on first packet ✅
 
 ## Related ADRs
 Link any ADRs that apply to this project's decisions.
