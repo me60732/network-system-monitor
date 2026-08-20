@@ -1,0 +1,23 @@
+# Rust
+/target/
+Cargo.lock  # Keep for binary crates, uncomment if needed
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.deb
+*.rpm
+
+# Lavish review sessions (ephemeral)
+.lavish/*.html  # Keep design docs but ignore session state files
+
+# Planning docs are tracked in vault, not repo
