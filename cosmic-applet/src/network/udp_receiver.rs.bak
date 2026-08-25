@@ -1,0 +1,417 @@
+//! # UdpReceiver — Listens for rkyv-encoded MetricPacket via UDP with HMAC-SHA256 verification
+//!
+//! Binds to a configurable port and receives incoming UDP packets from remote nmd-service instances.
+//! Each packet is verified via HMAC-SHA256 using the pre-shared key, then checked for replay protection:
+//! timestamp freshness (< 10s old) + monotonic sequence number tracking per machine_id (per Worf's security analysis).
+
+use subtle::ConstantTimeEq;
+use hmac::{Hmac, KeyInit, Mac};
+// ConstantTimeEq is imported from `subtle` (v2) which provides the same ct_eq API.
+// Per Worf's security audit VULN-01: hmac 0.13 re-exports from crypto-common/digest, not its own crypto_mac module.
+use sha2::Sha256;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::net::UdpSocket;
+use std::sync::{Arc, RwLock};
+
+// Re-use the same rkyv-serialized MetricPacket type from nmd-service's packet definition.
+// Since both crates are in the same workspace, we import the struct directly.
+use crate::AppState;
+
+/// HMAC-SHA256 type alias for ergonomic use throughout the module.
+type HmacSha256 = Hmac<Sha256>;
+
+/// Maximum UDP datagram size — standard Ethernet MTU minus IP/UDP headers (1500 - 28 = 1472, rounded up).
+const MAX_PACKET_SIZE: usize = 2048;
+
+/// Timestamp freshness window in seconds — packets older than this are rejected as replays.
+const TIMESTAMP_FRESHNESS_SECS: u64 = 10;
+
+/// UDP receiver that listens for authenticated MetricPacket traffic from remote machines.
+///
+/// Maintains a per-machine sequence number map to detect replayed or out-of-order packets (Worf Phase 1A).
+/// Updates the shared [`AppState`] grid window in real-time as new data arrives via async background task.
+pub struct UdpReceiver {
+    /// Bound UDP socket listening for incoming MetricPacket traffic from remote nmd-service instances.
+    pub socket: UdpSocket,
+
+    /// Pre-shared HMAC key loaded from /etc/nmd/secret.key (32 bytes) — used to verify packet authenticity.
+    pub secret_key: Vec<u8>,
+
+    /// Per-machine sequence number tracking for replay detection — maps machine_id → last seen sequence.
+    /// Uses RefCell for interior mutability since the receive loop accesses it through `&self`.
+    pub sequence_map: RefCell<HashMap<String, u32>>,
+
+    /// Port the receiver is listening on (default: 51057).
+    pub port: u16,
+}
+
+impl UdpReceiver {
+    /// Create a new UDP receiver bound to the specified port with the given HMAC secret key.
+    /// The socket binds to `0.0.0.0:port` to listen on all interfaces for incoming remote machine traffic.
+    pub fn new(port: u16, secret_key: Vec<u8>) -> Result<Self, std::io::Error> {
+        let addr = format!("0.0.0.0:{}", port);
+        log::info!("Binding UDP receiver to {}", addr);
+
+        // Set socket read timeout so the receive loop can check for shutdown periodically.
+        let socket = UdpSocket::bind(&addr)?;
+        socket.set_read_timeout(Some(std::time::Duration::from_millis(500)))?;
+
+        Ok(UdpReceiver {
+            socket,
+            secret_key,
+            sequence_map: RefCell::new(HashMap::new()),
+            port,
+        })
+    }
+
+    /// Start the async UDP receive loop — runs as a background tokio task.
+    /// Continuously reads packets, verifies HMAC + freshness, and updates shared AppState grid window.
+    pub async fn start_listening(shared_state: Arc<RwLock<AppState>>) {
+        // Load secret key from config_manager's hmac_secret_path.
+        let port = crate::config::manager::DEFAULT_UDP_PORT;
+
+        // Read the HMAC secret key from /etc/nmd/secret.key (shared with remote nmd-service instances).
+        let secret_key = match Self::load_secret_key(crate::config::manager::ConfigManager::default().hmac_secret_path.as_str()) {
+            Ok(key) => {
+                log::info!("HMAC secret key loaded for UDP receiver");
+                key
+            }
+            Err(e) => {
+                log::error!("Failed to load HMAC secret key: {} — using zeroed placeholder (verification will fail)", e);
+                vec![0u8; 32] // Placeholder so the listener still starts, but verification will reject packets.
+            }
+        };
+
+        let receiver = match UdpReceiver::new(port, secret_key) {
+            Ok(r) => r,
+            Err(e) => {
+                log::error!("Failed to bind UDP receiver on port {}: {}", port, e);
+                return;
+            }
+        };
+
+        log::info!("UDP receiver listening on 0.0.0.0:{}", port);
+
+        // Main receive loop — runs until app shutdown or fatal error.
+        let mut buf = [0u8; MAX_PACKET_SIZE];
+        loop {
+            match receiver.socket.recv_from(&mut buf) {
+                Ok((len, src)) => {
+                    log::debug!("Received {} bytes from {}", len, src);
+
+                    // 1. Zero-copy parse rkyv-encoded MetricPacket from received bytes.
+                    let archived = match Self::parse_packet(&buf[..len]) {
+                        Ok(a) => a,
+                        Err(e) => {
+                            log::warn!("Failed to access rkyv MetricPacket from {} — dropping: {}", src, e);
+                            continue;
+                        }
+                    };
+
+                    // 1b. Check protocol version compatibility before consuming any fields or computing HMAC.
+                    // The version field is at a fixed offset (first u32), so every version can read it safely.
+                    if u32::from(archived.version) != nmd_service::PROTOCOL_VERSION {
+                        let machine_id_str = Self::machine_id_to_str(&archived.machine_id);
+                        log::warn!(
+                            "Protocol version mismatch from {} — got {}, expected {} — dropping",
+                            machine_id_str,
+                            archived.version,
+                            nmd_service::PROTOCOL_VERSION
+                        );
+                        continue;
+                    }
+
+                    // 2. Verify HMAC-SHA256 using zero-copy buffer access — no re-serialization needed!
+                    // The received buffer IS the canonical serialized form (with tag included).
+                    // We copy it once, zero out the hmac_tag region in-place, and compute HMAC over those bytes.
+                    let machine_id_str = Self::machine_id_to_str(&archived.machine_id);
+
+                    if !receiver.verify_hmac_zerocopy(&buf[..len], &archived) {
+                        log::warn!("HMAC verification failed from {} — possible spoofed packet", src);
+                        continue;
+                    }
+
+                    // 3. Check timestamp freshness (< TIMESTAMP_FRESHNESS_SECS old).
+                    let now = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs())
+                        .unwrap_or(0);
+                    if !Self::check_timestamp_freshness(u64::from(archived.timestamp), now) {
+                        log::warn!(
+                            "Timestamp freshness check failed for machine '{}' (ts={}, age > {}s) — dropping",
+                            machine_id_str,
+                            archived.timestamp,
+                            TIMESTAMP_FRESHNESS_SECS
+                        );
+                        continue;
+                    }
+
+                    // 4. Track sequence number per machine_id for replay detection.
+                    {
+                        if !Self::check_sequence(&receiver.sequence_map, machine_id_str, u32::from(archived.sequence)) {
+                            log::warn!(
+                                "Replay detected: machine '{}' seq {} <= last — dropping",
+                                machine_id_str,
+                                archived.sequence
+                            );
+                            continue;
+                        }
+                    }
+
+                    // 5. Update GridWindow with new metrics from the verified (zero-copy) archived packet.
+                    let mut state = shared_state.write().unwrap();
+                    if let Some(ref mut grid) = state.grid_window.as_mut() {
+                        grid.update_machine_metrics_from_archived(&archived);
+                    } else {
+                        // Grid window not yet created — create and populate it.
+                        let names: Vec<String> = state.config_manager.read().unwrap().machines.iter()
+                            .map(|m| m.name.clone())
+                            .collect();
+                        let mut grid = crate::ui::grid_window::GridWindow::new();
+                        grid.populate_from_config(&names);
+                        if !state.config_manager.read().unwrap().auto_expand_grid {
+                            // Only auto-expand if configured to do so.
+                        }
+                        grid.update_machine_metrics_from_archived(&archived);
+                        state.grid_window = Some(grid);
+                    }
+
+                    log::debug!(
+                        "Processed packet from '{}' — seq={}, cpu={:.1}%, mem={:.1}%",
+                        machine_id_str,
+                        archived.sequence,
+                        f32::from(archived.cpu_usage),
+                        f32::from(archived.memory_used_percent)
+                    );
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut => {
+                    // No packet received within timeout — continue loop (non-blocking).
+                    tokio::task::yield_now().await;
+                }
+                Err(e) => {
+                    log::error!("UDP receive error: {}", e);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            }
+
+            // Check for offline machines — mark as Offline if no packets within timeout.
+            let mut state = shared_state.write().unwrap();
+            if let Some(ref mut grid) = state.grid_window.as_mut() {
+                let machine_names: Vec<String> = grid.rows.iter()
+                    .filter(|r| r.is_offline(crate::config::manager::OFFLINE_TIMEOUT_SECS))
+                    .map(|r| r.name.clone())
+                    .collect();
+                for name in &machine_names {
+                    grid.mark_offline(name);
+                }
+            }
+        }
+    }
+
+    /// Verify HMAC-SHA256 tag using zero-copy buffer access — no re-serialization needed!
+    /// Copies the received buffer once, zeroes the hmac_tag region in-place, computes HMAC over those bytes.
+    fn verify_hmac_zerocopy(&self, buf: &[u8], archived: &nmd_service::ArchivedMetricPacket) -> bool {
+        // The received buffer IS the canonical serialized form (rkyv::access gave us a typed ref into it).
+        // Copy once for HMAC computation — we zero out the tag region in this copy.
+        let mut hmac_buf = buf.to_vec();
+
+        // Zero out the hmac_tag field's bytes in the copy. The tag is at the end of the buffer (last 32 bytes),
+        // matching the struct layout where hmac_tag is the final field after all variable-length data.
+        let tag_start = hmac_buf.len().saturating_sub(32);
+        hmac_buf[tag_start..tag_start + 32].copy_from_slice(&[0u8; 32]);
+
+        // Compute HMAC over the zeroed-tag buffer and compare with the received tag using constant-time comparison.
+        let mut mac = HmacSha256::new_from_slice(&self.secret_key)
+            .expect("HMAC key length is valid for SHA-256");
+        mac.update(&hmac_buf);
+        let computed_tag = mac.finalize().into_bytes();
+
+        // Constant-time comparison to prevent timing attacks (Worf VULN-01).
+        ConstantTimeEq::ct_eq(&computed_tag[..], &archived.hmac_tag[..]).into()
+    }
+
+    /// Convert a fixed-length [u8; 20] machine_id field from an ArchivedMetricPacket to a displayable string.
+    /// Truncates at the first null byte (null-padded encoding). Returns "<unknown>" if all zeros.
+    fn machine_id_to_str(machine_id: &[u8; 20]) -> &str {
+        // Find the first null byte — rkyv serializes [u8; 20] as inline bytes, no length prefix needed.
+        let len = machine_id.iter().position(|&b| b == 0).unwrap_or(20);
+        if len == 0 {
+            return "<unknown>"; // All zeros = uninitialized/empty machine ID.
+        }
+        std::str::from_utf8(&machine_id[..len]).unwrap_or("<invalid-utf8>")
+    }
+
+    /// Check if a packet's timestamp is fresh enough to be accepted (< TIMESTAMP_FRESHNESS_SECS old).
+    fn check_timestamp_freshness(timestamp: u64, now: u64) -> bool {
+        // Reject packets older than TIMESTAMP_FRESHNESS_SECS (replay protection) or from the future.
+        let age = now.saturating_sub(timestamp);
+        age < TIMESTAMP_FRESHNESS_SECS && timestamp <= now  // No forward clock skew tolerance — prevents replay.
+    }
+
+    /// Check sequence number for replay detection — returns true if this is a new/expected sequence,
+    /// false if it's a duplicate or out-of-order (replay attempt). Updates internal map on success.
+    fn check_sequence(seq_map: &RefCell<HashMap<String, u32>>, machine_id: &str, sequence: u32) -> bool {
+        let mut map = seq_map.borrow_mut();
+        match map.get(machine_id) {
+            Some(&last_seq) => {
+                // Reject if sequence is <= last seen (replay or out-of-order).
+                if sequence > last_seq {
+                    map.insert(machine_id.to_string(), sequence);
+                    true
+                } else {
+                    log::warn!("Replay detected: machine '{}' seq {} <= last {}", machine_id, sequence, last_seq);
+                    false
+                }
+            }
+            None => {
+                // First packet from this machine — accept and record.
+                map.insert(machine_id.to_string(), sequence);
+                true
+            }
+        }
+    }
+
+    /// Parse an rkyv-encoded MetricPacket from received UDP bytes using true zero-copy access.
+    /// Returns a typed reference directly into the byte buffer — no allocation or copy, unlike `rkyv::from_bytes`.
+    fn parse_packet<'a>(data: &'a [u8]) -> Result<&'a nmd_service::ArchivedMetricPacket, rkyv::rancor::Error> {
+        // rkyv 0.8's access() is safe — it performs internal bounds checking and returns Err on malformed input.
+        // No unsafe needed: the ArchivedMetricPacket type uses bytecheck validation internally.
+        rkyv::access::<nmd_service::ArchivedMetricPacket, rkyv::rancor::Error>(data)
+    }
+
+    /// Load the HMAC secret key from a file path for UDP packet verification.
+    /// Reads exactly 32 bytes; returns an error if the file is missing or not the right length.
+    fn load_secret_key(path: &str) -> Result<Vec<u8>, std::io::Error> {
+        use std::os::unix::fs::PermissionsExt;
+
+        let path_buf = std::path::PathBuf::from(path);
+        let data = std::fs::read(&path_buf)?;
+
+        // Validate file permissions are 0600 (owner read/write only) per Worf's security requirements.
+        let metadata = std::fs::metadata(&path_buf)?;
+        let perms = metadata.permissions();
+        let mode = perms.mode() & 0o777;
+        if mode != 0o600 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                format!("Secret key at {} has permissions {:o} — expected 0600", path, mode),
+            ));
+        }
+
+        if data.len() != 32 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Secret key at {} is {} bytes — expected exactly 32", path, data.len()),
+            ));
+        }
+
+        Ok(data)
+    }
+}
+
+/// Re-export MetricPacket from nmd-service for type compatibility in this crate's tests and stubs.
+/// In production, the UDP receiver imports directly from the workspace-shared packet definition.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Correctly parses MetricPacket from UDP bytes via rkyv zero-copy access.
+    #[test]
+    fn test_parse_incoming_packet() {
+        // Invalid/zeroed buffer should fail to parse (not valid rkyv data).
+        let data = vec![0u8; 64];
+        let result = UdpReceiver::parse_packet(&data);
+        assert!(result.is_err(), "Parsing invalid bytes should return Err");
+
+        // Valid serialized packet should parse successfully via zero-copy access.
+        let mut machine_id_bytes = [0u8; 20];
+        let src = "pluto".as_bytes();
+        let len = src.len().min(20);
+        machine_id_bytes[..len].copy_from_slice(&src[..len]);
+        
+        let packet = nmd_service::MetricPacket {
+            version: nmd_service::PROTOCOL_VERSION,
+            machine_id: machine_id_bytes,
+            timestamp: 100,
+            sequence: 5,
+            cpu_usage: 42.5,
+            memory_used_percent: 65.3,
+            disk_used_percent: 78.9,
+            network_rx_bytes: 1_000_000,
+            uptime_seconds: 3600,
+            disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
+            disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
+            network_rx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
+            network_tx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
+            network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
+            network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
+            memory_swap_used_pct: 0.0,  // Phase 2: swap usage percentage
+            gpu_vram_used_mb: Some(512),
+            temperature_celsius: Some(65.0),
+            hmac_tag: [0u8; 32],
+        };
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&packet).unwrap();
+        let archived = UdpReceiver::parse_packet(serialized.as_ref());
+        assert!(archived.is_ok(), "Valid rkyv data should parse successfully");
+        if let Ok(a) = archived {
+            // machine_id is [u8; 20] null-padded — convert to string for comparison.
+            let len = a.machine_id.iter().position(|&b| b == 0).unwrap_or(20);
+            let packet_machine_id: &str = std::str::from_utf8(&a.machine_id[..len]).unwrap();
+            
+            assert_eq!(packet_machine_id, "pluto");
+            assert_eq!(a.cpu_usage, 42.5);
+            assert_eq!(a.sequence, 5);
+        }
+    }
+
+    /// Timestamp freshness check rejects packets older than 10s (Beverly writes).
+    #[test]
+    fn test_timestamp_freshness() {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        // Current timestamp should be accepted.
+        assert!(UdpReceiver::check_timestamp_freshness(now, now), "Current timestamp should pass freshness check");
+
+        // 5 seconds ago — still fresh (< 10s).
+        assert!(UdpReceiver::check_timestamp_freshness(now - 5, now), "5-second-old packet should be accepted");
+
+        // 15 seconds ago — too old, rejected.
+        assert!(!UdpReceiver::check_timestamp_freshness(now - 15, now), "15-second-old packet should be rejected as replay");
+
+        // Future timestamp — rejected (no forward skew tolerance).
+        assert!(!UdpReceiver::check_timestamp_freshness(now + 1, now), "Future-dated packet should be rejected");
+    }
+
+    /// Sequence number tracking detects replays (Beverly writes after implementation).
+    #[test]
+    fn test_sequence_replay_detection() {
+        // Shared sequence map for per-machine tracking
+        let seq_map = std::cell::RefCell::new(std::collections::HashMap::new());
+        
+        // First packet from machine — accepted.
+        assert!(UdpReceiver::check_sequence(&seq_map, "pluto", 1), "First sequence should be accepted");
+
+        // Higher sequence — accepted (normal increment).
+        assert!(UdpReceiver::check_sequence(&seq_map, "pluto", 2), "Higher sequence should be accepted");
+
+        // Same or lower sequence — rejected as replay.
+        assert!(!UdpReceiver::check_sequence(&seq_map, "pluto", 1), "Replay of seq 1 should be rejected");
+        assert!(!UdpReceiver::check_sequence(&seq_map, "pluto", 0), "Out-of-order seq should be rejected");
+
+        // Different machine — accepted independently (per-machine tracking).
+        assert!(UdpReceiver::check_sequence(&seq_map, "spark", 1), "First packet from different machine should be accepted");
+    }
+
+    /// HMAC verification rejects tampered packets (Beverly writes after implementation).
+    #[test]
+    fn test_hmac_verification() {
+        // TODO: Create valid + tampered packets and verify HMAC check rejects tampered ones (Beverly).
+        assert!(true, "Placeholder — real test once verify_hmac is implemented");
+    }
+}

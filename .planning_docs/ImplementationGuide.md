@@ -261,6 +261,6 @@ network-system-monitor/
 
 1. **UDP Push Model**: No retries needed — just resend next cycle. Each remote machine pre-configured with desktop host IP in `config.toml`.
 2. **rkyv Serialization Only (MVP)**: Cap'n Proto deferred to Phase 2 if cross-platform support becomes necessary.
-3. **mTLS Re-evaluated for UDP**: Unusual pattern over UDP; may pivot to pre-shared token or HMAC authentication during implementation. Certificates remain an option but deferred.
+3. **HMAC-SHA256 Authentication (Confirmed by Worf)**: Pivot from mTLS/DTLS to HMAC-signed packets with pre-shared key. MetricPacket augmented with `timestamp`, `sequence`, and `hmac_tag` fields. Secret distributed via `/etc/nmd/secret.key`. Replay protection via timestamp freshness + sequence number tracking.
 4. **No Auto-Discovery**: Remote machines auto-register on first UDP packet arrival (machine ID included in packet).
 5. **Template-First Repo Structure**: Repository structured following `pop-os/cosmic-applet-template` conventions from day one — no Phase 4 refactoring needed.

@@ -1,0 +1,61 @@
+[package]
+name = "cosmic-applet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Cosmic desktop panel applet for Network System Monitor — shows system stats in the panel and opens a grid window displaying all remote machines when clicked."
+
+[dependencies]
+# Shared metric collection library (same workspace)
+metrics-core = { path = "../metrics-core" }
+
+# Remote service types — MetricPacket for rkyv deserialization of incoming UDP packets
+nmd-service = { path = "../nmd-service" }
+
+# Cosmic desktop framework — libcosmic from Pop!_OS git (v0.6 not yet published to crates.io)
+# See: https://pop-os.github.io/libcosmic/cosmic/index.html#architecture
+# Uses cosmic's built-in winit + iced rendering (no separate iced dependency needed).
+# Features match minimon-applet: applet enables cosmic::applet module; about for the About dialog.
+cosmic = { package = "libcosmic", git = "https://github.com/pop-os/libcosmic.git", features = ["applet"] }
+
+# rkyv for zero-copy deserialization of incoming MetricPacket from remote machines (rkyv 0.8.x: derive built-in)
+rkyv = { workspace = true, features = ["alloc"] }
+
+# HMAC-SHA256 verification for incoming UDP packets (Worf Phase 1A security)
+# hmac 0.13 requires sha2 from the digest 0.11 ecosystem — both are workspace deps now.
+hmac = { workspace = true }
+sha2 = { workspace = true }
+
+# Logging macros used throughout the applet modules
+log = "0.4"
+env_logger = "0.11"
+
+# Constant-time comparison for HMAC tag verification (subtle::ConstantTimeEq).
+# crypto-common 0.2.x no longer re-exports constant_time — use subtle directly instead.
+subtle = { version = "2", default-features = false }
+
+# crypto-common is still a transitive dependency via hmac/digest, kept here for reference.
+crypto-common = { version = "0.2", default-features = false }
+
+# TOML configuration parsing (extends minimon-applet format — needs parse + display for to_string/from_str).
+toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
+serde = { workspace = true }
+
+# Async runtime for UDP receiver and UI event loop
+tokio = { version = "1", features = ["full"] }
+
+# System process spawning (for local_monitor.rs — opens system monitor app)
+std-subprocess = { package = "subprocess", version = "0.2" }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "panel_bench"
+harness = false
+
+[[bench]]
+name = "grid_bench"
+harness = false

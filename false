@@ -1,0 +1,4 @@
+<tool_call>
+<function=lmstudio_run_in_terminal>
+<parameter=command>
+cd /home/mark/Documents/in_cloud/Development/network-system-monitor/cosmic-applet && find src -type f -name '*.rs' | head -5

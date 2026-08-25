@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "type": "command",
+        "bash": "# Hard stop on repeated tool calls - prevents infinite loops\nnode -e '\nconst fs=require(\"fs\");\ntry{\nconst input=JSON.parse(fs.readFileSync(0,\"utf8\"));\nconst cmd=(input.toolName||input.command||\"unknown\").toString();\nconst sf=\"/tmp/.copilot-loop-check.json\";\nlet last=null;\ntry{last=JSON.parse(fs.readFileSync(sf,\"utf8\"));}catch(e){}\nif(last&&last.cmd===cmd){\nconsole.log(JSON.stringify({block:true,reason:\"BLOCKED: Repeated identical tool call detected - this prevents infinite loops\"}));\nprocess.exit(0);\n}\nfs.writeFileSync(sf,JSON.stringify({cmd:cmd}));\n}catch(e){console.log(\"{}\");}'\n",
+        "timeoutSec": 15
+      },
+      {
+        "matcher": "grep_search|search|lmstudio_search_files",
+        "type": "command",
+        "bash": "# Block excessive search calls - delegate to Data instead\nnode -e '\nconst fs=require(\"fs\");\ntry{\nconst sf=\"/tmp/.copilot-search-count.json\";\nlet c=0;\ntry{c=JSON.parse(fs.readFileSync(sf,\"utf8\")).count||0;}catch(e){}\nc++;\nfs.writeFileSync(sf,JSON.stringify({count:c}));\nif(c>=3){\nconsole.log(JSON.stringify({block:true,reason:\"BLOCKED: Search loop detected (>3 consecutive searches). Delegate library/API research to Data agent instead of searching source code.\"}));\nprocess.exit(0);\n}\n}catch(e){console.log(\"{}\");}'\n",
+        "timeoutSec": 15
+      }
+    ],
+    
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "type": "command",
+        "bash": "# Reset search counter on successful non-search tool use\nnode -e '\nconst fs=require(\"fs\");\ntry{\nconst input=JSON.parse(fs.readFileSync(0,\"utf8\"));\nconst cmd=(input.toolName||input.command||\"unknown\").toString();\nif(!cmd.includes(\"search\")&&!cmd.includes(\"grep\")){\ntry{fs.unlinkSync(\"/tmp/.copilot-search-count.json\");}catch(e){}\nconsole.log(JSON.stringify({additionalContext:\"\"}));\n}else{console.log(\"{}\");}\n}catch(e){console.log(\"{}\");}'\n",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}

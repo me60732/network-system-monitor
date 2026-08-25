@@ -1,0 +1,38 @@
+[workspace]
+members = [
+    "metrics-core",
+    "nmd-service",
+    "cosmic-applet",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mark/network-system-monitor"
+rust-version = "1.98"
+
+# Shared dependency versions for consistency across all crates
+[workspace.dependencies]
+# sysinfo 0.39.x — CPU/memory/disk/network/uptime collection via /proc and /sys on Linux.
+# Temperature & GPU sensors use direct /sys reads (same approach as minimon-applet).
+sysinfo = "0.39"
+procfs = "0.17"
+# rkyv 0.8.x: derive macros are included in the core crate (no separate 'derive' feature needed).
+# rkyv 0.8.x: derive macros are included in the core crate (no separate 'derive' feature needed).
+# The 'alloc' feature enables Vec/String support for ArchivedString and heap-allocated archives.
+# The 'bytecheck' feature is required alongside 'alloc' to enable rkyv::access() zero-copy deserialization.
+rkyv = { version = "0.8", default-features = false, features = ["alloc", "bytecheck"] }
+serde = { version = "1.0", features = ["derive"] }
+
+# HMAC-SHA256 authentication — hmac 0.13 requires sha2 from the digest 0.11 ecosystem.
+# sha2 0.11 uses digest 0.11 (matching hmac 0.13's dependency); sha2 0.10 is incompatible with hmac 0.13.
+hmac = { version = "0.13", default-features = false }
+sha2 = { version = "0.11" }
+
+# Constant-time comparison for HMAC tag verification (re-exported from crypto-common, matches hmac 0.13).
+crypto-common = { version = "0.2", default-features = false }
+
+# Development dependencies (shared) - cannot be 'optional' at workspace level
+criterion = { version = "0.5" }

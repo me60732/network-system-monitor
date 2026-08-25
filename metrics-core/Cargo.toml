@@ -1,0 +1,37 @@
+[package]
+name = "metrics-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Shared library for collecting system metrics (CPU, memory, disk, network, uptime, GPU, temperature) on Linux."
+
+[dependencies]
+sysinfo = { workspace = true }
+procfs = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+
+# rkyv is used by nmd-service for packet serialization; metrics-core stays pure collection
+# but we re-export compatible types for shared use in MetricPacket definitions.
+rkyv = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[features]
+default = []
+# Enables rkyv::Archive derives on all metric structs (used by nmd-service packet.rs)
+rkyv-serializable = ["dep:rkyv"]
+
+[[bench]]
+name = "cpu_bench"
+harness = false
+
+[[bench]]
+name = "memory_bench"
+harness = false
+
+[[bench]]
+name = "full_suite"
+harness = false

@@ -1,0 +1,48 @@
+[package]
+name = "nmd-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Remote systemd service for Network System Monitor — pushes rkyv-encoded MetricPacket via UDP with HMAC-SHA256 authentication."
+
+[dependencies]
+# Shared metric collection library (same workspace)
+metrics-core = { path = "../metrics-core" }
+
+# Serialization: rkyv for zero-copy packet encoding (rkyv 0.8.x: derive macros built-in)
+rkyv = { workspace = true, features = ["alloc"] }
+
+# HMAC-SHA256 authentication per Worf's security analysis (Worf Phase 1A)
+# hmac 0.13 requires sha2 from the digest 0.11 ecosystem — both are workspace deps now.
+hmac = { workspace = true }
+sha2 = { workspace = true }
+
+# System info for machine_id and uptime collection at service level
+sysinfo = { workspace = true }
+procfs = { workspace = true }
+
+# Configuration parsing (TOML)
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+serde = { version = "1.0", features = ["derive"] }
+
+# CLI argument parsing and logging
+clap = { version = "4", features = ["derive"] }
+log = "0.4"
+env_logger = "0.11"
+
+# Signal handling for graceful SIGTERM/SIGINT shutdown (Worf Phase 1A)
+signal-hook = "0.3"
+munge = "0.4"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "packet_bench"
+harness = false
+
+[[bench]]
+name = "aggregator_bench"
+harness = false

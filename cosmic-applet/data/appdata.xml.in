@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppData XML template for Network System Monitor cosmic-applet (Cosmic standards).
+
+  This file is processed by Meson during build — @variables@ are substituted with values from meson.build.
+  See: https://www.freedesktop.org/software/guidelines/ for the full AppStream specification.
+
+  The appdata describes the applet's purpose, features, and metadata for software centers
+  (GNOME Software, Discover) following Cosmic desktop submission standards.
+-->
+<component type="desktop-application">
+  <id>network-system-monitor</id>
+  <name>Network System Monitor</name>
+  <!-- Translators: This is the applet's short description shown in software centers -->
+  <summary>Monitor all machines on your network from a single Cosmic panel</summary>
+
+  <metadata_license>MIT OR Apache-2.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+
+  <!-- The desktop entry file that registers the applet with the system -->
+  <desktopid>network-system-monitor.desktop</desktopid>
+
+  <!-- Primary icon — referenced from data/icons/ directory -->
+  <icon type="remote">network-system-monitor</icon>
+
+  <!-- Project URL for documentation links in software centers -->
+  <url type="homepage">https://github.com/mark/network-system-monitor</url>
+  <url type="bugtracker">https://github.com/mark/network-system-monitor/issues</url>
+
+  <!-- Release information — updated on each tagged release -->
+  <releases>
+    <release version="@VERSION@" date="2026-08-20" />
+  </releases>
+
+  <!-- Core description explaining the applet's features and purpose -->
+  <description>
+    <p>
+      Network System Monitor is a Cosmic desktop panel applet that displays system metrics from all
+      Linux machines on your local network in one unified view. No SSH or manual login required — each
+      remote machine runs a lightweight systemd service (nmd-service) that pushes rkyv-encoded, HMAC-SHA256
+      authenticated UDP packets to the desktop applet every 2 seconds.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Single-line Cosmic panel widget showing desktop CPU, memory, disk, network, uptime, GPU VRAM, and temperature</li>
+      <li>Click-to-expand grid window listing all remote machines with per-metric status indicators (● online / ○ offline)</li>
+      <li>Color-coded progress bars at 60% (yellow warning) and 80% (red critical) thresholds for each metric type</li>
+      <li>HMAC-SHA256 authentication + replay protection via timestamp freshness &lt; 10s and per-machine sequence tracking</li>
+      <li>TOML configuration extending minimon-applet's format with per-machine checkbox metric selection</li>
+    </ul>
+  </description>
+
+  <!-- Categorization for software center filtering -->
+  <categories>
+    <category>System</category>
+    <category>Monitor</category>
+    <category>Network</category>
+  </categories>
+
+  <!-- Keywords for search discoverability in software centers -->
+  <keywords>
+    <keyword>system monitor</keyword>
+    <keyword>network monitoring</keyword>
+    <keyword>Cosmic applet</keyword>
+    <keyword>remote monitoring</keyword>
+    <keyword>UDP metrics</keyword>
+    <keyword>rkyv serialization</keyword>
+  </keywords>
+
+  <!-- Screenshot for software center preview (optional — add when UI is finalized) -->
+  <!--
+  <screenshots>
+    <screenshot type="default">
+      <image>network-system-monitor-screenshot.png</image>
+      <caption>Panel widget with single-line system stats summary</caption>
+    </screenshot>
+  </screenshots>
+  -->
+
+  <!-- Custom metadata for Cosmic desktop integration -->
+  <custom>
+    <value key="X-Cosmic-Applet">true</value>
+    <value key="X-Cosmic-Panel-Position">end</value>
+  </custom>
+</component>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="430" height="520" xmlns="http://www.w3.org/2000/svg">
+  <title>Disk Load Settings Panel</title>
+  
+  <!-- Background -->
+  <rect width="430" height="520" fill="#1a1a1a"/>
+  
+  <!-- Header -->
+  <text x="20" y="35" fill="#999" font-size="14" font-family="sans-serif">← Back</text>
+  <text x="20" y="70" fill="#fff" font-size="24" font-weight="bold" font-family="sans-serif">Disk load</text>
+  
+  <!-- Top-level toggles -->
+  <text x="20" y="115" fill="#ccc" font-size="13" font-family="sans-serif">Combine disk Write and Read</text>
+  <rect x="360" y="102" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="114" r="10" fill="#999"/>
+  
+  <text x="20" y="150" fill="#ccc" font-size="13" font-family="sans-serif">Show label</text>
+  <rect x="360" y="137" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="149" r="10" fill="#999"/>
+  
+  <text x="20" y="185" fill="#ccc" font-size="13" font-family="sans-serif">Show icon</text>
+  <rect x="360" y="172" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="184" r="10" fill="#999"/>
+  
+  <!-- Disk write section -->
+  <text x="20" y="230" fill="#fff" font-size="15" font-weight="bold" font-family="sans-serif">Disk write in bytes per second</text>
+  
+  <!-- Small chart thumbnail -->
+  <rect x="35" y="250" width="60" height="60" rx="4" fill="#0a0a0a" stroke="#444" stroke-width="1"/>
+  <polyline points="40,295 45,290 50,280 55,285 60,275 65,270 70,285 75,280 80,290 85,295" 
+            fill="none" stroke="#ff8800" stroke-width="2"/>
+  
+  <text x="120" y="270" fill="#ccc" font-size="13" font-family="sans-serif">Show chart</text>
+  <rect x="360" y="257" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="269" r="10" fill="#999"/>
+  
+  <text x="120" y="300" fill="#ccc" font-size="13" font-family="sans-serif">Show value</text>
+  <rect x="360" y="287" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="299" r="10" fill="#999"/>
+  
+  <text x="35" y="340" fill="#aaa" font-size="13" font-family="monospace">W 49.1 KB/s</text>
+  
+  <rect x="340" y="320" width="70" height="26" rx="4" fill="#333"/>
+  <text x="360" y="338" fill="#aaa" font-size="12" font-family="sans-serif">Colors</text>
+  
+  <!-- Disk read section -->
+  <text x="20" y="390" fill="#fff" font-size="15" font-weight="bold" font-family="sans-serif">Disk read in bytes per second</text>
+  
+  <!-- Small chart thumbnail (empty) -->
+  <rect x="35" y="410" width="60" height="60" rx="4" fill="#0a0a0a" stroke="#444" stroke-width="1"/>
+  <line x1="35" y1="465" x2="95" y2="465" stroke="#ffcc00" stroke-width="2"/>
+  
+  <text x="120" y="430" fill="#ccc" font-size="13" font-family="sans-serif">Show chart</text>
+  <rect x="360" y="417" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="429" r="10" fill="#999"/>
+  
+  <text x="120" y="460" fill="#ccc" font-size="13" font-family="sans-serif">Show value</text>
+  <rect x="360" y="447" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="459" r="10" fill="#999"/>
+  
+  <text x="35" y="500" fill="#aaa" font-size="13" font-family="monospace">R 0.00 B/s</text>
+  
+  <rect x="340" y="480" width="70" height="26" rx="4" fill="#333"/>
+  <text x="360" y="498" fill="#aaa" font-size="12" font-family="sans-serif">Colors</text>
+</svg>

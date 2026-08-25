@@ -1,0 +1,19 @@
+pub mod local_monitor;
+pub use local_monitor::LocalMonitor;
+
+/// Utility functions and helper modules.
+use cosmic::widget::{container, text};
+use cosmic::Element;
+
+// TODO: Add formatting utilities later (format_network_rate, format_uptime)
+fn labeled_value<'a, Message>(label: &'a str, value: &'a str) -> Element<'a, Message>
+where
+    Message: 'a,
+{
+    let row = cosmic::widget::row()
+        .spacing(5)
+        .align_items(cubic::Alignment::Center)
+        .push(text(label))
+        .push(text(value));
+    container(row).width(Length::Fill).into()
+}

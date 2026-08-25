@@ -1,0 +1,8 @@
+rkyv, I see in the code that we are deserializing, I thought the whole point of using rkyv was to avoid the need to deserializing.
+Also I see in the nnmd-service is is always searalizing the object(packet) before sending, wouldn't it be better to create the rkyv object on start up once then modify in place when reading system stats?
+with the above two this would eliminate both seralizing and desearlizing cost, (the whole pont of rkyv), see: https://rkyv.org/rkyv.html and https://github.com/rkyv/rkyv and https://docs.rs/rkyv/latest/rkyv/index.html
+
+21/08/2026 00:24
+in regards to rkyv and potiental breakage mentioned in data's report, couldn't we add a version number as the very first field, that way if diffrent senders are running diffrent versions of this app, and the structs have changed, 
+it will have a diffrent version number, and because the verserion number is always in the same offset, every version of this app will at least be able to read the version number.
+if there is a version missmatch, cosmic app can report this, then it's just a matter of making sure all machines on the network are running the same version?  it's a way to test and ensure the rkyv formats will match before trying to read other fields

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="430" height="450" xmlns="http://www.w3.org/2000/svg">
+  <title>CPU Temperature Settings Panel</title>
+  
+  <!-- Background -->
+  <rect width="430" height="450" fill="#1a1a1a"/>
+  
+  <!-- Header -->
+  <text x="20" y="35" fill="#999" font-size="14" font-family="sans-serif">← Back</text>
+  <text x="20" y="70" fill="#fff" font-size="24" font-weight="bold" font-family="sans-serif">CPU Temperature</text>
+  
+  <!-- Description -->
+  <text x="20" y="110" fill="#aaa" font-size="12" font-family="sans-serif">For Intel processors shows single highest temperature</text>
+  <text x="20" y="130" fill="#aaa" font-size="12" font-family="sans-serif">found across all sensors/cores.</text>
+  
+  <!-- Left side - Ring chart -->
+  <g transform="translate(70, 240)">
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#333" stroke-width="12"/>
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#ff4444" stroke-width="12" 
+            stroke-dasharray="157 314" stroke-dashoffset="78.5" transform="rotate(-90)"/>
+    <text x="0" y="5" fill="#ff4444" font-size="32" font-weight="bold" text-anchor="middle" font-family="sans-serif">35°</text>
+    <text x="0" y="75" fill="#aaa" font-size="14" text-anchor="middle" font-family="sans-serif">35°C</text>
+  </g>
+  
+  <!-- Right side - Toggle options -->
+  <text x="200" y="165" fill="#ccc" font-size="13" font-family="sans-serif">Show chart</text>
+  <rect x="360" y="152" width="45" height="24" rx="12" fill="#00bcd4"/>
+  <circle cx="393" cy="164" r="10" fill="#fff"/>
+  
+  <text x="200" y="200" fill="#ccc" font-size="13" font-family="sans-serif">Show value</text>
+  <rect x="360" y="187" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="199" r="10" fill="#999"/>
+  
+  <text x="200" y="235" fill="#ccc" font-size="13" font-family="sans-serif">Show label</text>
+  <rect x="360" y="222" width="45" height="24" rx="12" fill="#555"/>
+  <circle cx="372" cy="234" r="10" fill="#999"/>
+  
+  <text x="200" y="270" fill="#ccc" font-size="13" font-family="sans-serif">Show icon</text>
+  <rect x="360" y="257" width="45" height="24" rx="12" fill="#00bcd4"/>
+  <circle cx="393" cy="269" r="10" fill="#fff"/>
+  
+  <!-- Dropdowns -->
+  <text x="200" y="305" fill="#ccc" font-size="13" font-family="sans-serif">Temperature unit</text>
+  <rect x="325" y="292" width="85" height="26" rx="4" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <text x="340" y="310" fill="#fff" font-size="12" font-family="sans-serif">Celsius</text>
+  <text x="395" y="310" fill="#999" font-size="12" font-family="sans-serif">▼</text>
+  
+  <text x="200" y="345" fill="#ccc" font-size="13" font-family="sans-serif">Chart type</text>
+  <rect x="280" y="332" width="70" height="26" rx="4" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <text x="295" y="350" fill="#fff" font-size="12" font-family="sans-serif">Ring</text>
+  <text x="330" y="350" fill="#999" font-size="12" font-family="sans-serif">▼</text>
+  
+  <rect x="360" y="332" width="50" height="26" rx="4" fill="#333"/>
+  <text x="372" y="350" fill="#aaa" font-size="12" font-family="sans-serif">Colors</text>
+  
+  <!-- Input field -->
+  <text x="200" y="395" fill="#ccc" font-size="13" font-family="sans-serif">Minimum temperature</text>
+  <rect x="360" y="382" width="50" height="26" rx="4" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <text x="375" y="400" fill="#fff" font-size="12" font-family="sans-serif">0</text>
+</svg>

@@ -16,7 +16,7 @@ Thumbs.db
 # Build artifacts
 *.deb
 *.rpm
-
+.agentreports/
 # Lavish review sessions (ephemeral)
 .lavish/*.html  # Keep design docs but ignore session state files
 

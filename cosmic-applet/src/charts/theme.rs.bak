@@ -1,0 +1,207 @@
+//! # StatusIndicator — Renders ● (online) / ○ (offline/pending) with color thresholds at 60%/80%
+//!
+//! Color coding: green < 60%, yellow 60–80%, red > 80%. Used across PanelWidget and MachineRow
+//! for consistent visual feedback on metric severity levels.
+
+/// Color categories for metrics based on percentage thresholds at 60%/80%.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MetricColor {
+    /// Green — normal operating range (< 60%). Metric is healthy.
+    Green,
+    /// Yellow — warning range (60–80%). Approaching capacity, monitor closely.
+    Yellow,
+    /// Red — critical range (> 80%). Immediate attention required.
+    Red,
+    /// Gray — unavailable or not applicable (e.g., GPU VRAM on systems without discrete GPU).
+    Gray,
+}
+
+impl MetricColor {
+    /// Returns the CSS color string for this metric color category.
+    pub fn as_color(&self) -> &'static str {
+        match self {
+            MetricColor::Green => "#4ade80",   // emerald-400 — healthy/normal.
+            MetricColor::Yellow => "#facc15",  // yellow-400 — warning/approaching threshold.
+            MetricColor::Red => "#f87171",     // red-400 — critical/exceeds threshold.
+            MetricColor::Gray => "#9ca3af",    // gray-400 — unavailable/not applicable.
+        }
+    }
+
+    /// Returns the 60%/80% color category for a given percentage value (0.0–100.0).
+    pub fn from_percentage(value: f32) -> Self {
+        if value < crate::ui::panel_widget::THRESHOLD_WARN {   // < 60%: green
+            MetricColor::Green
+        } else if value < crate::ui::panel_widget::THRESHOLD_CRIT {  // 60–80%: yellow
+            MetricColor::Yellow
+        } else {                                          // >= 80%: red
+            MetricColor::Red
+        }
+    }
+
+    /// Returns the color category for a metric that may be unavailable (None → Gray).
+    pub fn from_optional_percentage(value: Option<f32>) -> Self {
+        match value {
+            Some(v) => MetricColor::from_percentage(v),
+            None => MetricColor::Gray,  // Metric not available on this hardware.
+        }
+    }
+}
+
+/// StatusIndicator renders ● (online) or ○ (offline/pending) symbols with color thresholds at 60%/80%.
+/// Used in MachineRow to show connection status next to machine name, and for metric progress bars.
+pub struct StatusIndicator {
+    /// Current online/offline/pending state of the remote machine this indicator represents.
+    pub is_online: bool,
+
+    /// Whether the indicator is currently visible (some columns may be hidden via checkbox selection).
+    pub visible: bool,
+}
+
+impl StatusIndicator {
+    /// Create a new status indicator — defaults to offline/pending until first UDP packet arrives.
+    pub fn new() -> Self {
+        StatusIndicator {
+            is_online: false,
+            visible: true,
+        }
+    }
+
+    /// Returns the Unicode symbol for current status: ● (online), ○ (offline/pending).
+    pub fn symbol(&self) -> &'static str {
+        if self.is_online { "●" } else { "○" }  // Filled = online, hollow = offline/pending.
+    }
+
+    /// Returns the color for this indicator based on connection status and metric thresholds.
+    pub fn color_for_status(&self) -> MetricColor {
+        if self.is_online { MetricColor::Green } else { MetricColor::Gray }
+    }
+
+    /// Render a colored progress bar with 60%/80% threshold coloring for a given percentage value.
+    /// The bar fills proportionally and applies green/yellow/red color coding based on thresholds.
+    pub fn render_progress_bar(value: f32, max_value: f32) -> cosmic::Element<'static, ()> {
+        // Compute fill percentage: value / max_value * 100.0
+        let pct = if max_value > 0.0 { (value / max_value) * 100.0 } else { 0.0 };
+        
+        // Apply MetricColor::from_percentage() for color coding at 60%/80% thresholds.
+        let color = MetricColor::from_percentage(pct);
+
+        // Render as a text-based progress bar — simple and compatible with cosmic's widget API.
+        // Bar width: 20 chars total, fill proportional to percentage.
+        let filled = (pct / 5.0) as usize;
+        let empty = 20usize.saturating_sub(filled);
+
+        cosmic::widget::text(format!(
+            "[{fill}{empty}] {pct:.1}% ({color:?})",
+            fill = "▰".repeat(filled),
+            empty = "▱".repeat(empty),
+            pct = pct,
+            color = color,
+        ))
+        .into()
+    }
+
+    /// Render a status indicator ●/○ with the appropriate color based on online state and metric value.
+    pub fn render(&self, optional_value: Option<f32>) -> cosmic::Element<'_, ()> {
+        let symbol = self.symbol();
+        let status_color = self.color_for_status();
+        let metric_color = MetricColor::from_optional_percentage(optional_value);
+
+        cosmic::widget::text(format!(
+            "{symbol} (status: {:?}, metric: {:?})",
+            status_color, metric_color
+        ))
+        .into()
+    }
+}
+
+impl Default for StatusIndicator {
+    fn default() -> Self {
+        StatusIndicator::new()
+    }
+}
+
+/// Format network rate from bytes as human-readable string (e.g., "1.2MB/s").
+pub fn format_network_rate(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+
+    if bytes >= GB {
+        format!("{:.1}GB/s", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1}MB/s", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.1}KB/s", bytes as f64 / KB as f64)
+    } else {
+        format!("{}B/s", bytes)
+    }
+}
+
+/// Format uptime seconds as human-readable string (e.g., "2h 15m", "3d 4h").
+pub fn format_uptime(seconds: u64) -> String {
+    const MINUTE: u64 = 60;
+    const HOUR: u64 = MINUTE * 60;
+    const DAY: u64 = HOUR * 24;
+
+    let days = seconds / DAY;
+    let hours = (seconds % DAY) / HOUR;
+    let minutes = (seconds % HOUR) / MINUTE;
+
+    if days > 0 {
+        format!("{}d {}h", days, hours)
+    } else if hours > 0 {
+        format!("{}h {}m", hours, minutes)
+    } else {
+        format!("{}m", minutes)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Color thresholds at 60%/80% applied correctly for each metric type (Beverly writes after implementation).
+    #[test]
+    fn test_threshold_colors() {
+        // Green: < 60%.
+        assert_eq!(MetricColor::from_percentage(30.0), MetricColor::Green);
+        assert_eq!(MetricColor::from_percentage(59.9), MetricColor::Green);
+
+        // Yellow: 60–80%.
+        assert_eq!(MetricColor::from_percentage(60.0), MetricColor::Yellow);
+        assert_eq!(MetricColor::from_percentage(79.9), MetricColor::Yellow);
+
+        // Red: > 80%.
+        assert_eq!(MetricColor::from_percentage(80.0), MetricColor::Red);
+        assert_eq!(MetricColor::from_percentage(100.0), MetricColor::Red);
+    }
+
+    /// Optional percentage returns Gray when value is None (Beverly writes).
+    #[test]
+    fn test_optional_color() {
+        assert_eq!(MetricColor::from_optional_percentage(Some(30.0)), MetricColor::Green);
+        assert_eq!(MetricColor::from_optional_percentage(None), MetricColor::Gray, "None should return Gray");
+    }
+
+    /// Status indicator renders correct symbols ●/○ (Beverly writes).
+    #[test]
+    fn test_status_symbols() {
+        let mut online = StatusIndicator::new();
+        assert_eq!(online.symbol(), "○", "Default state should be offline/pending");
+
+        online.is_online = true;
+        assert_eq!(online.symbol(), "●", "Online state should show filled circle");
+
+        online.is_online = false;
+        assert_eq!(online.symbol(), "○", "Offline state should show hollow circle");
+    }
+
+    /// Color categories have correct CSS strings for rendering (Beverly writes).
+    #[test]
+    fn test_color_strings() {
+        assert_eq!(MetricColor::Green.as_color(), "#4ade80");
+        assert_eq!(MetricColor::Yellow.as_color(), "#facc15");
+        assert_eq!(MetricColor::Red.as_color(), "#f87171");
+        assert_eq!(MetricColor::Gray.as_color(), "#9ca3af");
+    }
+}

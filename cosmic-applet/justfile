@@ -1,0 +1,54 @@
+# justfile — cosmic-applet build & maintenance recipes (cosmic-utils standards)
+# Reference: pop-os/cosmic-applet-template, cosmic-utils contribution guidelines
+
+[group]
+default = ["check"]
+
+# ── Build Recipes ───────────────────────────────────────────────────────────
+
+## Build the applet in release mode (optimized for panel performance).
+build-release:
+	cargo build --release
+
+## Install the compiled applet binary to ~/.local/bin.
+install: build-release
+	@mkdir -p $(HOME)/.local/bin
+	cp target/release/cosmic-applet $(HOME)/.local/bin/
+	@echo "Installed cosmic-applet to $(HOME)/.local/bin/"
+
+## Vendor all dependencies for offline builds (cosmic-utils standard).
+vendor:
+	cargo vendor vendor/ --versioned-dirs
+	@echo "Dependencies vendored to vendor/ directory"
+
+# ── Check & Lint Recipes ────────────────────────────────────────────────────
+
+## Run cargo check with clippy lints enabled.
+check:
+	cargo clippy --all-targets -- -D warnings
+
+## Output clippy results as JSON for CI integration (cosmic-utils standard).
+check-json:
+	cargo clippy --all-targets --message-format=json 2>&1 | tee /tmp/cosmic-applet-clippy.json
+
+# ── Development Recipes ─────────────────────────────────────────────────────
+
+## Run the applet in debug mode with logging.
+run-dev:
+	RUST_LOG=debug cargo run
+
+## Build documentation for all crates including docsrs annotations.
+docs:
+	cargo doc --workspace --no-deps --document-private-items
+
+## Clean build artifacts and vendored dependencies.
+clean-all: clean vendor-clean
+	@echo "Cleaned everything"
+
+## Remove only the target directory (keep vendored deps).
+clean:
+	cargo clean
+
+## Remove vendored dependencies directory.
+vendor-clean:
+	rm -rf vendor/
