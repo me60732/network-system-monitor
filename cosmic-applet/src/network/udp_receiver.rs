@@ -16,7 +16,7 @@ use tokio::sync::mpsc::Sender;
 
 // Re-use the same rkyv-serialized MetricPacket type from nmd-service's packet definition.
 // Since both crates are in the same workspace, we import the struct directly.
-use crate::{AppState, ui::GridWindow};
+use crate::AppState;
 use nmd_service::packet::{ArchivedMetricPacket, MetricPacket};
 use rkyv::access;
 
@@ -177,7 +177,6 @@ impl UdpReceiver {
                     let data = &buf[..size];
 
                     // Verify HMAC authenticity first (critical security step)
-                    let key = &self.secret_key;
                     // We need to access the archived packet to verify HMAC
                     let archived: ArchivedPacketRef<'_> = match access::<ArchivedMetricPacket, rkyv::rancor::Error>(data) {
                         Ok(pkt) => pkt,
@@ -209,18 +208,6 @@ impl UdpReceiver {
                         continue;
                     }
 
-                    // Packet is valid! Update shared state and send message to UI.
-                    let mut state = shared_state.write().unwrap();
-                    if let Some(ref mut grid) = state.grid_window.as_mut() {
-                        let machine_names: Vec<String> = grid.rows.iter()
-                            .filter(|r| r.is_offline(crate::config::manager::OFFLINE_TIMEOUT_SECS))
-                            .map(|r| r.name.clone())
-                            .collect();
-                        for name in &machine_names {
-                            grid.mark_offline(name);
-                        }
-                    }
-
                     // Convert archived packet to owned MetricPacket for potential use
                     let metric_packet = MetricPacket {
                         version: archived.version.into(),
@@ -228,28 +215,47 @@ impl UdpReceiver {
                         timestamp: archived.timestamp.into(),
                         sequence: archived.sequence.into(),
                         cpu_usage: archived.cpu_usage.into(),
-                        memory_used_percent: archived.memory_used_percent.into(),
-                        disk_used_percent: archived.disk_used_percent.into(),
+                        memory_used_bytes: archived.memory_used_bytes.into(),
+                        memory_total_bytes: archived.memory_total_bytes.into(),
+                        disk_used_bytes: archived.disk_used_bytes.into(),
+                        disk_total_bytes: archived.disk_total_bytes.into(),
                         network_rx_bytes: archived.network_rx_bytes.into(),
+                        network_tx_bytes: archived.network_tx_bytes.into(),
                         uptime_seconds: archived.uptime_seconds.into(),
                         disk_read_bytes: match archived.disk_read_bytes.as_ref() { Some(v) => Some((*v).into()), None => None },
                         disk_write_bytes: match archived.disk_write_bytes.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        network_rx_packets: match archived.network_rx_packets.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        network_tx_packets: match archived.network_tx_packets.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        network_rx_dropped: match archived.network_rx_dropped.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        network_tx_dropped: match archived.network_tx_dropped.as_ref() { Some(v) => Some((*v).into()), None => None },
                         memory_swap_used_pct: archived.memory_swap_used_pct.into(),
+                        disk_partitions: archived.disk_partitions.iter().map(|p| {
+                            nmd_service::packet::PartitionInfo {
+                                mount: p.mount.to_string(),
+                                total: p.total.into(),
+                                used: p.used.into(),
+                            }
+                        }).collect(),
                         gpu_vram_used_mb: match archived.gpu_vram_used_mb.as_ref() { Some(v) => Some((*v).into()), None => None },
                         temperature_celsius: match archived.temperature_celsius.as_ref() { Some(v) => Some((*v).into()), None => None },
                         hmac_tag: archived.hmac_tag,
                     };
 
-                    // Update grid window with received metrics
-                    if !state.config_manager.read().unwrap().machines.is_empty() {
-                        let mut new_grid = GridWindow::new_with_metrics(&metric_packet);
-                        new_grid.rows.extend(state.grid_window.as_ref().map(|g| g.rows.clone()).unwrap_or_default());
-                        state.grid_window = Some(new_grid);
+                    // Update RemoteMachine instances with new metrics
+                    // Convert machine_id from [u8; 20] to String
+                    let machine_id_len = metric_packet.machine_id.iter().position(|&b| b == 0).unwrap_or(20);
+                    let machine_name = std::str::from_utf8(&metric_packet.machine_id[..machine_id_len])
+                        .unwrap_or("unknown")
+                        .to_string();
+                    
+                    let mut state = shared_state.write().unwrap();
+                    if let Some(machine) = state.machines.get_mut(&machine_name) {
+                        machine.update_from_packet(&metric_packet);
+                        log::info!("Updated metrics for machine: {}", machine_name);
+                    } else {
+                        // Machine not in config, create it dynamically
+                        let mut new_machine = crate::remote_machine::RemoteMachine::new(machine_name.clone());
+                        new_machine.update_from_packet(&metric_packet);
+                        state.machines.insert(machine_name.clone(), new_machine);
+                        log::info!("Added new machine from UDP: {}", machine_name);
                     }
+                    drop(state);
 
                     // Send message to UI if transmitter is available
                     if let Some(ref tx) = self.tx {
@@ -269,17 +275,8 @@ impl UdpReceiver {
                 }
             }
 
-            // Check for offline machines — mark as Offline if no packets within timeout.
-            let mut state = shared_state.write().unwrap();
-            if let Some(ref mut grid) = state.grid_window.as_mut() {
-                let machine_names: Vec<String> = grid.rows.iter()
-                    .filter(|r| r.is_offline(crate::config::manager::OFFLINE_TIMEOUT_SECS))
-                    .map(|r| r.name.clone())
-                    .collect();
-                for name in &machine_names {
-                    grid.mark_offline(name);
-                }
-            }
+            // Offline detection disabled - machines remain visible until they send packets again
+            // TODO: Add optional timeout-based offline marking if needed
         }
     }
 
@@ -346,14 +343,6 @@ impl UdpReceiver {
             }
         }
     }
-
-    /// Parse an rkyv-encoded MetricPacket from received UDP bytes using true zero-copy access.
-    /// Returns a typed reference directly into the byte buffer — no allocation or copy, unlike `rkyv::from_bytes`.
-    fn parse_packet<'a>(data: &'a [u8]) -> Result<ArchivedPacketRef<'a>, rkyv::rancor::Error> {
-        // rkyv 0.8's access() is safe — it performs internal bounds checking and returns Err on malformed input.
-        // No unsafe needed: the ArchivedMetricPacket type uses bytecheck validation internally.
-        access::<ArchivedMetricPacket, rkyv::rancor::Error>(data)
-    }
 }
 
 // Define a lifetime-bound reference type for zero-copy access to archived packets.
@@ -383,17 +372,17 @@ mod tests {
             timestamp: 100,
             sequence: 5,
             cpu_usage: 42.5,
-            memory_used_percent: 65.3,
-            disk_used_percent: 78.9,
+            memory_used_bytes: 10_000_000_000,
+            memory_total_bytes: 16_000_000_000,
+            disk_used_bytes: 400_000_000_000,
+            disk_total_bytes: 500_000_000_000,
             network_rx_bytes: 1_000_000,
+            network_tx_bytes: 500_000,
             uptime_seconds: 3600,
             disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
             disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
-            network_rx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_tx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
-            network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             memory_swap_used_pct: 0.0,
+            disk_partitions: Vec::new(),
             gpu_vram_used_mb: None,
             temperature_celsius: None,
             hmac_tag: [0u8; 32],
@@ -407,6 +396,6 @@ mod tests {
         assert_eq!(archived.timestamp, 100);
         assert_eq!(archived.sequence, 5);
         assert_eq!(f32::from(archived.cpu_usage), 42.5);
-        assert_eq!(f32::from(archived.memory_used_percent), 65.3);
+        assert_eq!(u64::from(archived.memory_used_bytes), 10_000_000_000);
     }
 }

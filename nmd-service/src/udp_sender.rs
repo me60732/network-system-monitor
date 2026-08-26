@@ -80,17 +80,17 @@ impl UdpSender {
             timestamp: 0,           // Modified in-place via munge! on every send
             sequence: 0,            // Modified in-place via munge! on every send
             cpu_usage: 0.0,         // Modified in-place via munge! on every send
-            memory_used_percent: 0.0,
-            disk_used_percent: 0.0,
+            memory_used_bytes: 0,
+            memory_total_bytes: 0,
+            disk_used_bytes: 0,
+            disk_total_bytes: 0,
             network_rx_bytes: 0,
+            network_tx_bytes: 0,
             uptime_seconds: 0,
             disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
             disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
-            network_rx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_tx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
-            network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             memory_swap_used_pct: 0.0,  // Phase 2: swap usage percentage
+            disk_partitions: Vec::new(),
             gpu_vram_used_mb: None,
             temperature_celsius: None,
             hmac_tag: [0u8; 32],    // Zeroed for HMAC computation, then computed and written in-place
@@ -143,17 +143,21 @@ impl UdpSender {
 
         // Destructure the underlying type via munge to get mutable handles for each field.
         munge!(let ArchivedMetricPacket {
-            mut timestamp, mut sequence, mut cpu_usage, mut memory_used_percent, mut disk_used_percent,
-            mut network_rx_bytes, mut uptime_seconds, gpu_vram_used_mb, temperature_celsius, ..
+            mut timestamp, mut sequence, mut cpu_usage, mut memory_used_bytes, mut memory_total_bytes,
+            mut disk_used_bytes, mut disk_total_bytes, mut network_rx_bytes, mut network_tx_bytes,
+            mut uptime_seconds, gpu_vram_used_mb, temperature_celsius, ..
         } = seal);
 
         // Mutate fixed-size numeric fields directly in the buffer via munge handles.
         *timestamp = now_secs.into();                           // u64_le — DerefMut works for primitives
         *sequence = seq.into();                                  // u32_le — DerefMut works for primitives
         *cpu_usage = packet.cpu_usage.into();                    // f32_le — DerefMut works for primitives
-        *memory_used_percent = packet.memory_used_percent.into();
-        *disk_used_percent = packet.disk_used_percent.into();
+        *memory_used_bytes = packet.memory_used_bytes.into();
+        *memory_total_bytes = packet.memory_total_bytes.into();
+        *disk_used_bytes = packet.disk_used_bytes.into();
+        *disk_total_bytes = packet.disk_total_bytes.into();
         *network_rx_bytes = packet.network_rx_bytes.into();
+        *network_tx_bytes = packet.network_tx_bytes.into();
         *uptime_seconds = packet.uptime_seconds.into();
 
         // Optional fields (ArchivedOption) — use unsafe unseal for in-place mutation.
@@ -220,9 +224,12 @@ mod tests {
             timestamp: 12345,
             sequence: 99,
             cpu_usage: 45.6,
-            memory_used_percent: 78.9,
-            disk_used_percent: 33.3,
+            memory_used_bytes: 12_000_000_000,
+            memory_total_bytes: 16_000_000_000,
+            disk_used_bytes: 150_000_000_000,
+            disk_total_bytes: 500_000_000_000,
             network_rx_bytes: 1_000_000,
+            network_tx_bytes: 500_000,
             uptime_seconds: 3600,
             disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
             disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
@@ -231,6 +238,7 @@ mod tests {
             network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             memory_swap_used_pct: 0.0,  // Phase 2: swap usage percentage
+            disk_partitions: Vec::new(),
             gpu_vram_used_mb: Some(512),
             temperature_celsius: Some(65.0),
             hmac_tag: [0u8; 32],
@@ -255,9 +263,12 @@ mod tests {
             timestamp: 100,
             sequence: 0, // Will be overwritten by sender.
             cpu_usage: 50.0,
-            memory_used_percent: 60.0,
-            disk_used_percent: 70.0,
+            memory_used_bytes: 10_000_000_000,
+            memory_total_bytes: 16_000_000_000,
+            disk_used_bytes: 350_000_000_000,
+            disk_total_bytes: 500_000_000_000,
             network_rx_bytes: 12345,
+            network_tx_bytes: 6789,
             uptime_seconds: 999,
             disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
             disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
@@ -266,6 +277,7 @@ mod tests {
             network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             memory_swap_used_pct: 0.0,  // Phase 2: swap usage percentage
+            disk_partitions: Vec::new(),
             gpu_vram_used_mb: None,
             temperature_celsius: None,
             hmac_tag: [0u8; 32],

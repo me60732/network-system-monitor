@@ -98,11 +98,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(e) = (&mut sender).send(&packet) {
             log::warn!("UDP send failed: {}", e);
         } else {
+            let mem_percent = if packet.memory_total_bytes > 0 {
+                (packet.memory_used_bytes as f64 / packet.memory_total_bytes as f64) * 100.0
+            } else {
+                0.0
+            };
             log::debug!(
                 "Sent metrics — seq={}, cpu={:.1}%, mem={:.1}%",
                 packet.sequence,
                 packet.cpu_usage,
-                packet.memory_used_percent
+                mem_percent
             );
         }
 

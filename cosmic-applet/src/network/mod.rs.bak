@@ -1,7 +1,0 @@
-//! Network communication layer for receiving metric packets via UDP.
-//!
-//! Handles HMAC verification, sequence tracking, and packet deserialization.
-
-pub mod udp_receiver;
-
-pub use udp_receiver::{UdpReceiver, UdpMessage, UdpPayload};

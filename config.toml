@@ -1,0 +1,17 @@
+udp_port = 51057
+hmac_secret_path = "/etc/nmd/secret.key"
+auto_expand_grid = true
+config_path = "config.toml"
+
+[[machines]]
+name = "localhost"
+enabled = true
+host = "127.0.0.1"
+port = 51057
+show_cpu = true
+show_memory = false
+show_disk = false
+show_network = false
+show_uptime = true
+show_gpu_vram = true
+show_temperature = true

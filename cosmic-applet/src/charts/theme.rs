@@ -1,6 +1,6 @@
 //! Color theming and threshold constants for metric visualization.
 
-use cosmic::iced::{Color, Pixels};
+use cosmic::iced::Color;
 
 /// Threshold constants for metric color coding (shared across all charts).
 pub const THRESHOLD_WARN: f32 = 60.0;   // Yellow — approaching capacity
@@ -124,5 +124,16 @@ pub fn format_uptime(seconds: u64) -> String {
         format!("{}m", minutes)
     } else {
         format!("{}s", seconds)
+    }
+}
+
+/// Format a numeric value for chart display, keeping it to max 4 characters.
+/// - Values >= 10: 1 decimal place (e.g., "45.3")
+/// - Values < 10: 2 decimal places (e.g., "9.99")
+pub fn format_chart_value(value: f32) -> String {
+    if value >= 10.0 {
+        format!("{:.1}", value)
+    } else {
+        format!("{:.2}", value)
     }
 }

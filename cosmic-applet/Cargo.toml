@@ -46,8 +46,23 @@ serde = { workspace = true }
 # Async runtime for UDP receiver and UI event loop
 tokio = { version = "1", features = ["full"] }
 
+# Random number generation for debug/fake data mode
+rand = "0.8"
+
 # System process spawning (for local_monitor.rs — opens system monitor app)
 std-subprocess = { package = "subprocess", version = "0.2" }
+
+# Minimon sensor dependencies (Phase 1: copied from minimon-applet)
+sysinfo = "0.39"                  # System information (CPU, memory, disk, network from /proc)
+nvml-wrapper = "0.12"             # NVIDIA GPU monitoring
+anyhow = { version = "1.0", features = ["backtrace"] }  # Error handling
+zbus = { version = "5.7" }        # D-Bus for laptop battery detection
+zvariant = "5.6"                  # D-Bus types
+bounded-vec-deque = "0.1"         # Fixed-size VecDeque for chart history
+hex = "0.4"                       # Hex string conversion for color picker
+i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"] }
+i18n-embed-fl = "0.10"            # Fluent localization macros
+rust-embed = "8.3"                # Embed localization files
 
 [dev-dependencies]
 criterion = "0.5"

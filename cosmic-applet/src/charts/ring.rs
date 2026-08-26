@@ -1,105 +1,133 @@
-//! Ring chart widget for displaying single percentage metrics.
-//!
-//! Adapted from minimon-applet's ring.rs, simplified for network monitor use case.
-
 use cosmic::Renderer;
-use cosmic::iced::{Point, Radians, Rectangle};
+use cosmic::iced::Point;
+use cosmic::iced::Radians;
+use cosmic::iced::Rectangle;
+use cosmic::iced::mouse::Cursor;
+use cosmic::theme;
 use cosmic::widget::canvas;
-use cosmic::widget::canvas::{Geometry, Path, Stroke};
-use crate::AppMessage;
+use cosmic::widget::canvas::Geometry;
 
-/// Ring chart widget displaying a percentage as a circular progress indicator.
+use cosmic::widget::canvas::Path;
+use cosmic::widget::canvas::Text;
+use cosmic::widget::canvas::path::Arc;
+
+use std::f32::consts::PI;
+
+use crate::AppMessage as Message;
+use crate::minimon_config::ChartColors;
+
+use super::ChartColorsIced;
+
 #[derive(Debug)]
 pub struct RingChart {
-    /// Current percentage value (0.0 - 100.0).
+    // How much if the ring is filled. 0..100
     pub percent: f32,
+
+    //Text to display inside, if any
+    pub text: String,
+    pub colors: ChartColorsIced,
 }
 
 impl RingChart {
-    /// Create a new ring chart with given value and default config.
-    ///
-    /// # Arguments
-    /// * `percent` - The percentage to display (will be clamped to 0-100)
-    pub fn new(percent: f32) -> Self {
-        let percent = if percent > 100.0 { 100.0 } else if percent < 0.0 { 0.0 } else { percent };
-        RingChart { percent }
+    /// Create a ring chart with auto-formatted percentage text
+    /// Values >= 10 show 1 decimal place, values < 10 show 2 decimal places
+    pub fn new(percent: f32, colors: &ChartColors) -> Self {
+        let clamped_percent = if percent <= 100.0 { percent } else { 100.0 };
+        let text = Self::format_value(clamped_percent);
+        RingChart {
+            percent: clamped_percent,
+            text,
+            colors: (*colors).into(),
+        }
     }
-
-    /// Update the chart with a new percentage value.
-    pub fn update(&mut self, value: f32) {
-        let val = if value > 100.0 { 100.0 } else if value < 0.0 { 0.0 } else { value };
-        self.percent = val;
+    
+    /// Create a ring chart with custom text
+    pub fn new_with_text(percent: f32, text: &str, colors: &ChartColors) -> Self {
+        RingChart {
+            percent: if percent <= 100.0 { percent } else { 100.0 },
+            text: text.to_string(),
+            colors: (*colors).into(),
+        }
+    }
+    
+    /// Format a numeric value for chart display, keeping it compact
+    /// - Values >= 10: 1 decimal place (e.g., "45.3")
+    /// - Values < 10: 2 decimal places (e.g., "9.99")
+    fn format_value(value: f32) -> String {
+        if value >= 10.0 {
+            format!("{:.1}", value)
+        } else {
+            format!("{:.2}", value)
+        }
     }
 }
 
-impl canvas::Program<AppMessage, cosmic::Theme> for RingChart {
+impl canvas::Program<Message, theme::Theme> for RingChart {
     type State = ();
 
     fn draw(
         &self,
         _state: &Self::State,
         renderer: &Renderer,
-        _theme: &cosmic::Theme,
+        _theme: &theme::Theme,
         bounds: Rectangle,
-        _cursor: cosmic::iced::mouse::Cursor,
-    ) -> Vec<Geometry> {
+        _cursor: Cursor,
+    ) -> Vec<Geometry<Renderer>> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        // The starting point of the Ring graph (bottom/6pm)
-        let start_angle = std::f32::consts::PI / 2.0;
+        // The starting poing of the Ring graph, bottom/6pm
+        let starting_point = PI / 2.0;
 
-        // Max height/width of chart/widget
-        let limit = bounds.width.min(bounds.height) - 2.0;
-        if limit <= 0.0 {
-            return vec![frame.into_geometry()];
-        }
+        // Max height/width of chart/widget. Side length in a square
+        let limit = bounds.width.min(bounds.height)-2.0;
 
-        // Width and radius of ring based on limits (8% thickness)
-        let stroke_width = 0.08 * limit;
+        // Width and radius of ring - stroke width 0.06
+        let stroke_width = 0.06 * limit;
         let radius = (limit / 2.0) - stroke_width / 2.0;
         let center = Point::new(bounds.width / 2.0, bounds.height / 2.0);
 
-        // Determine color based on percentage thresholds
-        use crate::charts::theme::{MetricColor, THRESHOLD_WARN, THRESHOLD_CRIT};
-        let metric_color = if self.percent < THRESHOLD_WARN {
-            MetricColor::Green
-        } else if self.percent < THRESHOLD_CRIT {
-            MetricColor::Yellow
-        } else {
-            MetricColor::Red
-        };
-        // Convert to iced Color for stroke; background uses fixed colors (could also be themed)
-        let ring_color = metric_color.as_iced_color();
-        let bg_color = cosmic::iced::Color::from_rgb8(0x2e, 0x34, 0x40); // dark slate
-        let inner_bg = cosmic::iced::Color::from_rgb8(0x1e, 0x1e, 0x2e); // darker
+        // Use dark grey for rings
+        let grey = cosmic::iced::Color::from_rgb(0.25, 0.25, 0.25);
 
-        // Draw outer background ring segment as circle (track)
-        let outer_circle = Path::circle(center, radius + stroke_width / 2.0);
-        frame.fill(&outer_circle, bg_color);
+        // Draw outer background ring segment as circle
+        let outer_circle = Path::circle(center, radius+(stroke_width / 2.0));
+        frame.fill(&outer_circle, grey);
 
-        // Fill inner area
+        // Fill background color inside ring
         let inner_circle = Path::circle(center, radius - stroke_width / 2.0);
-        frame.fill(&inner_circle, inner_bg);
+        frame.fill(&inner_circle, self.colors.color1);
 
-        // Draw highlighted ring segment showing progress percentage
-        let end_angle = start_angle + (std::f32::consts::PI * 2.0 * (self.percent / 100.0));
-        let arc_path = Path::new(|p| {
-            p.arc(cosmic::iced::widget::canvas::path::Arc {
+        // Draw highlighted ring segment showing status/percentage
+        let ring = Path::new(|p| {
+            p.arc(Arc {
                 center,
                 radius,
-                start_angle: Radians::from(start_angle),
-                end_angle: Radians::from(end_angle),
+                start_angle: Radians::from(starting_point),
+                end_angle: Radians::from(starting_point + (PI * 2.0 * (self.percent / 100.0))),
             });
         });
-
+        
         frame.stroke(
-            &arc_path,
-            Stroke {
-                style: cosmic::widget::canvas::Style::Solid(ring_color),
+            &ring,
+            canvas::Stroke {
+                style: canvas::Style::Solid(grey),
                 width: stroke_width,
                 ..Default::default()
             },
         );
+
+        // Create centered text object with smaller size (0.82 instead of 0.93 to compensate for larger canvas)
+        let text = Text {
+            content: self.text.clone(),
+            position: center,
+            color: self.colors.color2,
+            size: cosmic::iced::Pixels(radius * 0.82),
+            align_x: cosmic::iced::alignment::Horizontal::Center.into(),
+            align_y: cosmic::iced::alignment::Vertical::Center.into(),
+            ..Default::default()
+        };
+
+        frame.fill_text(text);
 
         vec![frame.into_geometry()]
     }

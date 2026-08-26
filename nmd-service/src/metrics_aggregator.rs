@@ -9,8 +9,14 @@
 //! ```text
 //! metrics-core::collect_all() → (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats, TemperatureStats)
 //!   ↓ aggregate(machine_id, sequence_counter)
-//! MetricPacket { version, machine_id, timestamp, sequence, cpu_usage, memory_used_percent, disk_used_percent, network_rx_bytes, uptime_seconds, gpu_vram_used_mb, temperature_celsius }
+//! MetricPacket { version, machine_id, timestamp, sequence, cpu_usage, memory_used_bytes, memory_total_bytes, disk_used_bytes, disk_total_bytes, network_rx_bytes, uptime_seconds, gpu_vram_used_mb, temperature_celsius }
 //! ```
+//!
+//! ## Design Philosophy
+//!
+//! The service collects and sends **raw metric values** (bytes, counts, etc.). The desktop applet
+//! handles all presentation logic including percentage calculations. This separation allows users to
+//! configure display preferences (percentages vs. absolute values) without changing the service.
 
 use crate::config::ServiceConfig;
 use crate::packet::MetricPacket;
@@ -40,24 +46,19 @@ impl MetricsAggregator {
         // --- CPU usage — direct percentage from CpuStats::usage (0.0–100.0) ---
         let cpu_usage = cpu.usage;
 
-        // --- Memory used percent — (used / total) * 100, guard against division by zero ---
-        let memory_used_percent = if memory.total > 0 {
-            ((memory.used as f64) / (memory.total as f64) * 100.0) as f32
-        } else {
-            0.0
-        };
+        // --- Memory used and total bytes — send raw values, let applet calculate percentage ---
+        let memory_used_bytes = memory.used;
+        let memory_total_bytes = memory.total;
 
-        // --- Disk used percent — sum(used) / sum(total) across all non-virtual partitions ---
-        let disk_total: u64 = disk.partitions.iter().map(|p| p.total).sum();
-        let disk_used: u64 = disk.partitions.iter().map(|p| p.used).sum();
-        let disk_used_percent = if disk_total > 0 {
-            ((disk_used as f64) / (disk_total as f64) * 100.0) as f32
-        } else {
-            0.0
-        };
+        // --- Disk used and total bytes — sum across all partitions, send raw values ---
+        let disk_total_bytes: u64 = disk.partitions.iter().map(|p| p.total).sum();
+        let disk_used_bytes: u64 = disk.partitions.iter().map(|p| p.used).sum();
 
         // --- Network RX bytes — sum of rx_bytes across all non-loopback interfaces; fallback to loopback ---
         let network_rx_bytes = Self::primary_interface_rx(&network.interfaces);
+
+        // --- Network TX bytes — sum of tx_bytes across all non-loopback interfaces; fallback to loopback ---
+        let network_tx_bytes = Self::primary_interface_tx(&network.interfaces);
 
         // --- Uptime seconds — direct from UptimeStats ---
         let uptime_seconds = uptime.seconds;
@@ -74,6 +75,17 @@ impl MetricsAggregator {
             (None, Some(gpu_t)) => Some(gpu_t),
             (None, None) => None,
         };
+
+        // --- Disk partitions — collect mount point, total, and used for each partition ---
+        let disk_partitions: Vec<crate::packet::PartitionInfo> = disk
+            .partitions
+            .iter()
+            .map(|p| crate::packet::PartitionInfo {
+                mount: p.mount.clone(),
+                total: p.total,
+                used: p.used,
+            })
+            .collect();
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -92,17 +104,17 @@ impl MetricsAggregator {
             timestamp,
             sequence: 0, // Filled by UdpSender before transmission
             cpu_usage,
-            memory_used_percent,
-            disk_used_percent,
+            memory_used_bytes,
+            memory_total_bytes,
+            disk_used_bytes,
+            disk_total_bytes,
             network_rx_bytes,
+            network_tx_bytes,
             uptime_seconds,
             disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
             disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
-            network_rx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_tx_packets: None,   // Phase 2: packet counters (sysinfo doesn't expose these)
-            network_rx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
-            network_tx_dropped: None,   // Phase 2: dropped packets (sysinfo doesn't expose these)
             memory_swap_used_pct: memory.swap_used, // Phase 2: swap usage percentage from MemoryStats
+            disk_partitions,
             gpu_vram_used_mb,
             temperature_celsius,
             hmac_tag: [0u8; 32], // Filled by UdpSender::send before transmission
@@ -123,6 +135,26 @@ impl MetricsAggregator {
         for iface in interfaces {
             if iface.name == "lo" {
                 return iface.rx_bytes;
+            }
+        }
+
+        0
+    }
+
+    /// Find the primary non-loopback interface and return its cumulative tx_bytes.
+    /// Falls back to loopback if no non-loopback interface is found.
+    fn primary_interface_tx(interfaces: &[InterfaceStat]) -> u64 {
+        // Prefer the first non-loopback interface with a name that isn't "lo".
+        for iface in interfaces {
+            if !iface.name.is_empty() && iface.name != "lo" {
+                return iface.tx_bytes;
+            }
+        }
+
+        // Fallback: use loopback ("lo") if no other interface is found.
+        for iface in interfaces {
+            if iface.name == "lo" {
+                return iface.tx_bytes;
             }
         }
 

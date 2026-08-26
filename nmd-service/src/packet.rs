@@ -6,6 +6,12 @@
 //! and HMAC-SHA256 tag computed over all fields using a pre-shared key stored at
 //! `/etc/nmd/secret.key`.
 //!
+//! ## Design Philosophy
+//!
+//! The packet contains **raw metric values** (bytes, counts, etc.) rather than pre-calculated
+//! percentages. This allows the desktop applet to handle display preferences (show as percentage
+//! or absolute values) without requiring service changes.
+//!
 //! ## Security Fields (Worf — Phase 1A)
 //!
 //! | Field          | Type       | Purpose                                                    |
@@ -22,10 +28,6 @@
 //! |------------------------|------------|------------------------------------------------------|
 //! | `disk_read_bytes`      | `Option<u64>` | Total disk read bytes since boot (None if unavailable) |
 //! | `disk_write_bytes`     | `Option<u64>` | Total disk write bytes since boot (None if unavailable) |
-//! | `network_rx_packets`   | `Option<u64>` | RX packets count (None if unavailable)               |
-//! | `network_tx_packets`   | `Option<u64>` | TX packets count (None if unavailable)               |
-//! | `network_rx_dropped`   | `Option<u64>` | RX dropped packets (None if unavailable)             |
-//! | `network_tx_dropped`   | `Option<u64>` | TX dropped packets (None if unavailable)             |
 //! | `memory_swap_used_pct` | `f32`        | Swap usage as percentage of total swap (0.0–100.0)     |
 //!
 //! ## rkyv Compatibility
@@ -34,6 +36,17 @@
 //! The `hmac_tag` field is excluded from the HMAC computation itself to avoid a circular dependency.
 
 use rkyv::{Archive, Deserialize, Serialize};
+
+/// Disk partition information for one mount point
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct PartitionInfo {
+    /// Mount point path (e.g., "/", "/home", "/boot")
+    pub mount: String,
+    /// Total size in bytes
+    pub total: u64,
+    /// Used space in bytes
+    pub used: u64,
+}
 
 /// A single metrics snapshot sent over UDP from remote machine → desktop applet.
 ///
@@ -74,14 +87,23 @@ pub struct MetricPacket {
     /// CPU usage percentage (0.0–100.0), aggregate across all cores.
     pub cpu_usage: f32,
 
-    /// Memory used as a percentage of total RAM (0.0–100.0).
-    pub memory_used_percent: f32,
+    /// Memory used in bytes.
+    pub memory_used_bytes: u64,
 
-    /// Disk usage for the root partition as a percentage (0.0–100.0).
-    pub disk_used_percent: f32,
+    /// Total memory in bytes.
+    pub memory_total_bytes: u64,
+
+    /// Disk used bytes (sum across all partitions).
+    pub disk_used_bytes: u64,
+
+    /// Disk total bytes (sum across all partitions).
+    pub disk_total_bytes: u64,
 
     /// Total bytes received on the primary network interface since boot.
     pub network_rx_bytes: u64,
+
+    /// Total bytes transmitted on the primary network interface since boot.
+    pub network_tx_bytes: u64,
 
     /// System uptime in seconds since last boot.
     pub uptime_seconds: u64,
@@ -94,20 +116,11 @@ pub struct MetricPacket {
     /// Total disk write bytes since boot — `None` if sysinfo doesn't expose IO stats.
     pub disk_write_bytes: Option<u64>,
 
-    /// RX packets count (cumulative) — `None` if sysinfo doesn't expose packet counters.
-    pub network_rx_packets: Option<u64>,
-
-    /// TX packets count (cumulative) — `None` if sysinfo doesn't expose packet counters.
-    pub network_tx_packets: Option<u64>,
-
-    /// Packets dropped on receive — `None` if sysinfo doesn't expose dropped counts.
-    pub network_rx_dropped: Option<u64>,
-
-    /// Packets dropped on transmit — `None` if sysinfo doesn't expose dropped counts.
-    pub network_tx_dropped: Option<u64>,
-
     /// Swap usage as a percentage of total swap space (0.0–100.0).
     pub memory_swap_used_pct: f32,
+
+    /// Disk partition information (mount point, total, used) for all mounted partitions
+    pub disk_partitions: Vec<PartitionInfo>,
 
     // ── Optional Metrics (None when hardware unsupported) ─────────────────
 
@@ -139,17 +152,17 @@ mod tests {
             timestamp: 0,
             sequence: 0,
             cpu_usage: 0.0,
-            memory_used_percent: 0.0,
-            disk_used_percent: 0.0,
+            memory_used_bytes: 0,
+            memory_total_bytes: 0,
+            disk_used_bytes: 0,
+            disk_total_bytes: 0,
             network_rx_bytes: 0,
+            network_tx_bytes: 0,
             uptime_seconds: 0,
             disk_read_bytes: None,
             disk_write_bytes: None,
-            network_rx_packets: None,
-            network_tx_packets: None,
-            network_rx_dropped: None,
-            network_tx_dropped: None,
             memory_swap_used_pct: 0.0,
+            disk_partitions: Vec::new(),
             gpu_vram_used_mb: None,
             temperature_celsius: None,
             hmac_tag: [0u8; 32],

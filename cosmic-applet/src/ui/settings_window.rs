@@ -1,74 +1,77 @@
-//! # SettingsWindow — Configuration menu for adding/removing machines and toggling metrics
+//! # SettingsWindow — General configuration panel (app-wide settings)
 //!
-//! Provides a settings window that allows users to:
-//! - Add new machines (with name, host/IP, port)
-//! - Remove existing machines
-//! - Enable/disable machines (checkbox)
-//! - Toggle which metrics to display per machine: CPU, memory, disk, network, uptime, GPU VRAM, temperature
-//!
-//! Configuration is persisted via the shared ConfigManager (Arc<RwLock>) using TOML format.
+//! Provides a settings window for app-wide configuration following minimon's design:
+//! - Refresh rate control (seconds)
+//! - Value size control
+//! - Monospace font toggle
+//! - Panel spacing slider
+//! - Content order reordering
 
-use crate::config::manager::ConfigManager;
-use cosmic::iced::widget as iced_widget;
+use cosmic::Element;
+use cosmic::widget::{button, column, container, row, text, checkbox, slider};
+use cosmic::iced::Alignment;
+use crate::minimon_config::{MinimonConfig, ContentType};
 
-/// Message types for settings window.
+/// Message types for general settings window.
 #[derive(Debug, Clone)]
 pub enum SettingsMessage {
-    /// Add a new machine to the configuration.
-    AddMachine,
-    /// Remove the selected machine from the configuration.
-    RemoveSelected,
-    /// Close the settings window.
+    /// Close the settings window and return to panel view.
     CloseWindow,
+    /// Update refresh rate (in seconds as f64, will be converted to milliseconds u32)
+    UpdateRefreshRate(f64),
+    /// Increment refresh rate by 0.1 seconds
+    IncrementRefreshRate,
+    /// Decrement refresh rate by 0.1 seconds
+    DecrementRefreshRate,
+    /// Update value size
+    UpdateValueSize(u16),
+    /// Increment value size
+    IncrementValueSize,
+    /// Decrement value size
+    DecrementValueSize,
+    /// Toggle monospace font
+    ToggleMonospace(bool),
+    /// Update panel spacing (0=smallest, 6=largest)
+    UpdatePanelSpacing(u16),
+    /// Move content item up in order
+    MoveContentUp(usize),
+    /// Move content item down in order
+    MoveContentDown(usize),
+    /// Toggle CPU sensor visibility
+    ToggleCpuVisible(bool),
+    /// Toggle CPU temperature sensor visibility
+    ToggleCpuTempVisible(bool),
+    /// Toggle memory sensor visibility
+    ToggleMemoryVisible(bool),
+    /// Toggle network sensor visibility
+    ToggleNetworkVisible(bool),
+    /// Toggle disk sensor visibility
+    ToggleDiskVisible(bool),
+    /// Toggle GPU sensor visibility
+    ToggleGpuVisible(bool),
     /// No operation — used when a widget needs to return a message but no action is required.
     NoOp,
-    /// Update a field in a specific machine configuration.
-    UpdateMachineField(usize, MachineField, String),
-    /// Toggle a metric display setting for a specific machine.
-    UpdateMachineMetric(usize, MetricType, bool),
 }
 
-/// Field types that can be updated in a machine configuration.
-#[derive(Debug, Clone)]
-pub enum MachineField {
-    Name,
-    Host,
-    Port,
-    Enabled,
-}
-
-/// Metric types that can be toggled per machine.
-#[derive(Debug, Clone)]
-pub enum MetricType {
-    CPU,
-    Memory,
-    Disk,
-    Network,
-    Uptime,
-    GpuVram,
-    Temperature,
-}
-
-/// SettingsWindow renders a configuration menu for managing machines and metric selections.
+/// SettingsWindow renders general configuration options for the app.
 ///
-/// Layout: list of machines with editable fields + enable toggle + metric checkboxes,
-/// plus add/remove buttons at the bottom. All changes update shared ConfigManager
-/// and persist to disk via ConfigManager::save().
+/// Layout: refresh rate, value size, font toggle, spacing slider, content order reordering.
 #[derive(Clone)]
 pub struct SettingsWindow {
     /// Shared configuration manager (std::sync::Arc<RwLock>) for reading/writing machine configs.
-    pub config_manager: std::sync::Arc<std::sync::RwLock<ConfigManager>>,
-    /// Whether this window is currently visible (toggled from panel widget).
+    pub config_manager: std::sync::Arc<std::sync::RwLock<crate::config::manager::ConfigManager>>,
+    /// Minimon app-wide configuration (refresh rate, value size, spacing, content order, etc.)
+    pub minimon_config: MinimonConfig,
+    /// Whether this window is currently visible (toggled from panel view).
     pub visible: bool,
 }
 
 impl SettingsWindow {
     /// Create a new SettingsWindow with the given shared configuration manager.
-    ///
-    /// The window starts invisible — it's toggled on via a gear icon button in the panel widget.
-    pub fn new(config_manager: std::sync::Arc<std::sync::RwLock<ConfigManager>>) -> Self {
+    pub fn new(config_manager: std::sync::Arc<std::sync::RwLock<crate::config::manager::ConfigManager>>) -> Self {
         SettingsWindow {
             config_manager,
+            minimon_config: MinimonConfig::default(),
             visible: false,
         }
     }
@@ -77,226 +80,153 @@ impl SettingsWindow {
     pub fn toggle_visibility(&mut self) {
         self.visible = !self.visible;
     }
-
-    /// Render the settings window as a Cosmic widget element (if visible).
-    ///
-    /// Layout:
-    /// - Header row with "Settings" title and close button
-    /// - Machine list: each machine has name/host/port text inputs, enable toggle, metric checkboxes
-    /// - Add machine button + remove selected button at bottom
-    pub fn view(&self) -> cosmic::Element<'static, SettingsMessage> {
-        if !self.visible {
-            return cosmic::widget::text("").into();
-        }
-
-        // Read config and clone machines to avoid borrowing issues.
-        let config = self.config_manager.read().unwrap().clone();
-        
-        // Clone machines into a Vec for rendering (each machine is cloned once).
-        let machines_clone: Vec<crate::config::manager::MachineConfig> = config.machines.iter().cloned().collect();
-
-        // Machine list with editable fields per entry - clone machines to avoid borrowing issues.
-        let bottom_controls = cosmic::widget::Row::new()
-            .spacing(8)
-            .padding([16, 0])
-            .push(
-                cosmic::iced::widget::button("Add Machine")
-                    .on_press(SettingsMessage::AddMachine)
-            )
-            .push(
-                cosmic::iced::widget::button("Remove Selected")
-                    .on_press(SettingsMessage::RemoveSelected)
-            );
-
-        // Metric configuration section with ring chart toggles (minimon pattern).
-        let metric_config_section = Self::render_metric_config_section();
-
-        // Full settings window layout.
-        let content = cosmic::widget::Column::new()
-            .spacing(8)
-            .padding([16, 24])
-            .push(
-                cosmic::widget::Row::new()
-                    .spacing(8)
-                    .push(cosmic::widget::text("Settings").size(24))
-                    .push(
-                        cosmic::iced::widget::button("×")
-                            .on_press(SettingsMessage::CloseWindow)
-                    )
-            )
-            .push(metric_config_section)
-            .push(cosmic::widget::Container::new(
-                cosmic::widget::Column::with_children(
-                    machines_clone.iter()
-                        .enumerate()
-                        .map(|(idx, machine)| Self::render_machine_row(idx, machine.clone()))
-                )
-                    .spacing(12)
-            ))
-            .push(bottom_controls);
-
-        cosmic::widget::container(content)
-            .width(700)
-            .height(500)
-            .into()
+    
+    /// Update the minimon configuration
+    pub fn update_config(&mut self, config: MinimonConfig) {
+        self.minimon_config = config;
+    }
+    
+    /// Get current config
+    pub fn get_config(&self) -> &MinimonConfig {
+        &self.minimon_config
     }
 
-    /// Render metric configuration section with ring chart toggles (minimon pattern).
-    ///
-    /// Uses standard cosmic widgets for togglers since cosmic::widget::settings may not be available.
-    fn render_metric_config_section() -> cosmic::Element<'static, SettingsMessage> {
-        // Metric display settings using standard cosmic widgets
-        let content = cosmic::widget::Column::new()
-            .spacing(8)
-            .padding([16, 0])
-            .push(cosmic::widget::text("Metric Display").size(24))
-            .push(
-                cosmic::widget::Container::new(
-                    cosmic::widget::Row::new()
-                        .spacing(16)
-                        .push(
-                            cosmic::widget::Column::new()
-                                .spacing(8)
-                                .push(cosmic::widget::text("Ring charts"))
-                                .push(
-                                    iced_widget::toggler(false)
-                                        .on_toggle(|_| SettingsMessage::NoOp) // Placeholder
-                                )
-                        )
-                        .push(
-                            cosmic::widget::Column::new()
-                                .spacing(8)
-                                .push(cosmic::widget::text("Show values"))
-                                .push(
-                                    iced_widget::toggler(false)
-                                        .on_toggle(|_| SettingsMessage::NoOp) // Placeholder
-                                )
-                        )
-                )
-            );
-        
-        cosmic::widget::container(content).padding(8).into()
+    /// Render the general settings view.
+    pub fn view(&self) -> Element<'_, SettingsMessage> {
+        view_with_config(&self.minimon_config)
     }
+}
 
-    /// Render one row in the machine list with editable fields.
-    fn render_machine_row(index: usize, machine: crate::config::manager::MachineConfig) -> cosmic::Element<'static, SettingsMessage> {
-        // Clone machine data into closures to avoid borrow issues
-        let machine_name = machine.name.clone();
-        let machine_host = machine.host.clone();
-        let machine_port = machine.port;
-        let machine_enabled = machine.enabled;
-        let machine_show_cpu = machine.show_cpu;
-        let machine_show_memory = machine.show_memory;
-        let machine_show_disk = machine.show_disk;
-        let machine_show_network = machine.show_network;
-        let machine_show_uptime = machine.show_uptime;
-        let machine_show_gpu_vram = machine.show_gpu_vram;
-        let machine_show_temperature = machine.show_temperature;
-
-        // Text inputs for name, host, port (use cloned String directly)
-        let name_input = cosmic::widget::TextInput::new("Name", machine_name.clone())
-            .on_input(move |value| SettingsMessage::UpdateMachineField(index, MachineField::Name, value))
-            .width(150);
-
-        let host_input = cosmic::widget::TextInput::new("Host", machine_host.clone())
-            .on_input(move |value| SettingsMessage::UpdateMachineField(index, MachineField::Host, value))
-            .width(200);
-
-        let port_input = cosmic::widget::TextInput::new("Port", machine_port.to_string())
-            .on_input(move |value| {
-                if let Ok(port) = value.parse::<u16>() {
-                    SettingsMessage::UpdateMachineField(index, MachineField::Port, port.to_string())
-                } else {
-                    SettingsMessage::NoOp
-                }
-            })
-            .width(80);
-
-        // Enable/disable toggle.
-        let enable_toggle = iced_widget::checkbox(machine_enabled)
-            .on_toggle(move |enabled| SettingsMessage::UpdateMachineField(index, MachineField::Enabled, enabled.to_string()));
-
-        // Metric checkboxes.
-        let metric_row = cosmic::widget::Row::new()
-            .spacing(8)
-            .push(
-                cosmic::widget::text("CPU").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_cpu)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::CPU, checked))
-            )
-            .push(
-                cosmic::widget::text("MEM").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_memory)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::Memory, checked))
-            )
-            .push(
-                cosmic::widget::text("DISK").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_disk)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::Disk, checked))
-            )
-            .push(
-                cosmic::widget::text("NET").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_network)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::Network, checked))
-            )
-            .push(
-                cosmic::widget::text("UP").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_uptime)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::Uptime, checked))
-            )
-            .push(
-                cosmic::widget::text("GPU").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_gpu_vram)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::GpuVram, checked))
-            )
-            .push(
-                cosmic::widget::text("TMP").size(12).width(40)
-                    .align_y(cosmic::iced::Alignment::Center)
-            )
-            .push(
-                iced_widget::checkbox(machine_show_temperature)
-                    .on_toggle(move |checked| SettingsMessage::UpdateMachineMetric(index, MetricType::Temperature, checked))
-            );
-
-        // Machine row container with all fields.
-        cosmic::widget::Container::new(
-            cosmic::widget::Column::new()
-                .spacing(8)
-                .push(
-                    cosmic::widget::Row::new()
-                        .spacing(8)
-                        .push(name_input)
-                        .push(host_input)
-                        .push(port_input)
-                        .push(cosmic::widget::Text::new("Enable").size(12))
-                        .push(enable_toggle)
-                )
-                .push(metric_row)
-        )
-        .padding([8, 0])
+/// Standalone view function that takes owned config data.
+pub fn view_with_config(minimon_config: &MinimonConfig) -> Element<'static, SettingsMessage> {
+    use cosmic::widget::{icon, divider};
+    
+    // Back button
+    let back_button = button::text("← Back")
+        .on_press(SettingsMessage::CloseWindow);
+    
+    // Title
+    let title = text("General settings")
+        .size(24);
+    
+    // Version info
+    let version_row = text("Network System Monitor for COSMIC.").size(14);
+    
+    // Refresh rate control (seconds with decimal)
+    let refresh_seconds = minimon_config.refresh_rate as f64 / 1000.0;
+    let refresh_row = row(vec![
+        text("Refresh rate (seconds)").width(cosmic::iced::Length::Fill).into(),
+        button::text("−").on_press(SettingsMessage::DecrementRefreshRate).into(),
+        text(format!("{:.2}", refresh_seconds)).width(cosmic::iced::Length::Fixed(60.0)).into(),
+        button::text("+").on_press(SettingsMessage::IncrementRefreshRate).into(),
+    ])
+    .spacing(8)
+    .align_y(Alignment::Center);
+    
+    // Value size control
+    let value_size_row = row(vec![
+        text("Value size").width(cosmic::iced::Length::Fill).into(),
+        button::text("−").on_press(SettingsMessage::DecrementValueSize).into(),
+        text(format!("{}", minimon_config.value_size_default)).width(cosmic::iced::Length::Fixed(60.0)).into(),
+        button::text("+").on_press(SettingsMessage::IncrementValueSize).into(),
+    ])
+    .spacing(8)
+    .align_y(Alignment::Center);
+    
+    // Monospace font checkbox
+    let monospace_row = row(vec![
+        text("Monospace font for values").width(cosmic::iced::Length::Fill).into(),
+        checkbox(minimon_config.monospace_values)
+            .on_toggle(SettingsMessage::ToggleMonospace)
+            .into(),
+    ])
+    .spacing(8)
+    .align_y(Alignment::Center);
+    
+    // Panel spacing slider (0-6, maps to cosmic spacing units)
+    let spacing_slider = slider(
+        0..=6,
+        minimon_config.panel_spacing,
+        SettingsMessage::UpdatePanelSpacing
+    );
+    let spacing_row = row(vec![
+        text("Small").size(12).into(),
+        spacing_slider.into(),
+        text("Large").size(12).into(),
+    ])
+    .spacing(8)
+    .align_y(Alignment::Center);
+    
+    let spacing_section = column(vec![
+        text("Panel spacing").into(),
+        spacing_row.into(),
+    ])
+    .spacing(4);
+    
+    // Content order reorderable list
+    let content_order_label = text("Content order");
+    
+    let mut content_items: Vec<Element<'static, SettingsMessage>> = Vec::new();
+    for (idx, content_type) in minimon_config.content_order.order.iter().enumerate() {
+        let name = match content_type {
+            ContentType::CpuUsage => "CPU".to_string(),
+            ContentType::CpuTemp => "CPU Temperature".to_string(),
+            ContentType::MemoryUsage => "Memory".to_string(),
+            ContentType::NetworkUsage => "Network".to_string(),
+            ContentType::DiskUsage => "Disk".to_string(),
+            ContentType::GpuInfo => "GPU".to_string(),
+        };
+        
+        let up_button = if idx > 0 {
+            button::icon(icon::from_name("go-up-symbolic"))
+                .on_press(SettingsMessage::MoveContentUp(idx))
+        } else {
+            button::icon(icon::from_name("go-up-symbolic"))
+        };
+        
+        let down_button = if idx < minimon_config.content_order.order.len() - 1 {
+            button::icon(icon::from_name("go-down-symbolic"))
+                .on_press(SettingsMessage::MoveContentDown(idx))
+        } else {
+            button::icon(icon::from_name("go-down-symbolic"))
+        };
+        
+        let item_row = row(vec![
+            up_button.into(),
+            down_button.into(),
+            text(name).width(cosmic::iced::Length::Fill).into(),
+        ])
+        .spacing(4)
+        .align_y(Alignment::Center);
+        
+        content_items.push(item_row.into());
+    }
+    
+    let content_order_list = column(content_items).spacing(4);
+    
+    // Build content column
+    let content_col = column(vec![
+        back_button.into(),
+        title.into(),
+        version_row.into(),
+        divider::horizontal::default().into(),
+        refresh_row.into(),
+        value_size_row.into(),
+        monospace_row.into(),
+        spacing_section.into(),
+        divider::horizontal::default().into(),
+        content_order_label.into(),
+        content_order_list.into(),
+    ])
+    .spacing(16)
+    .padding([20, 16]);
+    
+    // Wrap in scrollable with max height to enable scrollbar when content is too long
+    let scrollable_content = cosmic::widget::scrollable(content_col)
+        .height(cosmic::iced::Length::Shrink);
+    
+    container(scrollable_content)
+        .width(cosmic::iced::Length::Fixed(430.0))
+        .max_height(600.0)
         .into()
-    }
-
-    /// Close the settings window (set visible = false).
-    pub fn close(&mut self) {
-        self.visible = false;
-    }
 }
