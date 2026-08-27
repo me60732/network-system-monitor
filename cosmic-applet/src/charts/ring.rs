@@ -100,33 +100,77 @@ impl canvas::Program<Message, theme::Theme> for RingChart {
         let inner_circle = Path::circle(center, radius - stroke_width / 2.0);
         frame.fill(&inner_circle, self.colors.color1);
 
-        // Determine ring color based on percentage: green (0-60%), orange (60-80%), red (80-100%)
-        let ring_color = if self.percent <= 60.0 {
-            cosmic::iced::Color::from_rgb(0.0, 0.8, 0.2)  // Green
-        } else if self.percent <= 80.0 {
-            cosmic::iced::Color::from_rgb(1.0, 0.6, 0.0)  // Orange
-        } else {
-            cosmic::iced::Color::from_rgb(1.0, 0.2, 0.2)  // Red
-        };
+        // Define threshold colors for graduated ring display
+        let green = cosmic::iced::Color::from_rgb(0.0, 0.8, 0.2);
+        let orange = cosmic::iced::Color::from_rgb(1.0, 0.6, 0.0);
+        let red = cosmic::iced::Color::from_rgb(1.0, 0.2, 0.2);
 
-        // Draw highlighted ring segment showing status/percentage
-        let ring = Path::new(|p| {
-            p.arc(Arc {
-                center,
-                radius,
-                start_angle: Radians::from(starting_point),
-                end_angle: Radians::from(starting_point + (PI * 2.0 * (self.percent / 100.0))),
-            });
-        });
+        // Draw ring with graduated colors based on thresholds (green 0-60%, orange 60-80%, red 80-100%)
+        // Draw each threshold segment separately with its own color
         
-        frame.stroke(
-            &ring,
-            canvas::Stroke {
-                style: canvas::Style::Solid(ring_color),
-                width: stroke_width,
-                ..Default::default()
-            },
-        );
+        // Green segment: 0% to min(60%, current%)
+        if self.percent > 0.0 {
+            let green_end = self.percent.min(60.0);
+            let green_ring = Path::new(|p| {
+                p.arc(Arc {
+                    center,
+                    radius,
+                    start_angle: Radians::from(starting_point),
+                    end_angle: Radians::from(starting_point + (PI * 2.0 * (green_end / 100.0))),
+                });
+            });
+            frame.stroke(
+                &green_ring,
+                canvas::Stroke {
+                    style: canvas::Style::Solid(green),
+                    width: stroke_width,
+                    ..Default::default()
+                },
+            );
+        }
+        
+        // Orange segment: 60% to min(80%, current%)
+        if self.percent > 60.0 {
+            let orange_start = 60.0;
+            let orange_end = self.percent.min(80.0);
+            let orange_ring = Path::new(|p| {
+                p.arc(Arc {
+                    center,
+                    radius,
+                    start_angle: Radians::from(starting_point + (PI * 2.0 * (orange_start / 100.0))),
+                    end_angle: Radians::from(starting_point + (PI * 2.0 * (orange_end / 100.0))),
+                });
+            });
+            frame.stroke(
+                &orange_ring,
+                canvas::Stroke {
+                    style: canvas::Style::Solid(orange),
+                    width: stroke_width,
+                    ..Default::default()
+                },
+            );
+        }
+        
+        // Red segment: 80% to current%
+        if self.percent > 80.0 {
+            let red_start = 80.0;
+            let red_ring = Path::new(|p| {
+                p.arc(Arc {
+                    center,
+                    radius,
+                    start_angle: Radians::from(starting_point + (PI * 2.0 * (red_start / 100.0))),
+                    end_angle: Radians::from(starting_point + (PI * 2.0 * (self.percent / 100.0))),
+                });
+            });
+            frame.stroke(
+                &red_ring,
+                canvas::Stroke {
+                    style: canvas::Style::Solid(red),
+                    width: stroke_width,
+                    ..Default::default()
+                },
+            );
+        }
 
         // Create centered text object with smaller size (0.82 instead of 0.93 to compensate for larger canvas)
         let text = Text {

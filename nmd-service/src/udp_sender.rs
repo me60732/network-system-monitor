@@ -46,8 +46,6 @@ pub struct UdpSender {
     sequence_counter: AtomicU32,
     /// Pre-serialized rkyv buffer reused across all send cycles — mutated in-place.
     packet_buf: Vec<u8>,
-    /// Byte offset of `hmac_tag` within the pre-serialized buffer (computed at construction).
-    hmac_tag_offset: usize,
 }
 
 impl UdpSender {
@@ -111,19 +109,7 @@ impl UdpSender {
             .as_ref()
             .to_vec();
 
-        // Compute the actual byte offset of hmac_tag within the buffer using the archived struct.
-        // We access the buffer to get a typed reference, then use pointer arithmetic.
-        let archived = rkyv::access::<ArchivedMetricPacketFlat, rkyv::rancor::Error>(&packet_buf)
-            .map_err(|e| std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to access archived packet: {}", e),
-            ))?;
-        
-        let buf_ptr = packet_buf.as_ptr() as usize;
-        let tag_ptr = archived.hmac_tag.as_ptr() as usize;
-        let hmac_tag_offset = tag_ptr - buf_ptr;
-        
-        log::info!("🔧 UDP sender initialized: hmac_tag_offset={}, buffer_len={}", hmac_tag_offset, packet_buf.len());
+        log::info!("🔧 UDP sender initialized: buffer_len={}", packet_buf.len());
 
         Ok(UdpSender {
             socket,
@@ -131,7 +117,6 @@ impl UdpSender {
             secret_key,
             sequence_counter: AtomicU32::new(0),
             packet_buf,
-            hmac_tag_offset,
         })
     }
 

@@ -1,7 +1,7 @@
 //! AMD GPU statistics via sysfs (DRM).
 
 use std::fs;
-use log::{debug, warn};
+use log::debug;
 
 use super::GpuStats;
 

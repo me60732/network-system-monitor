@@ -23,14 +23,18 @@
 //!
 //! Full collection (all modules) must complete in < 50ms for real-time panel updates.
 //! CPU delta measurement adds ~1-2ms overhead for the extra /proc/stat read.
-
+#![allow(missing_docs)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+/// Per-core CPU utilization statistics.
+///
+/// Represents the CPU usage for a single logical processor core.
+/// - `index`: Zero-indexed core number (0 = first logical processor)
+/// - `usage`: Current usage percentage for this core (0.0–100.0)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CoreStat {
-    /// Zero-indexed core number (0 = first logical processor).
     pub index: u32,
-    /// Current usage percentage for this core (0.0–100.0).
     pub usage: f32,
 }
 
@@ -46,14 +50,14 @@ pub struct CpuStats {
 /// Raw CPU time statistics from /proc/stat parsing.
 ///
 /// Each field represents accumulated CPU time in clock ticks since boot:
-/// - user: normal processes executing in user mode
-/// - nice: niced processes executing in user mode  
-/// - system: processes executing in kernel mode
-/// - idle: waiting for I/O or no work to do
-/// - iowait: waiting for I/O (but idle otherwise)
-/// - irq: servicing hardware interrupts
-/// - softirq: servicing software interrupts
-/// - steal: time spent in other OSes when virtualized
+/// - `user`: normal processes executing in user mode
+/// - `nice`: niced processes executing in user mode  
+/// - `system`: processes executing in kernel mode
+/// - `idle`: waiting for I/O or no work to do
+/// - `iowait`: waiting for I/O (but idle otherwise)
+/// - `irq`: servicing hardware interrupts
+/// - `softirq`: servicing software interrupts
+/// - `steal`: time spent in other OSes when virtualized
 #[derive(Debug, Clone, Copy)]
 pub struct CpuStat {
     pub user: u64,

@@ -435,7 +435,6 @@ impl Application for PanelApplet {
                 // Periodic refresh - just trigger a view update by returning Task::none().
                 // The view() function will read the latest data from shared_state.
                 let state = self.shared_state.read().unwrap();
-                let machine_count = state.machines.len();
                 if let Some((name, machine)) = state.machines.iter().next() {
                     log::debug!("🔄 RefreshMetrics: machine '{}' CPU={:.1}%, mem={}/{}", 
                         name, machine.sensors.cpu.usage_percent, 

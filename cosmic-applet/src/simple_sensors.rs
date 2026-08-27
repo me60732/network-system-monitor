@@ -4,7 +4,7 @@
 //! Unlike minimon's full sensors, these have no configuration UI, no toggles, no settings.
 
 use cosmic::Element;
-use nmd_service::packet::{MetricPacket, CpuMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics, DiskMetrics};
+use nmd_service::packet::MetricPacket;
 
 /// CPU usage data
 #[derive(Debug, Clone)]

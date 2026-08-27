@@ -1073,7 +1073,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bounded-vec-deque",
- "criterion",
  "crypto-common",
  "env_logger",
  "hex",

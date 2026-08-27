@@ -63,14 +63,3 @@ hex = "0.4"                       # Hex string conversion for color picker
 i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"] }
 i18n-embed-fl = "0.10"            # Fluent localization macros
 rust-embed = "8.3"                # Embed localization files
-
-[dev-dependencies]
-criterion = "0.5"
-
-[[bench]]
-name = "panel_bench"
-harness = false
-
-[[bench]]
-name = "grid_bench"
-harness = false

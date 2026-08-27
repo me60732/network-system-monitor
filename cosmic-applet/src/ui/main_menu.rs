@@ -136,7 +136,7 @@ fn create_menu_item(
 /// Aggregate sensor data from all machines
 fn aggregate_sensor_data(machines: &[crate::remote_machine::RemoteMachine]) -> (f32, f32, String, String, String, String) {
     if machines.is_empty() {
-        return (0.0, 0.0, "No data".into(), "No data".into(), "No data".into(), "No data".into());
+        return (0.0, 0.0, "—".into(), "—".into(), "—".into(), "—".into());
     }
     
     let mut total_cpu = 0.0;

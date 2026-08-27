@@ -39,10 +39,8 @@ impl PanelWidget {
         // Aggregate metrics from all machines (simple average for now)
         let mut total_cpu = 0.0;
         let mut total_cpu_temp = 0.0;
-        let mut total_memory = 0.0;
         let mut total_gpu = 0.0;
         let mut total_gpu_temp = 0.0;
-        let mut total_gpu_vram = 0.0;
         let mut total_rx = 0.0;
         let mut total_tx = 0.0;
         let count = machines.len().max(1) as f32;
@@ -50,11 +48,8 @@ impl PanelWidget {
         for machine in machines {
             total_cpu += machine.sensors.cpu.usage_percent;
             total_cpu_temp += machine.sensors.temperature.celsius;
-            total_memory += machine.sensors.memory.usage_percent();
             // GPU load from load_percent field (actual GPU utilization)
             total_gpu += machine.sensors.gpu.load_percent.unwrap_or(0.0);
-            // VRAM percentage from usage_percent()
-            total_gpu_vram += machine.sensors.gpu.usage_percent();
             // GPU temp from GPU sensor's own temp field (separate from CPU temp)
             total_gpu_temp += machine.sensors.gpu.gpu_temp.unwrap_or(0.0);
             total_rx += machine.sensors.network.rx_bytes_per_sec as f64;
@@ -63,7 +58,6 @@ impl PanelWidget {
         
         let avg_cpu = total_cpu / count;
         let avg_cpu_temp = total_cpu_temp / count;
-        let avg_memory = total_memory / count;
         
         // Calculate average memory data for bytes display
         let mut total_memory_used = 0u64;
@@ -78,7 +72,6 @@ impl PanelWidget {
         };
         
         let avg_gpu = total_gpu / count;
-        let avg_gpu_vram = total_gpu_vram / count;
         let avg_gpu_temp = total_gpu_temp / count;
         let rx_kbps = total_rx / 1024.0;
         let tx_kbps = total_tx / 1024.0;
@@ -160,8 +153,6 @@ impl PanelWidget {
         let cpu = machine.sensors.cpu.usage_percent;
         let cpu_temp = machine.sensors.temperature.celsius;
         let memory = machine.sensors.memory.usage_percent();
-        let gpu = machine.sensors.gpu.usage_percent();
-        let gpu_vram = machine.sensors.gpu.usage_percent();
         let gpu_temp = machine.sensors.temperature.celsius;
         let rx_kbps = machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
         let tx_kbps = machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
