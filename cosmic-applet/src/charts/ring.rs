@@ -51,10 +51,13 @@ impl RingChart {
     }
     
     /// Format a numeric value for chart display, keeping it compact
+    /// - Value = 100: show "100" (no decimal)
     /// - Values >= 10: 1 decimal place (e.g., "45.3")
     /// - Values < 10: 2 decimal places (e.g., "9.99")
     fn format_value(value: f32) -> String {
-        if value >= 10.0 {
+        if (value - 100.0).abs() < 0.01 {
+            "100".to_string()
+        } else if value >= 10.0 {
             format!("{:.1}", value)
         } else {
             format!("{:.2}", value)
@@ -97,6 +100,15 @@ impl canvas::Program<Message, theme::Theme> for RingChart {
         let inner_circle = Path::circle(center, radius - stroke_width / 2.0);
         frame.fill(&inner_circle, self.colors.color1);
 
+        // Determine ring color based on percentage: green (0-60%), orange (60-80%), red (80-100%)
+        let ring_color = if self.percent <= 60.0 {
+            cosmic::iced::Color::from_rgb(0.0, 0.8, 0.2)  // Green
+        } else if self.percent <= 80.0 {
+            cosmic::iced::Color::from_rgb(1.0, 0.6, 0.0)  // Orange
+        } else {
+            cosmic::iced::Color::from_rgb(1.0, 0.2, 0.2)  // Red
+        };
+
         // Draw highlighted ring segment showing status/percentage
         let ring = Path::new(|p| {
             p.arc(Arc {
@@ -110,7 +122,7 @@ impl canvas::Program<Message, theme::Theme> for RingChart {
         frame.stroke(
             &ring,
             canvas::Stroke {
-                style: canvas::Style::Solid(grey),
+                style: canvas::Style::Solid(ring_color),
                 width: stroke_width,
                 ..Default::default()
             },

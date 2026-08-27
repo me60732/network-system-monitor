@@ -11,6 +11,8 @@ description = "Shared library for collecting system metrics (CPU, memory, disk, 
 sysinfo = { workspace = true }
 procfs = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+nvml-wrapper = "0.10"
 
 # rkyv is used by nmd-service for packet serialization; metrics-core stays pure collection
 # but we re-export compatible types for shared use in MetricPacket definitions.

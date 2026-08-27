@@ -1,0 +1,5 @@
+host = "127.0.0.1"
+port = 51057
+hmac_secret_path = "/tmp/nmd/secret.key"
+refresh_interval_secs = 1
+machine_id = "Neptune"

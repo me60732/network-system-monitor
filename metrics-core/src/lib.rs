@@ -55,12 +55,15 @@ pub mod uptime;
 
 // Re-export top-level structs for ergonomic imports: `use metrics_core::CpuStats;`
 pub use cpu::{CoreStat, CpuStats};
-pub use disk::{DiskStats, PartitionStat};
+pub use disk::{DiskStats, DiskIoStats, PartitionStat};
 pub use gpu::GpuStats;
 pub use memory::MemoryStats;
-pub use network::{InterfaceStat, NetworkStats};
+pub use network::{InterfaceStat, NetworkCollector, NetworkStats};
 pub use temperature::TemperatureStats;
 pub use uptime::UptimeStats;
+
+// Re-export CPU collection functions - stateful collector is now primary
+pub use cpu::{CpuCollector};
 
 /// Convenience function: collect all metrics in a single pass.
 ///
@@ -71,32 +74,37 @@ pub use uptime::UptimeStats;
 ///
 /// ## Implementation Notes
 ///
-/// CPU, memory, disk, network, and uptime metrics all read from `/proc` via sysinfo.
+/// CPU uses a stateful collector (`CpuCollector`) for accurate delta measurement. Since this function
+/// cannot maintain state between calls, it creates a fresh collector, primes it with one read,
+/// and immediately collects to get accurate deltas from that initial baseline.
+///
+/// Memory, disk, network, and uptime metrics all read from `/proc` via sysinfo.
 /// This function creates a single `sysinfo::System` instance with `new_all()` to minimize
-/// syscall overhead — one batched read covers CPU and memory (disks and networks use separate
-/// standalone types in sysinfo 0.35). GPU and temperature are handled separately since they require
-/// direct sysfs reads (`/sys/class/drm/`, `/sys/class/thermal/`), which cannot be batched through sysinfo.
+/// syscall overhead — one batched read covers CPU (via collector), memory, and processes.
+/// GPU and temperature are handled separately since they require direct sysfs reads (`/sys/class/drm/`, `/sys/class/thermal/`).
+///
+/// ## CPU Measurement Accuracy Note
+///
+/// This function uses [`CpuCollector::new()`] + `collect()` for accurate delta measurement.
+/// The collector is initialized fresh each call, so the first read primes state and the second
+/// (in collect()) computes deltas from that baseline. This yields more accurate CPU percentages
+/// than single-snapshot approaches but adds ~1-2ms overhead.
 pub fn collect_all() -> (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats, TemperatureStats) {
     // Create a System instance and refresh all data sources in one batched pass.
     // new_all() refreshes CPU, memory, and processes from /proc/stat and /proc/meminfo.
     let sys = sysinfo::System::new_all();
+    
+    // Use stateful CPU collector for accurate delta measurement
+    let mut cpu_collector = CpuCollector::new();  // Prime with initial read
+    let cpu_stats = cpu_collector.collect();      // Compute deltas from baseline
 
     // Build results from the shared System instance — no additional syscalls per module.
-    let cpu_stats = {
-        let usage = sys.global_cpu_usage();
-        let cores: Vec<cpu::CoreStat> = sys
-            .cpus()
-            .iter()
-            .enumerate()
-            .map(|(i, c)| cpu::CoreStat { index: i as u32, usage: c.cpu_usage() })
-            .collect();
-        CpuStats { usage, cores }
-    };
-
     let memory_stats = MemoryStats {
         total: sys.total_memory(),
         free: sys.free_memory(),
-        used: sys.used_memory(),
+        // used = total - available (Linux semantics, matches standard accounting)
+        available: sys.available_memory(),
+        used: sys.total_memory().saturating_sub(sys.available_memory()),
         swap_used: if sys.total_swap() > 0 {
             ((sys.used_swap() as f64 / sys.total_swap() as f64) * 100.0) as f32
         } else {

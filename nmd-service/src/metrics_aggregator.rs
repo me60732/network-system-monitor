@@ -1,15 +1,22 @@
 //! # MetricsAggregator — packs metrics-core collection results into MetricPacket format
 //!
-//! Calls [`metrics_core::collect_all()`] to gather CPU, memory, disk, network, uptime, GPU, and
-//! temperature stats in a single pass (< 50ms target), then transforms them into the flat-field
-//! `MetricPacket` struct suitable for rkyv serialization and UDP transmission.
+//! Calls [`metrics_core::CpuCollector`] for stateful CPU delta measurement,
+//! [`metrics_core::NetworkCollector`] for stateful network delta tracking, and other collectors
+//! for one-shot metrics (memory, disk, uptime, GPU, temperature). Packs all metrics into
+//! the flat-field [`MetricPacketFlat`] struct suitable for rkyv serialization and UDP transmission.
 //!
 //! ## Data Transformation Pipeline
 //!
 //! ```text
-//! metrics-core::collect_all() → (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats, TemperatureStats)
-//!   ↓ aggregate(machine_id, sequence_counter)
-//! MetricPacket { version, machine_id, timestamp, sequence, cpu_usage, memory_used_bytes, memory_total_bytes, disk_used_bytes, disk_total_bytes, network_rx_bytes, uptime_seconds, gpu_vram_used_mb, temperature_celsius }
+//! CpuCollector::collect() → CpuStats { usage, cores }
+//! NetworkCollector::collect() → NetworkStats { interfaces: Vec<InterfaceStat> } (deltas)
+//! MemoryStats::collect() → MemoryStats { total, used, free, available, swap_used }
+//! DiskStats::collect() → DiskStats { partitions: Vec<PartitionStat> }
+//! UptimeStats::collect() → UptimeStats { seconds, load_avg }
+//! GpuStats::collect() → GpuStats { vram_total, vram_used, gpu_load_percent }
+//! TemperatureStats::collect() → TemperatureStats { cpu_temp, gpu_temp }
+//!   ↓ aggregate(machine_id)
+//! MetricPacketFlat { version, machine_id, timestamp, sequence, cpu_usage_percent, memory_used_bytes, ... }
 //! ```
 //!
 //! ## Design Philosophy
@@ -19,65 +26,94 @@
 //! configure display preferences (percentages vs. absolute values) without changing the service.
 
 use crate::config::ServiceConfig;
-use crate::packet::MetricPacket;
-use metrics_core::{collect_all, InterfaceStat};
+use crate::packet_flat::{MetricPacketFlat, PROTOCOL_VERSION_FLAT};
+use metrics_core::{CpuCollector, InterfaceStat, NetworkCollector};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Aggregator that collects system metrics and packs them into [`MetricPacket`] format.
+///
+/// Uses stateful CPU collector (`metrics_core::CpuCollector`) for accurate delta measurement
+/// via the prev/current pattern. All other metrics use one-shot collection functions.
 pub struct MetricsAggregator {
     /// Service configuration providing machine_id for packet identity.
     config: ServiceConfig,
+    /// Stateful CPU collector for accurate delta-based utilization percentages.
+    cpu_collector: CpuCollector,
+    /// Stateful network collector for accurate delta-based RX/TX byte tracking.
+    network_collector: NetworkCollector,
 }
 
 impl MetricsAggregator {
-    /// Create a new aggregator with the given service configuration.
+    /// Create a new aggregator with the given service configuration and prime CPU/network state.
+    ///
+    /// Initializes [`CpuCollector`] which performs an initial /proc/stat read to establish
+    /// the baseline state, and [`NetworkCollector`] which initializes empty previous value maps.
+    /// The first call to `aggregate()` will compute deltas from these baselines.
     pub fn new(config: ServiceConfig) -> Self {
-        MetricsAggregator { config }
+        MetricsAggregator {
+            config,
+            cpu_collector: CpuCollector::new(),  // Prime with initial read
+            network_collector: NetworkCollector::new(),  // Initialize empty prev maps
+        }
     }
 
-    /// Collect all metrics via `metrics_core::collect_all()` and pack into a [`MetricPacket`].
+    /// Collect all metrics and pack into a [`MetricPacketFlat`].
     ///
-    /// Sets timestamp to current Unix seconds, machine_id from config, and leaves sequence/hmac_tag
-    /// for the [`crate::udp_sender::UdpSender`] to fill in before transmission.
-    pub fn aggregate(&self) -> MetricPacket {
-        // Collect all metrics in a single pass (performance target: < 50ms).
-        let (cpu, memory, disk, network, uptime, gpu, temperature) = collect_all();
+    /// Uses stateful CPU collector (`cpu_collector.collect()`) for accurate delta measurement.
+    /// All other metrics use one-shot collection functions. Sets timestamp to current Unix seconds,
+    /// machine_id from config, and leaves sequence/hmac_tag for the [`crate::udp_sender::UdpSender`]
+    /// to fill in before transmission.
+    pub fn aggregate(&mut self) -> MetricPacketFlat {
+        // Collect CPU stats via stateful collector (delta measurement)
+        let cpu = self.cpu_collector.collect();
+        
+        // Collect network stats via stateful collector (cumulative bytes since boot)
+        let network_stats = self.network_collector.collect();
 
         // --- CPU usage — direct percentage from CpuStats::usage (0.0–100.0) ---
-        let cpu_usage = cpu.usage;
+        let cpu_usage_percent = cpu.usage;
+
+        // --- Temperature — collect both CPU and GPU temps separately ---
+        let temp_stats = metrics_core::temperature::collect();
+        let temperature_celsius = temp_stats.cpu_temp;
+        let gpu_temperature_celsius = temp_stats.gpu_temp;
 
         // --- Memory used and total bytes — send raw values, let applet calculate percentage ---
-        let memory_used_bytes = memory.used;
-        let memory_total_bytes = memory.total;
+        // Use sysinfo for memory stats (it reads /proc/meminfo)
+        let sys = sysinfo::System::new_all();
+        let memory_used_bytes = sys.total_memory().saturating_sub(sys.available_memory());
+        let memory_total_bytes = sys.total_memory();
+
+        // --- Swap usage percentage ---
+        let memory_swap_used_pct = metrics_core::memory::collect().swap_used;
 
         // --- Disk used and total bytes — sum across all partitions, send raw values ---
-        let disk_total_bytes: u64 = disk.partitions.iter().map(|p| p.total).sum();
-        let disk_used_bytes: u64 = disk.partitions.iter().map(|p| p.used).sum();
+        let disk_stats = metrics_core::disk::collect();
+        let disk_total_bytes: u64 = disk_stats.partitions.iter().map(|p| p.total).sum();
+        let disk_used_bytes: u64 = disk_stats.partitions.iter().map(|p| p.used).sum();
 
-        // --- Network RX bytes — sum of rx_bytes across all non-loopback interfaces; fallback to loopback ---
-        let network_rx_bytes = Self::primary_interface_rx(&network.interfaces);
+        // --- Disk IO stats — cumulative read/write bytes since boot ---
+        let disk_io = metrics_core::disk::collect_io();
+        let disk_read_bytes = Some(disk_io.read_bytes);
+        let disk_write_bytes = Some(disk_io.write_bytes);
 
-        // --- Network TX bytes — sum of tx_bytes across all non-loopback interfaces; fallback to loopback ---
-        let network_tx_bytes = Self::primary_interface_tx(&network.interfaces);
+        // --- Network RX/TX bytes — cumulative bytes since boot (applet computes rates) ---
+        let network_interfaces: Vec<InterfaceStat> = network_stats.interfaces;
+        let network_rx_bytes = Self::primary_interface_rx(&network_interfaces);
+        let network_tx_bytes = Self::primary_interface_tx(&network_interfaces);
 
-        // --- Uptime seconds — direct from UptimeStats ---
-        let uptime_seconds = uptime.seconds;
+        // --- Uptime seconds — use metrics_core collector ---
+        let uptime_stats = metrics_core::uptime::collect();
+        let uptime_seconds = uptime_stats.seconds;
 
-        // --- GPU VRAM used in MB — convert bytes to megabytes if available ---
-        let gpu_vram_used_mb = match &gpu.vram_used {
-            Some(bytes) => Some((bytes / 1_048_576) as u32),
-            None => None,
-        };
-
-        // --- Temperature — prefer CPU temp; fallback to GPU temp if CPU is unavailable ---
-        let temperature_celsius = match (temperature.cpu_temp, temperature.gpu_temp) {
-            (Some(cpu_t), _) => Some(cpu_t),
-            (None, Some(gpu_t)) => Some(gpu_t),
-            (None, None) => None,
-        };
+        // --- GPU VRAM used in MB and load percent — convert bytes to megabytes, pass load as-is ---
+        let gpu_stats = metrics_core::gpu::collect();
+        let gpu_vram_used_mb = gpu_stats.vram_used.map(|bytes| (bytes / 1_048_576) as u32);
+        let gpu_vram_total_mb = gpu_stats.vram_total.map(|bytes| (bytes / 1_048_576) as u32);
+        let gpu_load_percent = gpu_stats.gpu_load_percent; // Pass through directly (0.0–100.0)
 
         // --- Disk partitions — collect mount point, total, and used for each partition ---
-        let disk_partitions: Vec<crate::packet::PartitionInfo> = disk
+        let disk_partitions: Vec<crate::packet::PartitionInfo> = disk_stats
             .partitions
             .iter()
             .map(|p| crate::packet::PartitionInfo {
@@ -98,25 +134,40 @@ impl MetricsAggregator {
         let len = src.len().min(20);
         machine_id_bytes[..len].copy_from_slice(&src[..len]);
 
-        MetricPacket {
-            version: crate::packet::PROTOCOL_VERSION,
+        MetricPacketFlat {
+            version: PROTOCOL_VERSION_FLAT, // Use flat protocol version
             machine_id: machine_id_bytes,
             timestamp,
             sequence: 0, // Filled by UdpSender before transmission
-            cpu_usage,
-            memory_used_bytes,
-            memory_total_bytes,
-            disk_used_bytes,
-            disk_total_bytes,
-            network_rx_bytes,
-            network_tx_bytes,
+            
+            // Flat metric fields (Phase 3: flat for UDP zero-copy mutation)
+            cpu_usage_percent: cpu_usage_percent,
+            cpu_temperature_celsius: temperature_celsius,
+            
+            gpu_load_percent: gpu_load_percent,
+            gpu_vram_used_mb: gpu_vram_used_mb,
+            gpu_vram_total_mb: gpu_vram_total_mb,
+            gpu_temperature_celsius: gpu_temperature_celsius,
+            
+            memory_used_bytes: memory_used_bytes,
+            memory_total_bytes: memory_total_bytes,
+            memory_swap_used_pct: memory_swap_used_pct,
+            
+            network_rx_bytes: network_rx_bytes,
+            network_tx_bytes: network_tx_bytes,
+            
+            disk_used_bytes: disk_used_bytes,
+            disk_total_bytes: disk_total_bytes,
+            disk_read_bytes: disk_read_bytes,
+            disk_write_bytes: disk_write_bytes,
+            // Convert PartitionInfo types
+            disk_partitions: disk_partitions.iter().map(|p| crate::packet::PartitionInfo {
+                mount: p.mount.clone(),
+                total: p.total,
+                used: p.used,
+            }).collect(),
+            
             uptime_seconds,
-            disk_read_bytes: None,      // Phase 2: IO stats (sysinfo doesn't expose these)
-            disk_write_bytes: None,     // Phase 2: IO stats (sysinfo doesn't expose these)
-            memory_swap_used_pct: memory.swap_used, // Phase 2: swap usage percentage from MemoryStats
-            disk_partitions,
-            gpu_vram_used_mb,
-            temperature_celsius,
             hmac_tag: [0u8; 32], // Filled by UdpSender::send before transmission
         }
     }
@@ -175,7 +226,7 @@ mod tests {
     #[test]
     fn test_aggregate_returns_machine_id() {
         let config = ServiceConfig::default();
-        let aggregator = MetricsAggregator::new(config);
+        let mut aggregator = MetricsAggregator::new(config);
 
         let packet = aggregator.aggregate();
         
@@ -190,7 +241,7 @@ mod tests {
     #[test]
     fn test_aggregate_timestamp_valid() {
         let config = ServiceConfig::default();
-        let aggregator = MetricsAggregator::new(config);
+        let mut aggregator = MetricsAggregator::new(config);
 
         let packet = aggregator.aggregate();
         assert!(packet.timestamp > 0, "timestamp should be set to current Unix time");

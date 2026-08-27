@@ -9,7 +9,7 @@ use nmd_service::{MetricsAggregator, ServiceConfig};
 
 fn bench_aggregate_overhead(c: &mut Criterion) {
     let config = ServiceConfig::default();
-    let aggregator = MetricsAggregator::new(config);
+    let mut aggregator = MetricsAggregator::new(config);
 
     c.bench_function("aggregate_overhead", |b| {
         b.iter(|| {

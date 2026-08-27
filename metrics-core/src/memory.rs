@@ -7,8 +7,14 @@
 //!
 //! 1. `collect()` creates a fresh [`sysinfo::System`] with all features enabled (`new_all`).
 //! 2. It refreshes memory and swap data via `refresh_memory()`, which reads `/proc/meminfo`.
-//! 3. Total/used/free RAM come from `SystemExt` methods: `total_memory()`, `used_memory()`, `free_memory()`.
+//! 3. Total/used/free RAM come from `SystemExt` methods: `total_memory()`, `available_memory()`, `free_memory()`.
+//!    - **Used memory calculation**: Uses sysinfo's `used_memory()` directly (matches Linux "used" semantics)
 //! 4. Swap usage percentage is computed as `(swap_used / swap_total) * 100.0`, or 0.0 if no swap exists.
+//!
+//! ## Memory Calculation Notes
+//!
+//! On Linux, "used memory" = total - available (where available includes reclaimable cache/buffer).
+//! sysinfo's `used_memory()` computes this internally and returns the same value.
 
 use serde::{Deserialize, Serialize};
 use sysinfo::System;
@@ -18,10 +24,12 @@ use sysinfo::System;
 pub struct MemoryStats {
     /// Total physical RAM in bytes.
     pub total: u64,
-    /// Currently used RAM in bytes (total - available).
+    /// Currently used RAM in bytes (sysinfo's used_memory()).
     pub used: u64,
     /// Completely free/unused RAM in bytes.
     pub free: u64,
+    /// Available RAM in bytes (includes reclaimable cache/buffer), for Linux semantics.
+    pub available: u64,
     /// Swap usage as a percentage of total swap space (0.0–100.0).
     pub swap_used: f32,
 }
@@ -31,13 +39,19 @@ pub struct MemoryStats {
 /// Uses `sysinfo::System` to read `/proc/meminfo` and report RAM and swap utilization.
 /// All byte values are in bytes. `swap_used` is a percentage (0.0–100.0) representing
 /// how much of total swap space is currently in use; returns 0.0 if no swap partition exists.
+///
+/// ## Memory Calculation Notes
+///
+/// **Used memory** = sysinfo's `used_memory()` which computes total - available on Linux.
+/// This matches standard Linux semantics where "used" includes reclaimable cache/buffer memory.
 pub fn collect() -> MemoryStats {
     let sys = System::new_all();
 
     let total = sys.total_memory();
     let free = sys.free_memory();
-    // used = total - available (sysinfo's used_memory() already computes this)
+    // Use sysinfo's used_memory() directly (it computes total - available internally)
     let used = sys.used_memory();
+    let available = sys.available_memory();
 
     let swap_total = sys.total_swap();
     let swap_used_bytes = sys.used_swap();
@@ -51,6 +65,7 @@ pub fn collect() -> MemoryStats {
         total,
         used,
         free,
+        available,
         swap_used: swap_used_percent,
     }
 }

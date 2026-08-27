@@ -17,7 +17,8 @@ use tokio::sync::mpsc::Sender;
 // Re-use the same rkyv-serialized MetricPacket type from nmd-service's packet definition.
 // Since both crates are in the same workspace, we import the struct directly.
 use crate::AppState;
-use nmd_service::packet::{ArchivedMetricPacket, MetricPacket};
+use nmd_service::packet::{MetricPacket, CpuMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics, DiskMetrics};
+use nmd_service::packet_flat::{ArchivedMetricPacketFlat, MetricPacketFlat};
 use rkyv::access;
 
 /// HMAC-SHA256 type alias for ergonomic use throughout the module.
@@ -125,15 +126,22 @@ impl UdpReceiver {
     ///
     /// * `shared_state` - Shared application state that gets updated with received metrics
     pub async fn start_listening(shared_state: Arc<RwLock<AppState>>) {
+        log::info!("🔌 Starting UDP receiver...");
+        
         // Load configuration from shared_state
         let config_manager = shared_state.read().unwrap().config_manager.clone();
         let config_guard = config_manager.read().unwrap();
         let port = config_guard.udp_port; 
         let secret_key_path = config_guard.hmac_secret_path.clone();
+        
+        log::info!("UDP receiver config: port={}, secret_key_path={}", port, secret_key_path);
 
         // Load secret key
         let secret_key = match Self::load_secret_key(&secret_key_path) {
-            Ok(key) => key,
+            Ok(key) => {
+                log::info!("✓ Loaded HMAC secret key ({} bytes)", key.len());
+                key
+            }
             Err(e) => {
                 log::error!("Failed to load HMAC secret key: {}", e);
                 return;
@@ -142,7 +150,10 @@ impl UdpReceiver {
 
         // Create socket
         let socket = match UdpSocket::bind(&format!("0.0.0.0:{}", port)) {
-            Ok(sock) => sock,
+            Ok(sock) => {
+                log::info!("✓ Bound UDP socket to 0.0.0.0:{}", port);
+                sock
+            }
             Err(e) => {
                 log::error!("Failed to bind UDP socket: {}", e);
                 return;
@@ -160,6 +171,8 @@ impl UdpReceiver {
                       // But note: the original design didn't use tx for sending to UI, it updated shared state directly.
         };
 
+        log::info!("🎧 UDP receiver ready — waiting for packets...");
+        
         // Run the listen loop
         receiver.listen_loop(shared_state).await;
     }
@@ -178,7 +191,7 @@ impl UdpReceiver {
 
                     // Verify HMAC authenticity first (critical security step)
                     // We need to access the archived packet to verify HMAC
-                    let archived: ArchivedPacketRef<'_> = match access::<ArchivedMetricPacket, rkyv::rancor::Error>(data) {
+                    let archived: ArchivedPacketRef<'_> = match access::<ArchivedMetricPacketFlat, rkyv::rancor::Error>(data) {
                         Ok(pkt) => pkt,
                         Err(e) => {
                             log::warn!("Failed to parse packet from {} (pre-HMAC): {}", src, e);
@@ -208,23 +221,46 @@ impl UdpReceiver {
                         continue;
                     }
 
-                    // Convert archived packet to owned MetricPacket for potential use
-                    let metric_packet = MetricPacket {
+                    // Convert archived flat packet to owned MetricPacketFlat, then to nested MetricPacket
+                    let flat_packet = MetricPacketFlat {
                         version: archived.version.into(),
                         machine_id: archived.machine_id,
                         timestamp: archived.timestamp.into(),
                         sequence: archived.sequence.into(),
-                        cpu_usage: archived.cpu_usage.into(),
+                        
+                        cpu_usage_percent: archived.cpu_usage_percent.into(),
+                        cpu_temperature_celsius: match archived.cpu_temperature_celsius.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        
+                        gpu_load_percent: match archived.gpu_load_percent.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        gpu_vram_used_mb: match archived.gpu_vram_used_mb.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        gpu_vram_total_mb: match archived.gpu_vram_total_mb.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        gpu_temperature_celsius: match archived.gpu_temperature_celsius.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        
                         memory_used_bytes: archived.memory_used_bytes.into(),
                         memory_total_bytes: archived.memory_total_bytes.into(),
-                        disk_used_bytes: archived.disk_used_bytes.into(),
-                        disk_total_bytes: archived.disk_total_bytes.into(),
+                        memory_swap_used_pct: archived.memory_swap_used_pct.into(),
+                        
                         network_rx_bytes: archived.network_rx_bytes.into(),
                         network_tx_bytes: archived.network_tx_bytes.into(),
-                        uptime_seconds: archived.uptime_seconds.into(),
-                        disk_read_bytes: match archived.disk_read_bytes.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        disk_write_bytes: match archived.disk_write_bytes.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        memory_swap_used_pct: archived.memory_swap_used_pct.into(),
+                        
+                        disk_used_bytes: archived.disk_used_bytes.into(),
+                        disk_total_bytes: archived.disk_total_bytes.into(),
+                        disk_read_bytes: match archived.disk_read_bytes.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
+                        disk_write_bytes: match archived.disk_write_bytes.as_ref() { 
+                            Some(v) => Some((*v).into()), None => None 
+                        },
                         disk_partitions: archived.disk_partitions.iter().map(|p| {
                             nmd_service::packet::PartitionInfo {
                                 mount: p.mount.to_string(),
@@ -232,10 +268,13 @@ impl UdpReceiver {
                                 used: p.used.into(),
                             }
                         }).collect(),
-                        gpu_vram_used_mb: match archived.gpu_vram_used_mb.as_ref() { Some(v) => Some((*v).into()), None => None },
-                        temperature_celsius: match archived.temperature_celsius.as_ref() { Some(v) => Some((*v).into()), None => None },
+                        
+                        uptime_seconds: archived.uptime_seconds.into(),
                         hmac_tag: archived.hmac_tag,
                     };
+                    
+                    // Convert flat packet to nested structure for clean API
+                    let metric_packet = flat_packet.to_nested();
 
                     // Update RemoteMachine instances with new metrics
                     // Convert machine_id from [u8; 20] to String
@@ -247,13 +286,14 @@ impl UdpReceiver {
                     let mut state = shared_state.write().unwrap();
                     if let Some(machine) = state.machines.get_mut(&machine_name) {
                         machine.update_from_packet(&metric_packet);
-                        log::info!("Updated metrics for machine: {}", machine_name);
+                        log::debug!("📊 Updated metrics for machine: {} (CPU: {:.1}%, Mem: {}/{} bytes)", 
+                            machine_name, metric_packet.cpu.usage_percent, metric_packet.memory.used_bytes, metric_packet.memory.total_bytes);
                     } else {
                         // Machine not in config, create it dynamically
                         let mut new_machine = crate::remote_machine::RemoteMachine::new(machine_name.clone());
                         new_machine.update_from_packet(&metric_packet);
                         state.machines.insert(machine_name.clone(), new_machine);
-                        log::info!("Added new machine from UDP: {}", machine_name);
+                        log::info!("📍 Added new machine from UDP: {}", machine_name);
                     }
                     drop(state);
 
@@ -287,10 +327,16 @@ impl UdpReceiver {
         // Copy once for HMAC computation — we zero out the tag region in this copy.
         let mut hmac_buf = buf.to_vec();
 
-        // Zero out the hmac_tag field's bytes in the copy. The tag is at the end of the buffer (last 32 bytes),
-        // matching the struct layout where hmac_tag is the final field after all variable-length data.
-        let tag_start = hmac_buf.len().saturating_sub(32);
-        hmac_buf[tag_start..tag_start + 32].copy_from_slice(&[0u8; 32]);
+        // Compute the actual byte offset of hmac_tag field using pointer arithmetic.
+        // archived is a reference into buf, so we can calculate the offset of archived.hmac_tag.
+        let buf_ptr = buf.as_ptr() as usize;
+        let tag_ptr = archived.hmac_tag.as_ptr() as usize;
+        let tag_offset = tag_ptr - buf_ptr;
+        
+        log::debug!("  Tag offset in buffer: {} (buffer len: {})", tag_offset, buf.len());
+        
+        // Zero out the hmac_tag field's bytes in the copy at the correct offset.
+        hmac_buf[tag_offset..tag_offset + 32].copy_from_slice(&[0u8; 32]);
 
         // Compute HMAC over the zeroed-tag buffer and compare with the received tag using constant-time comparison.
         let mut mac = HmacSha256::new_from_slice(&self.secret_key)
@@ -298,9 +344,23 @@ impl UdpReceiver {
         mac.update(&hmac_buf);
         let computed_tag = mac.finalize().into_bytes();
 
+        // DEBUG: Log received vs computed tags for diagnostics
+        log::debug!("🔐 HMAC verification:");
+        log::debug!("  Secret key (first 8 bytes): {:02x?}", &self.secret_key[..8.min(self.secret_key.len())]);
+        log::debug!("  Received tag:  {:02x?}", &archived.hmac_tag[..8]);
+        log::debug!("  Computed tag:  {:02x?}", &computed_tag[..8]);
+
         // Constant-time comparison to prevent timing attacks (Worf VULN-01).
         // hmac_tag is [u8; 32] in both MetricPacket and ArchivedMetricPacket, no dereference needed.
-        ConstantTimeEq::ct_eq(&computed_tag[..], &archived.hmac_tag).into()
+        let result: bool = ConstantTimeEq::ct_eq(&computed_tag[..], &archived.hmac_tag).into();
+        
+        if !result {
+            log::warn!("  ❌ Tags don't match!");
+        } else {
+            log::debug!("  ✓ Tags match");
+        }
+        
+        result
     }
 
     /// Convert a fixed-length [u8; 20] machine_id field from an ArchivedMetricPacket to a displayable string.
@@ -346,7 +406,7 @@ impl UdpReceiver {
 }
 
 // Define a lifetime-bound reference type for zero-copy access to archived packets.
-type ArchivedPacketRef<'a> = &'a ArchivedMetricPacket;
+type ArchivedPacketRef<'a> = &'a ArchivedMetricPacketFlat;
 
 #[cfg(test)]
 mod tests {
@@ -384,7 +444,11 @@ mod tests {
             memory_swap_used_pct: 0.0,
             disk_partitions: Vec::new(),
             gpu_vram_used_mb: None,
+            gpu_vram_total_mb: None,
+            // Phase 2.1: GPU load percentage (optional)
+            gpu_load_percent: None,
             temperature_celsius: None,
+            gpu_temperature_celsius: None,
             hmac_tag: [0u8; 32],
         };
 

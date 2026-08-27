@@ -1,0 +1,156 @@
+[INFO] cosmic_applet: ========== cosmic-applet starting ==========
+[INFO] cosmic_applet: 🧪 DEVELOPMENT MODE: Running in standalone window for testing
+[INFO] cosmic_applet: Usage: cargo run -- --test [--debug]
+[INFO] cosmic_applet: cosmic-applet starting — config: config.toml
+[INFO] cosmic_applet: This shows the panel widget in a normal window for development
+[INFO] cosmic_applet: Window size: 1000x600 (tall enough for settings window)
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("list_button", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("frosted_maximized_apps", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[DEBUG] cosmic_text::font::system: Locale: en-AU
+[DEBUG] cosmic_text::font::system: Parsed 646 font faces in 7ms.
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] tracing::span: winit::EventLoopBuilder::build;
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[DEBUG] sctk: Bound new global [19] wp_cursor_shape_manager_v1 v2
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[INFO] zbus::connection::handshake::common: write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[INFO] zbus::connection::handshake::common: write_commands; commands=[Auth(Some(External), Some([49, 48, 48, 48]))] extra_bytes=None
+[INFO] tracing::span: read_command;
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] zbus::connection::handshake::common: write_commands; commands=[NegotiateUnixFD, Begin] extra_bytes=Some([108, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 109, 0, 0, 0, 1, 1, 111, 0, 21, 0, 0, 0, 47, 111, 114, 103, 47, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 47, 68, 66, 117, 115, 0, 0, 0, 2, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0, 3, 1, 115, 0, 5, 0, 0, 0, 72, 101, 108, 108, 111, 0, 0, 0, 6, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0])
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] cosmic_applet: 📂 Loading config from config.toml
+[INFO] cosmic_applet::config::manager: Loaded config from config.toml — 1 machines configured
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] cosmic_applet: Loaded MinimonConfig from COSMIC config system
+[INFO] iced_winit: System theme: None
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] iced_winit: Window attributes for id `Id(
+    1,
+)`: WindowAttributes {
+    surface_size: Some(
+        Logical(
+            LogicalSize {
+                width: 1000.0,
+                height: 600.0,
+            },
+        ),
+    ),
+    min_surface_size: Some(
+        Logical(
+            LogicalSize {
+                width: 1.0,
+                height: 1.0,
+            },
+        ),
+    ),
+    max_surface_size: None,
+    surface_resize_increments: None,
+    position: None,
+    resizable: true,
+    enabled_buttons: WindowButtons(
+        CLOSE | MINIMIZE | MAXIMIZE,
+    ),
+    title: "",
+    maximized: false,
+    visible: false,
+    transparent: true,
+    blur: false,
+    decorations: false,
+    window_icon: None,
+    preferred_theme: None,
+    content_protected: false,
+    window_level: Normal,
+    active: true,
+    cursor: Icon(
+        Default,
+    ),
+    parent_window: None,
+    fullscreen: None,
+    platform: Some(
+        WindowAttributesWayland {
+            name: Some(
+                ApplicationName {
+                    general: "com.cosmic.network_system_monitor",
+                    instance: "com.cosmic.network_system_monitor",
+                },
+            ),
+            activation_token: None,
+            prefer_csd: false,
+        },
+    ),
+}
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[WARN] winit_wayland::window::state: `xdg_toplevel_icon_manager_v1` is not supported
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [49] ext_foreign_toplevel_list_v1 v1
+[DEBUG] sctk: Bound new global [48] zcosmic_toplevel_info_v1 v3
+[DEBUG] sctk: Bound new global [3] cosmic_corner_radius_manager_v1 v2
+[DEBUG] sctk: Bound new global [50] zcosmic_toplevel_manager_v1 v4
+[DEBUG] sctk: Bound new global [6] zwp_keyboard_shortcuts_inhibit_manager_v1 v1
+[DEBUG] sctk: Bound new global [32] zwp_text_input_manager_v3 v1
+[DEBUG] sctk: Bound new global [1] wl_compositor v5
+[DEBUG] sctk: Bound new global [2] wl_subcompositor v1
+[DEBUG] sctk: Bound new global [20] wp_viewporter v1
+[DEBUG] sctk: Bound new global [18] wl_shm v1
+[DEBUG] sctk: Bound new global [55] zwp_linux_dmabuf_v1 v4
+[DEBUG] sctk: Bound new global [34] wp_alpha_modifier_v1 v1
+[INFO] iced_winit::platform_specific::wayland::event_loop: SCTK setup complete.
+[INFO] cosmic_applet::network::udp_receiver: 🔌 Starting UDP receiver...
+[INFO] cosmic_applet::network::udp_receiver: UDP receiver config: port=51057, secret_key_path=/tmp/nmd/secret.key
+[INFO] cosmic_applet::network::udp_receiver: ✓ Loaded HMAC secret key (32 bytes)
+[INFO] cosmic_applet::network::udp_receiver: ✓ Bound UDP socket to 0.0.0.0:51057
+[INFO] cosmic_applet::network::udp_receiver: 🎧 UDP receiver ready — waiting for packets...
+[DEBUG] sctk: Bound new global [19] wp_cursor_shape_manager_v1 v2
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[INFO] zbus::connection::handshake::common: write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[INFO] zbus::connection::handshake::common: write_commands; commands=[Auth(Some(External), Some([49, 48, 48, 48]))] extra_bytes=None
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'Neptune' CPU=0.0%, mem=0/1
+[INFO] tracing::span: read_command;
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] zbus::connection::handshake::common: write_commands; commands=[NegotiateUnixFD, Begin] extra_bytes=Some([108, 1, 0, 1, 0, 0, 0, 0, 14, 0, 0, 0, 109, 0, 0, 0, 1, 1, 111, 0, 21, 0, 0, 0, 47, 111, 114, 103, 47, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 47, 68, 66, 117, 115, 0, 0, 0, 2, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0, 3, 1, 115, 0, 5, 0, 0, 0, 72, 101, 108, 108, 111, 0, 0, 0, 6, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0])
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] zbus::proxy: {}; task_name="org.a11y.Status proxy caching"
+[DEBUG] cosmic_text::font::system: font matches for Attrs { color_opt: None, family: SansSerif, stretch: Normal, style: Normal, weight: Weight(400), metadata: 0, cache_key_flags: CacheKeyFlags(0x0), metrics_opt: None, letter_spacing_opt: None, font_features: FontFeatures { features: [] }, text_decoration: TextDecoration { underline: None, underline_color_opt: None, strikethrough: false, strikethrough_color_opt: None, overline: false, overline_color_opt: None } } in 1.94527ms
+[DEBUG] cosmic_text::font::system: font matches for Attrs { color_opt: None, family: Name("Open Sans"), stretch: Normal, style: Normal, weight: Weight(400), metadata: 0, cache_key_flags: CacheKeyFlags(0x0), metrics_opt: None, letter_spacing_opt: None, font_features: FontFeatures { features: [] }, text_decoration: TextDecoration { underline: None, underline_color_opt: None, strikethrough: false, strikethrough_color_opt: None, overline: false, overline_color_opt: None } } in 1.676358ms
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("list_button", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("frosted_maximized_apps", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'Neptune' CPU=0.0%, mem=0/1
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'Neptune' CPU=0.0%, mem=0/1
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'Neptune' CPU=0.0%, mem=0/1
+[INFO] iced_winit::platform_specific::wayland::event_loop: Calloop channel closed.

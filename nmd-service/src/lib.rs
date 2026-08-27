@@ -6,6 +6,7 @@
 pub mod config;
 mod metrics_aggregator;
 pub mod packet;
+pub mod packet_flat;
 mod udp_sender;
 
 /// Install/uninstall helpers for the systemd unit file (used by install scripts).
@@ -15,4 +16,5 @@ pub mod systemd_unit;
 pub use config::{DEFAULT_CONFIG_PATH, ServiceConfig};
 pub use metrics_aggregator::MetricsAggregator;
 pub use packet::{ArchivedMetricPacket, MetricPacket, PROTOCOL_VERSION};
+pub use packet_flat::{ArchivedMetricPacketFlat, MetricPacketFlat, PROTOCOL_VERSION_FLAT};
 pub use udp_sender::UdpSender;

@@ -168,9 +168,14 @@ pub fn view_with_config(minimon_config: &MinimonConfig) -> Element<'static, Sett
     
     let mut content_items: Vec<Element<'static, SettingsMessage>> = Vec::new();
     for (idx, content_type) in minimon_config.content_order.order.iter().enumerate() {
+        // Skip CpuTemp - it's now combined with CPU
+        if *content_type == ContentType::CpuTemp {
+            continue;
+        }
+        
         let name = match content_type {
-            ContentType::CpuUsage => "CPU".to_string(),
-            ContentType::CpuTemp => "CPU Temperature".to_string(),
+            ContentType::CpuUsage => "CPU (with Temperature)".to_string(),
+            ContentType::CpuTemp => continue, // Already filtered above
             ContentType::MemoryUsage => "Memory".to_string(),
             ContentType::NetworkUsage => "Network".to_string(),
             ContentType::DiskUsage => "Disk".to_string(),

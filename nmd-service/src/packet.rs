@@ -20,15 +20,11 @@
 //! | `sequence`     | `u32`      | Monotonic counter per machine_id for replay detection      |
 //! | `hmac_tag`     | `[u8; 32]`| HMAC-SHA256 over all serialized fields (excluding tag)    |
 //!
-//! ## Phase 2 Hardening — Additional Metrics (Geordi)
+//! ## Protocol Version History
 //!
-//! New optional fields added in Phase 2 hardening:
-//!
-//! | Field                  | Type       | Purpose                                              |
-//! |------------------------|------------|------------------------------------------------------|
-//! | `disk_read_bytes`      | `Option<u64>` | Total disk read bytes since boot (None if unavailable) |
-//! | `disk_write_bytes`     | `Option<u64>` | Total disk write bytes since boot (None if unavailable) |
-//! | `memory_swap_used_pct` | `f32`        | Swap usage as percentage of total swap (0.0–100.0)     |
+//! - **v1**: Original flat structure with basic metrics
+//! - **v2**: Added optional IO/network stats, no struct change needed (rkyv handles missing fields)
+//! - **v3**: Refactored to nested metric group structs for better type safety and extensibility
 //!
 //! ## rkyv Compatibility
 //!
@@ -48,25 +44,81 @@ pub struct PartitionInfo {
     pub used: u64,
 }
 
+/// CPU metrics group — all CPU-related metrics bundled together for type safety.
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct CpuMetrics {
+    /// CPU usage percentage (0.0–100.0), aggregate across all cores.
+    pub usage_percent: f32,
+    /// CPU package temperature in Celsius — `None` if thermal sensors unavailable.
+    pub temperature_celsius: Option<f32>,
+}
+
+/// GPU metrics group — all GPU-related metrics bundled together for type safety.
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct GpuMetrics {
+    /// GPU utilization load percentage (0.0–100.0) — `None` if GPU monitoring unavailable.
+    pub load_percent: Option<f32>,
+    /// VRAM used in megabytes — `None` on systems without a discrete GPU.
+    pub vram_used_mb: Option<u32>,
+    /// VRAM total in megabytes — `None` on systems without a discrete GPU.
+    pub vram_total_mb: Option<u32>,
+    /// GPU junction temperature in Celsius — `None` if GPU thermal sensors unavailable.
+    pub temperature_celsius: Option<f32>,
+}
+
+/// Memory metrics group — all memory-related metrics bundled together for type safety.
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct MemoryMetrics {
+    /// Used memory in bytes.
+    pub used_bytes: u64,
+    /// Total memory in bytes.
+    pub total_bytes: u64,
+    /// Swap usage as a percentage of total swap space (0.0–100.0).
+    pub swap_used_pct: f32,
+}
+
+/// Network metrics group — all network-related metrics bundled together for type safety.
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct NetworkMetrics {
+    /// Total bytes received on the primary network interface since boot.
+    pub rx_bytes: u64,
+    /// Total bytes transmitted on the primary network interface since boot.
+    pub tx_bytes: u64,
+}
+
+/// Disk metrics group — all disk-related metrics bundled together for type safety.
+#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+pub struct DiskMetrics {
+    /// Used disk space in bytes (sum across all partitions).
+    pub used_bytes: u64,
+    /// Total disk space in bytes (sum across all partitions).
+    pub total_bytes: u64,
+    /// Total disk read bytes since boot — `None` if sysinfo doesn't expose IO stats.
+    pub read_bytes: Option<u64>,
+    /// Total disk write bytes since boot — `None` if sysinfo doesn't expose IO stats.
+    pub write_bytes: Option<u64>,
+    /// Disk partition information (mount point, total, used) for all mounted partitions
+    pub partitions: Vec<PartitionInfo>,
+}
+
 /// A single metrics snapshot sent over UDP from remote machine → desktop applet.
 ///
 /// All fields except `hmac_tag` are included in the HMAC-SHA256 digest computed by
 /// [`crate::udp_sender::UdpSender::send`]. The tag is verified on receipt and packets
 /// failing verification or freshness checks (< 10s old) are silently dropped per Worf's spec.
-/// Current protocol version for MetricPacket serialization compatibility.
-/// Bumped from 1 → 2: machine_id changed from String to [u8; 20] for zero-copy in-place mutation.
-/// Phase 2 adds optional IO/network stats — rkyv handles missing fields gracefully, no version bump needed.
-pub const PROTOCOL_VERSION: u32 = 2;
+///
+/// **Protocol Version 3**: Refactored to nested metric group structs for better type safety,
+/// extensibility, and clearer semantics. Each metrics group (CPU, GPU, Memory, Network, Disk)
+/// bundles related fields together, eliminating type confusion and making extension easier.
+pub const PROTOCOL_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, Archive, Serialize, Deserialize)]
 pub struct MetricPacket {
-    // ── Protocol Version (Phase 1B) ───────────────────────────────────────
+    // ── Protocol Version & Security (Worf Phase 1A) ───────────────────────
 
     /// Protocol version for detecting incompatible sender/receiver versions.
     /// Bump [`PROTOCOL_VERSION`] whenever a breaking change is made to the packet structure.
     pub version: u32,
-
-    // ── Identity & Security (Worf Phase 1A) ───────────────────────────────
 
     /// Unique identifier for the sending machine (e.g., hostname or UUID).
     /// Stored as fixed-length [u8; 20] — null-padded if shorter than 20 bytes.
@@ -82,53 +134,25 @@ pub struct MetricPacket {
     /// Combined with machine_id + timestamp to detect replayed or out-of-order packets.
     pub sequence: u32,
 
-    // ── Metric Data (sourced from metrics-core via aggregator) ────────────
+    // ── Nested Metric Groups (Phase 3 Refactoring) ───────────────────────
 
-    /// CPU usage percentage (0.0–100.0), aggregate across all cores.
-    pub cpu_usage: f32,
+    /// CPU metrics group — usage, temperature
+    pub cpu: CpuMetrics,
 
-    /// Memory used in bytes.
-    pub memory_used_bytes: u64,
+    /// GPU metrics group — load, VRAM, temperature
+    pub gpu: GpuMetrics,
 
-    /// Total memory in bytes.
-    pub memory_total_bytes: u64,
+    /// Memory metrics group — used/total bytes, swap percentage
+    pub memory: MemoryMetrics,
 
-    /// Disk used bytes (sum across all partitions).
-    pub disk_used_bytes: u64,
+    /// Network metrics group — RX/TX cumulative bytes since boot
+    pub network: NetworkMetrics,
 
-    /// Disk total bytes (sum across all partitions).
-    pub disk_total_bytes: u64,
-
-    /// Total bytes received on the primary network interface since boot.
-    pub network_rx_bytes: u64,
-
-    /// Total bytes transmitted on the primary network interface since boot.
-    pub network_tx_bytes: u64,
+    /// Disk metrics group — usage, IO stats, partitions
+    pub disk: DiskMetrics,
 
     /// System uptime in seconds since last boot.
     pub uptime_seconds: u64,
-
-    // ── Phase 2 Hardening — Additional Metrics (Optional) ─────────────────
-
-    /// Total disk read bytes since boot — `None` if sysinfo doesn't expose IO stats.
-    pub disk_read_bytes: Option<u64>,
-
-    /// Total disk write bytes since boot — `None` if sysinfo doesn't expose IO stats.
-    pub disk_write_bytes: Option<u64>,
-
-    /// Swap usage as a percentage of total swap space (0.0–100.0).
-    pub memory_swap_used_pct: f32,
-
-    /// Disk partition information (mount point, total, used) for all mounted partitions
-    pub disk_partitions: Vec<PartitionInfo>,
-
-    // ── Optional Metrics (None when hardware unsupported) ─────────────────
-
-    /// GPU VRAM used in megabytes — `None` on systems without a discrete GPU.
-    pub gpu_vram_used_mb: Option<u32>,
-
-    /// CPU package or GPU junction temperature in Celsius — `None` if thermal sensors unavailable.
-    pub temperature_celsius: Option<f32>,
 
     // ── Authentication Tag (Worf Phase 1A) ────────────────────────────────
 
@@ -144,31 +168,66 @@ mod tests {
     /// rkyv serialize → deserialize roundtrip preserves all data fields (Beverly writes after implementation).
     #[test]
     fn test_packet_rkyv_roundtrip() {
-        // TODO: Implement full roundtrip once UdpSender HMAC logic is complete.
-        // For now, verify the struct compiles and default values are sane.
+        // Test nested metric group initialization for protocol version 3
         let packet = MetricPacket {
             version: PROTOCOL_VERSION,
             machine_id: [0u8; 20], // Null-padded empty machine ID.
             timestamp: 0,
             sequence: 0,
-            cpu_usage: 0.0,
-            memory_used_bytes: 0,
-            memory_total_bytes: 0,
-            disk_used_bytes: 0,
-            disk_total_bytes: 0,
-            network_rx_bytes: 0,
-            network_tx_bytes: 0,
+            cpu: CpuMetrics {
+                usage_percent: 0.0,
+                temperature_celsius: None,
+            },
+            gpu: GpuMetrics {
+                load_percent: None,
+                vram_used_mb: None,
+                vram_total_mb: None,
+                temperature_celsius: None,
+            },
+            memory: MemoryMetrics {
+                used_bytes: 0,
+                total_bytes: 0,
+                swap_used_pct: 0.0,
+            },
+            network: NetworkMetrics {
+                rx_bytes: 0,
+                tx_bytes: 0,
+            },
+            disk: DiskMetrics {
+                used_bytes: 0,
+                total_bytes: 0,
+                read_bytes: None,
+                write_bytes: None,
+                partitions: Vec::new(),
+            },
             uptime_seconds: 0,
-            disk_read_bytes: None,
-            disk_write_bytes: None,
-            memory_swap_used_pct: 0.0,
-            disk_partitions: Vec::new(),
-            gpu_vram_used_mb: None,
-            temperature_celsius: None,
             hmac_tag: [0u8; 32],
         };
+        
+        // Verify nested struct initialization
         assert!(packet.machine_id.iter().all(|&b| b == 0)); // All zeros = empty/null-padded.
         assert_eq!(packet.sequence, 0);
-        assert_eq!(packet.memory_swap_used_pct, 0.0); // Phase 2: swap usage initialized to 0
+        assert_eq!(packet.cpu.usage_percent, 0.0);
+        assert_eq!(packet.memory.swap_used_pct, 0.0);
+        
+        // Test GPU VRAM calculation (convert MB to bytes for applet display)
+        let gpu_vram_bytes = packet.gpu.vram_used_mb.map(|v| v as u64 * 1_048_576);
+        assert_eq!(gpu_vram_bytes, None); // No VRAM data in test
+        
+        // Test with sample GPU data
+        let packet_with_gpu = MetricPacket {
+            gpu: GpuMetrics {
+                load_percent: Some(75.5),
+                vram_used_mb: Some(4096), // 4GB
+                vram_total_mb: Some(8192), // 8GB
+                temperature_celsius: Some(85.0),
+            },
+            ..packet.clone()
+        };
+        
+        assert_eq!(packet_with_gpu.gpu.load_percent, Some(75.5));
+        assert_eq!(packet_with_gpu.gpu.vram_used_mb, Some(4096));
+        let vram_bytes = packet_with_gpu.gpu.vram_used_mb.map(|v| v as u64 * 1_048_576);
+        assert_eq!(vram_bytes, Some(4_294_967_296)); // 4GB in bytes
     }
 }

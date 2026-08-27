@@ -47,14 +47,8 @@ pub fn view(
     // Individual sensor configuration options with live values
     let cpu_button = create_menu_item(
         "CPU",
-        &format!("{:.2}%", avg_cpu),
+        &format!("{:.2}% / {}°C", avg_cpu, avg_cpu_temp as i32),
         AppMessage::OpenCpuConfig
-    );
-    
-    let cpu_temp_button = create_menu_item(
-        "CPU Temperature",
-        &format!("{}°C", avg_cpu_temp as i32),
-        AppMessage::OpenCpuTempConfig
     );
     
     let memory_button = create_menu_item(
@@ -96,7 +90,6 @@ pub fn view(
         general_settings_button,
         divider::horizontal::default().into(),
         cpu_button,
-        cpu_temp_button,
         memory_button,
         network_button,
         disk_button,

@@ -99,6 +99,8 @@ pub enum AppMessage {
     OpenGpuConfig,
     /// Navigation: go back to previous view
     Back,
+    /// Refresh metrics from UDP-updated RemoteMachine data
+    RefreshMetrics,
     /// Remove a machine from configuration
     RemoveMachine(String),
     /// Settings window message (forwards to settings_window::SettingsMessage).
@@ -258,7 +260,15 @@ impl Default for AppState {
     fn default() -> Self {
         use crate::remote_machine::RemoteMachine;
         
-        let config = ConfigManager::default();
+        // Try to load config from file, fall back to defaults if not found
+        let config = if std::path::Path::new("config.toml").exists() {
+            log::info!("📂 Loading config from config.toml");
+            ConfigManager::load("config.toml")
+        } else {
+            log::info!("📂 Using default config (no config.toml found)");
+            ConfigManager::default()
+        };
+        
         let config_manager: std::sync::Arc<std::sync::RwLock<ConfigManager>> = 
             std::sync::Arc::new(std::sync::RwLock::new(config.clone()));
         let settings_window_config = config_manager.clone();
@@ -291,8 +301,29 @@ impl Default for AppState {
 
 /// Entry point — registers the application with Cosmic's panel system.
 fn main() -> Result<(), cosmic::iced::Error> {
-    // Initialize logging
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    // Initialize logging to file
+    use std::fs::OpenOptions;
+    use env_logger::Builder;
+    
+    let log_file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open("cosmic-applet.log")
+        .expect("Failed to open log file");
+    
+    Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
+        .format(|buf, record| {
+            use std::io::Write;
+            writeln!(buf, "[{}] {}: {}", 
+                record.level(), 
+                record.target(),
+                record.args())
+        })
+        .target(env_logger::Target::Pipe(Box::new(log_file)))
+        .init();
+    
+    log::info!("========== cosmic-applet starting ==========");
     
     // Parse command-line arguments and locate config file.
     let args: Vec<String> = std::env::args().collect();
@@ -366,9 +397,11 @@ impl Application for PanelApplet {
             AppState::default()
         };
 
-        // Clone state for thread spawn
-        let state_clone: std::sync::Arc<std::sync::RwLock<AppState>> = 
-            std::sync::Arc::clone(&std::sync::Arc::new(std::sync::RwLock::new(app_state.clone())));
+        // Wrap in Arc<RwLock> ONCE — both UI and UDP receiver share this instance
+        let shared_state = std::sync::Arc::new(std::sync::RwLock::new(app_state));
+        
+        // Clone the Arc reference (not the data!) for the thread
+        let state_clone = std::sync::Arc::clone(&shared_state);
 
         if !debug_mode {
             // Spawn UDP receiver in a background task — updates app state in real-time.
@@ -386,7 +419,7 @@ impl Application for PanelApplet {
         (
             PanelApplet { 
                 core, 
-                shared_state: std::sync::Arc::new(std::sync::RwLock::new(app_state)) 
+                shared_state  // Use the same Arc instance
             }, 
             Task::none()
         )
@@ -396,6 +429,19 @@ impl Application for PanelApplet {
         match message {
             AppMessage::NoOp => {
                 // No operation — do nothing.
+                Task::none()
+            }
+            AppMessage::RefreshMetrics => {
+                // Periodic refresh - just trigger a view update by returning Task::none().
+                // The view() function will read the latest data from shared_state.
+                let state = self.shared_state.read().unwrap();
+                let machine_count = state.machines.len();
+                if let Some((name, machine)) = state.machines.iter().next() {
+                    log::debug!("🔄 RefreshMetrics: machine '{}' CPU={:.1}%, mem={}/{}", 
+                        name, machine.sensors.cpu.usage_percent, 
+                        machine.sensors.memory.used_bytes, machine.sensors.memory.total_bytes);
+                }
+                drop(state);
                 Task::none()
             }
             AppMessage::OpenMainMenu => {
@@ -840,6 +886,14 @@ impl Application for PanelApplet {
                 let machines_vec: Vec<_> = state.machines.values().cloned().collect();
                 let content_order = state.settings_window.minimon_config.content_order.clone();
                 let minimon_config = state.settings_window.minimon_config.clone();
+                
+                // Debug: log the data we're about to render
+                if let Some(machine) = machines_vec.first() {
+                    log::debug!("🖼️  Rendering Panel: machine '{}' CPU={:.1}%, mem={}/{}", 
+                        machine.name, machine.sensors.cpu.usage_percent,
+                        machine.sensors.memory.used_bytes, machine.sensors.memory.total_bytes);
+                }
+                
                 drop(state);
                 PanelWidget::view_from_machines(&machines_vec, &content_order, &minimon_config)
             }
@@ -927,8 +981,9 @@ impl Application for PanelApplet {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        // No subscriptions needed for basic applet functionality.
-        Subscription::none()
+        // Subscribe to periodic updates to refresh UI with latest metrics
+        cosmic::iced::time::every(std::time::Duration::from_millis(500))
+            .map(|_| AppMessage::RefreshMetrics)
     }
 }
 

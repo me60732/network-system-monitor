@@ -10,14 +10,17 @@ use cosmic::iced::{Alignment, Length};
 use cosmic::Element;
 use crate::minimon_config::{NetworkVariant, DisksVariant};
 
-/// View for CPU sensor configuration
+/// View for CPU sensor configuration (includes load and temperature)
 pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
         button::text("← Back")
             .on_press(AppMessage::Back)
             .into(),
-        text("CPU Load Average").size(24).into(),
+        text("CPU").size(24).into(),
     ];
+
+    // === CPU Load Section ===
+    items.push(text("Load Average").size(16).into());
 
     // Show sensor
     items.push(
@@ -67,6 +70,59 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
             button::text("Colors")
         )
         .width(Length::Fill)
+        .into()
+    );
+
+    // Divider between sections
+    items.push(divider::horizontal::default().into());
+
+    // === CPU Temperature Section ===
+    items.push(text("Temperature").size(16).into());
+    items.push(
+        text("For Intel processors shows single highest temperature found across all sensors/cores.")
+            .size(12)
+            .into()
+    );
+
+    // Show sensor
+    items.push(
+        row(vec![
+            text("Show sensor").into(),
+            toggler(config.cputemp.chart_visible())
+                .on_toggle(AppMessage::ToggleCpuTempShowChart)
+                .width(Length::Shrink)
+                .into(),
+        ])
+        .spacing(12)
+        .align_y(Alignment::Center)
+        .into()
+    );
+
+    // Show label
+    items.push(
+        row(vec![
+            text("Show label").into(),
+            toggler(config.cputemp.label_visible())
+                .on_toggle(AppMessage::ToggleCpuTempShowLabel)
+                .width(Length::Shrink)
+                .into(),
+        ])
+        .spacing(12)
+        .align_y(Alignment::Center)
+        .into()
+    );
+
+    // Show icon
+    items.push(
+        row(vec![
+            text("Show icon").into(),
+            toggler(config.cputemp.icon_visible())
+                .on_toggle(AppMessage::ToggleCpuTempShowIcon)
+                .width(Length::Shrink)
+                .into(),
+        ])
+        .spacing(12)
+        .align_y(Alignment::Center)
         .into()
     );
 
@@ -572,6 +628,20 @@ pub fn view_gpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
             text("Show sensor").into(),
             toggler(default_gpu.map(|g| g.vram.chart_visible()).unwrap_or(true))
                 .on_toggle(AppMessage::ToggleGpuVramShowChart)
+                .width(Length::Shrink)
+                .into(),
+        ])
+        .spacing(12)
+        .align_y(Alignment::Center)
+        .into()
+    );
+
+    // As percentage toggle
+    items.push(
+        row(vec![
+            text("As percentage").into(),
+            toggler(default_gpu.map(|g| g.vram.percentage).unwrap_or(false))
+                .on_toggle(AppMessage::ToggleGpuVramAsPercentage)
                 .width(Length::Shrink)
                 .into(),
         ])

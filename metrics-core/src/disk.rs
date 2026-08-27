@@ -14,7 +14,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
-use sysinfo::Disks;
+use sysinfo::{Disks, DiskRefreshKind};
 
 /// Disk partition statistics for one mount point.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -25,10 +25,15 @@ pub struct PartitionStat {
     pub total: u64,
     /// Used space on this partition in bytes.
     pub used: u64,
-    /// Total bytes read from disk since boot (if available).
-    pub read_bytes: Option<u64>,
-    /// Total bytes written to disk since boot (if available).
-    pub write_bytes: Option<u64>,
+}
+
+/// Disk IO statistics (cumulative since boot).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DiskIoStats {
+    /// Total bytes read from all disks since boot.
+    pub read_bytes: u64,
+    /// Total bytes written to all disks since boot.
+    pub write_bytes: u64,
 }
 
 /// Aggregate disk statistics across all mounted partitions.
@@ -36,6 +41,30 @@ pub struct PartitionStat {
 pub struct DiskStats {
     /// One entry per detected mount point with usage data.
     pub partitions: Vec<PartitionStat>,
+}
+
+/// Collect disk IO statistics (cumulative totals since boot).
+///
+/// Uses sysinfo's Disks with io_usage refresh to get cumulative read/write byte counts.
+/// Returns total IO across all disks. Matches minimon-applet's collection pattern.
+pub fn collect_io() -> DiskIoStats {
+    let r = DiskRefreshKind::nothing().with_io_usage();
+    let mut disks = Disks::new();
+    disks.refresh_specifics(true, r);
+
+    let mut total_read = 0u64;
+    let mut total_write = 0u64;
+
+    for disk in disks.list() {
+        let usage = disk.usage();
+        total_read += usage.read_bytes;
+        total_write += usage.written_bytes;
+    }
+
+    DiskIoStats {
+        read_bytes: total_read,
+        write_bytes: total_write,
+    }
 }
 
 /// Collect current disk partition statistics.
@@ -79,8 +108,6 @@ pub fn collect() -> DiskStats {
             mount: mp_str.to_string(),
             total: total_bytes,
             used: used_bytes,
-            read_bytes: None,
-            write_bytes: None,
         });
     }
 

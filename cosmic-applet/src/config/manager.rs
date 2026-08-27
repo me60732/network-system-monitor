@@ -35,6 +35,7 @@ pub struct ConfigManager {
     pub auto_expand_grid: bool,
 
     /// File path where this configuration is persisted (loaded from on startup).
+    #[serde(skip)]
     pub config_path: PathBuf,
 }
 

@@ -55,10 +55,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3. Load service configuration from TOML.
     let config = ServiceConfig::load(&cli.config);
     log::info!(
-        "Loaded config — host={}, port={}, interval={}ms, machine_id={}",
+        "Loaded config — host={}, port={}, refresh_interval={}s, machine_id={}",
         config.host,
         config.port,
-        config.interval_ms,
+        config.refresh_interval_secs,
         config.machine_id
     );
 
@@ -80,41 +80,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("UDP sender initialized — sending to {} (machine_id={})", dest, config.machine_id);
 
     // 6. Initialize metrics aggregator.
-    let aggregator = MetricsAggregator::new(config.clone());
+    let mut aggregator = MetricsAggregator::new(config.clone());
 
     // 7. Install signal handlers for graceful shutdown (SIGTERM from systemd + SIGINT/Ctrl-C).
     install_signal_handlers();
 
-    log::info!("Entering main loop — interval={}ms", config.interval_ms);
+    log::info!("Entering main loop — interval={}s", config.refresh_interval_secs);
 
     // 8. Main collection + transmission loop.
     while !SHUTDOWN_REQUESTED.load(Ordering::SeqCst) {
         let start = std::time::Instant::now();
 
         // Collect metrics and pack into MetricPacket (delegates to metrics-core).
-        let packet = aggregator.aggregate();
+        let flat_packet = aggregator.aggregate();
+        
+        // Convert flat packet to nested for UDP sender interface compatibility
+        let packet = flat_packet.to_nested();
 
         // Send via UDP with HMAC-SHA256 authentication — in-place buffer mutation, zero allocations.
         if let Err(e) = (&mut sender).send(&packet) {
             log::warn!("UDP send failed: {}", e);
         } else {
-            let mem_percent = if packet.memory_total_bytes > 0 {
-                (packet.memory_used_bytes as f64 / packet.memory_total_bytes as f64) * 100.0
+            let mem_percent = if packet.memory.total_bytes > 0 {
+                (packet.memory.used_bytes as f64 / packet.memory.total_bytes as f64) * 100.0
             } else {
                 0.0
             };
             log::debug!(
                 "Sent metrics — seq={}, cpu={:.1}%, mem={:.1}%",
                 packet.sequence,
-                packet.cpu_usage,
+                packet.cpu.usage_percent,
                 mem_percent
             );
         }
 
         // Sleep for the configured interval (minus time already spent collecting/sending).
         let elapsed = start.elapsed();
-        let sleep_duration = if elapsed < Duration::from_millis(config.interval_ms) {
-            Duration::from_millis(config.interval_ms) - elapsed
+        let sleep_duration = if elapsed < Duration::from_secs(config.refresh_interval_secs) {
+            Duration::from_secs(config.refresh_interval_secs) - elapsed
         } else {
             Duration::ZERO // Collection took longer than interval — skip sleep
         };

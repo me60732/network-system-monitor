@@ -10,8 +10,8 @@
 //! host = "192.168.1.10"
 //! port = 51057
 //!
-//! # How often to collect + send metrics (milliseconds)
-//! interval_ms = 2000
+//! # How often to collect + send metrics (seconds)
+//! refresh_interval_secs = 1
 //!
 //! # Unique machine identifier — auto-detected from hostname if not set
 //! machine_id = "pluto"
@@ -30,8 +30,8 @@ use std::path::PathBuf;
 /// Default UDP destination: desktop applet listening address.
 const DEFAULT_HOST: &str = "127.0.0.1";
 const DEFAULT_PORT: u16 = 51057;
-/// Default collection/send interval in milliseconds (matches spec: every 2 seconds).
-const DEFAULT_INTERVAL_MS: u64 = 2000;
+/// Default collection/send interval in seconds (every 1 second for accurate CPU delta measurement).
+const DEFAULT_REFRESH_INTERVAL_SECS: u64 = 1;
 
 /// Default configuration file path for nmd-service (loaded when no --config is given).
 pub const DEFAULT_CONFIG_PATH: &str = "/etc/nmd/config.toml";
@@ -50,9 +50,9 @@ pub struct ServiceConfig {
     /// UDP port on the desktop applet (default: 51057).
     #[serde(default = "default_port")]
     pub port: u16,
-    /// Collection + transmission interval in milliseconds (default: 2000 = every 2s per spec).
-    #[serde(default = "default_interval_ms")]
-    pub interval_ms: u64,
+    /// Collection + transmission interval in seconds (default: 1 = every 1s for accurate CPU delta measurement).
+    #[serde(default = "default_refresh_interval_secs")]
+    pub refresh_interval_secs: u64,
     /// Unique machine identifier — used for auto-registration and HMAC replay protection.
     /// Falls back to the system hostname if not set in config or empty string.
     #[serde(default = "default_machine_id")]
@@ -65,7 +65,7 @@ pub struct ServiceConfig {
 /// Serde default functions for partial TOML config support.
 fn default_host() -> String { DEFAULT_HOST.to_string() }
 fn default_port() -> u16 { DEFAULT_PORT }
-fn default_interval_ms() -> u64 { DEFAULT_INTERVAL_MS }
+fn default_refresh_interval_secs() -> u64 { DEFAULT_REFRESH_INTERVAL_SECS }
 fn default_machine_id() -> String { "unknown".to_string() }
 fn default_secret_path() -> String { SECRET_KEY_PATH.to_string() }
 
@@ -79,7 +79,7 @@ impl Default for ServiceConfig {
         ServiceConfig {
             host: DEFAULT_HOST.to_string(),
             port: DEFAULT_PORT,
-            interval_ms: DEFAULT_INTERVAL_MS,
+            refresh_interval_secs: DEFAULT_REFRESH_INTERVAL_SECS,
             machine_id,
             hmac_secret_path: SECRET_KEY_PATH.to_string(),
         }
@@ -104,14 +104,14 @@ impl ServiceConfig {
                     Ok(parsed) => {
                         config.host = parsed.host;
                         config.port = parsed.port;
-                        config.interval_ms = parsed.interval_ms;
+                        config.refresh_interval_secs = parsed.refresh_interval_secs;
                         // Only override machine_id if the TOML actually specified one (non-empty).
                         if !parsed.machine_id.is_empty() && parsed.machine_id != "unknown" {
                             config.machine_id = parsed.machine_id;
                         }
                         config.hmac_secret_path = parsed.hmac_secret_path;
-                        log::info!("Loaded config from {} — host={}, port={}, interval={}ms",
-                                   config_path, config.host, config.port, config.interval_ms);
+                        log::info!("Loaded config from {} — host={}, port={}, refresh_interval={}s",
+                                   config_path, config.host, config.port, config.refresh_interval_secs);
                     }
                     Err(e) => {
                         log::warn!(
@@ -212,7 +212,7 @@ mod tests {
         let config = ServiceConfig::default();
         assert!(!config.host.is_empty());
         assert!(config.port > 0);
-        assert!(config.interval_ms >= 100); // Minimum sane interval
+        assert!(config.refresh_interval_secs >= 1); // Minimum sane interval
         assert!(!config.machine_id.is_empty());
     }
 
@@ -229,6 +229,6 @@ mod tests {
     fn test_load_nonexistent_config() {
         let config = ServiceConfig::load("/nonexistent/path/config.toml");
         assert_eq!(config.port, DEFAULT_PORT);
-        assert_eq!(config.interval_ms, DEFAULT_INTERVAL_MS);
+        assert_eq!(config.refresh_interval_secs, DEFAULT_REFRESH_INTERVAL_SECS);
     }
 }

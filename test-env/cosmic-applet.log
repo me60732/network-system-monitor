@@ -1,0 +1,1260 @@
+[INFO] cosmic_applet: ========== cosmic-applet starting ==========
+[INFO] cosmic_applet: 🧪 DEVELOPMENT MODE: Running in standalone window for testing
+[INFO] cosmic_applet: Usage: cargo run -- --test [--debug]
+[INFO] cosmic_applet: cosmic-applet starting — config: config.toml
+[INFO] cosmic_applet: This shows the panel widget in a normal window for development
+[INFO] cosmic_applet: Window size: 1000x600 (tall enough for settings window)
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("list_button", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("frosted_maximized_apps", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[DEBUG] cosmic_text::font::system: Locale: en-AU
+[DEBUG] cosmic_text::font::system: Parsed 646 font faces in 32ms.
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] tracing::span: winit::EventLoopBuilder::build;
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[DEBUG] sctk: Bound new global [19] wp_cursor_shape_manager_v1 v2
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[INFO] zbus::connection::handshake::common: write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[INFO] zbus::connection::handshake::common: write_commands; commands=[Auth(Some(External), Some([49, 48, 48, 48]))] extra_bytes=None
+[INFO] tracing::span: read_command;
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] zbus::connection::handshake::common: write_commands; commands=[NegotiateUnixFD, Begin] extra_bytes=Some([108, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 109, 0, 0, 0, 1, 1, 111, 0, 21, 0, 0, 0, 47, 111, 114, 103, 47, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 47, 68, 66, 117, 115, 0, 0, 0, 2, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0, 3, 1, 115, 0, 5, 0, 0, 0, 72, 101, 108, 108, 111, 0, 0, 0, 6, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0])
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] cosmic_applet: 📂 Loading config from config.toml
+[INFO] cosmic_applet::config::manager: Loaded config from config.toml — 1 machines configured
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] cosmic_applet: Loaded MinimonConfig from COSMIC config system
+[INFO] iced_winit: System theme: None
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] iced_winit: Window attributes for id `Id(
+    1,
+)`: WindowAttributes {
+    surface_size: Some(
+        Logical(
+            LogicalSize {
+                width: 1000.0,
+                height: 600.0,
+            },
+        ),
+    ),
+    min_surface_size: Some(
+        Logical(
+            LogicalSize {
+                width: 1.0,
+                height: 1.0,
+            },
+        ),
+    ),
+    max_surface_size: None,
+    surface_resize_increments: None,
+    position: None,
+    resizable: true,
+    enabled_buttons: WindowButtons(
+        CLOSE | MINIMIZE | MAXIMIZE,
+    ),
+    title: "",
+    maximized: false,
+    visible: false,
+    transparent: true,
+    blur: false,
+    decorations: false,
+    window_icon: None,
+    preferred_theme: None,
+    content_protected: false,
+    window_level: Normal,
+    active: true,
+    cursor: Icon(
+        Default,
+    ),
+    parent_window: None,
+    fullscreen: None,
+    platform: Some(
+        WindowAttributesWayland {
+            name: Some(
+                ApplicationName {
+                    general: "com.cosmic.network_system_monitor",
+                    instance: "com.cosmic.network_system_monitor",
+                },
+            ),
+            activation_token: None,
+            prefer_csd: false,
+        },
+    ),
+}
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[WARN] winit_wayland::window::state: `xdg_toplevel_icon_manager_v1` is not supported
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [49] ext_foreign_toplevel_list_v1 v1
+[DEBUG] sctk: Bound new global [48] zcosmic_toplevel_info_v1 v3
+[DEBUG] sctk: Bound new global [3] cosmic_corner_radius_manager_v1 v2
+[DEBUG] sctk: Bound new global [50] zcosmic_toplevel_manager_v1 v4
+[DEBUG] sctk: Bound new global [6] zwp_keyboard_shortcuts_inhibit_manager_v1 v1
+[DEBUG] sctk: Bound new global [32] zwp_text_input_manager_v3 v1
+[DEBUG] sctk: Bound new global [1] wl_compositor v5
+[DEBUG] sctk: Bound new global [2] wl_subcompositor v1
+[DEBUG] sctk: Bound new global [20] wp_viewporter v1
+[DEBUG] sctk: Bound new global [18] wl_shm v1
+[DEBUG] sctk: Bound new global [55] zwp_linux_dmabuf_v1 v4
+[DEBUG] sctk: Bound new global [34] wp_alpha_modifier_v1 v1
+[INFO] iced_winit::platform_specific::wayland::event_loop: SCTK setup complete.
+[INFO] cosmic_applet::network::udp_receiver: 🔌 Starting UDP receiver...
+[INFO] cosmic_applet::network::udp_receiver: UDP receiver config: port=51057, secret_key_path=/home/mark/Documents/in_cloud/Development/network-system-monitor/test-env/etc/nmd/secret.key
+[INFO] cosmic_applet::network::udp_receiver: ✓ Loaded HMAC secret key (32 bytes)
+[INFO] cosmic_applet::network::udp_receiver: ✓ Bound UDP socket to 0.0.0.0:51057
+[INFO] cosmic_applet::network::udp_receiver: 🎧 UDP receiver ready — waiting for packets...
+[DEBUG] sctk: Bound new global [19] wp_cursor_shape_manager_v1 v2
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[INFO] zbus::connection::handshake::common: write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[INFO] zbus::connection::handshake::common: write_commands; commands=[Auth(Some(External), Some([49, 48, 48, 48]))] extra_bytes=None
+[INFO] tracing::span: read_command;
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[INFO] zbus::connection::handshake::common: write_commands; commands=[NegotiateUnixFD, Begin] extra_bytes=Some([108, 1, 0, 1, 0, 0, 0, 0, 14, 0, 0, 0, 109, 0, 0, 0, 1, 1, 111, 0, 21, 0, 0, 0, 47, 111, 114, 103, 47, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 47, 68, 66, 117, 115, 0, 0, 0, 2, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0, 3, 1, 115, 0, 5, 0, 0, 0, 72, 101, 108, 108, 111, 0, 0, 0, 6, 1, 115, 0, 20, 0, 0, 0, 111, 114, 103, 46, 102, 114, 101, 101, 100, 101, 115, 107, 116, 111, 112, 46, 68, 66, 117, 115, 0, 0, 0, 0])
+[INFO] zbus::connection::handshake::common: read_commands; n_commands=1
+[INFO] zbus::proxy: {}; task_name="org.a11y.Status proxy caching"
+[DEBUG] cosmic_text::font::system: font matches for Attrs { color_opt: None, family: SansSerif, stretch: Normal, style: Normal, weight: Weight(400), metadata: 0, cache_key_flags: CacheKeyFlags(0x0), metrics_opt: None, letter_spacing_opt: None, font_features: FontFeatures { features: [] }, text_decoration: TextDecoration { underline: None, underline_color_opt: None, strikethrough: false, strikethrough_color_opt: None, overline: false, overline_color_opt: None } } in 2.710333ms
+[DEBUG] cosmic_text::font::system: font matches for Attrs { color_opt: None, family: Name("Open Sans"), stretch: Normal, style: Normal, weight: Weight(400), metadata: 0, cache_key_flags: CacheKeyFlags(0x0), metrics_opt: None, letter_spacing_opt: None, font_features: FontFeatures { features: [] }, text_decoration: TextDecoration { underline: None, underline_color_opt: None, strikethrough: false, strikethrough_color_opt: None, overline: false, overline_color_opt: None } } in 2.44112ms
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[DEBUG] sctk: Bound new global [58] wl_output v4
+[DEBUG] sctk: Bound new global [59] wl_output v4
+[DEBUG] sctk: Bound new global [60] wl_output v4
+[DEBUG] sctk: Bound new global [7] zxdg_output_manager_v1 v3
+[DEBUG] sctk: Bound new global [61] wl_seat v9
+[DEBUG] sctk: supported wl_shm format Xrgb8888
+[DEBUG] sctk: supported wl_shm format Argb8888
+[DEBUG] sctk: supported wl_shm format Xbgr8888
+[DEBUG] sctk: supported wl_shm format Abgr8888
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("list_button", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[ERROR] cosmic::theme: error loading system dark theme error=GetKey("frosted_maximized_apps", Os { code: 2, kind: NotFound, message: "No such file or directory" })
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[INFO] cosmic::app::cosmic: Suggested bounds: Some(Size { width: 3440.0, height: 1400.0 })
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=0.0%, mem=0/1
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [33, 3c, 95, 16, e6, 77, 27, 8a]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [33, 3c, 95, 16, e6, 77, 27, 8a]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(45.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35955273728 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(10.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 45
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.3%, Mem: 35955273728/134819328000 bytes)
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=35955273728/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [32, 97, e3, e6, a9, f9, d8, c2]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [32, 97, e3, e6, a9, f9, d8, c2]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(62.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35957850112 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 62
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 5.5%, Mem: 35957850112/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.5%, mem=35957850112/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=5.5%, mem=35957850112/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.5%, mem=35957850112/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=5.5%, mem=35957850112/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [f2, 3c, 4a, bc, e2, 74, e0, d5]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [f2, 3c, 4a, bc, e2, 74, e0, d5]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 7.0%, temp: Some(70.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 36003536896 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 70
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 7.0%, Mem: 36003536896/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=7.0%, mem=36003536896/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=7.0%, mem=36003536896/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=7.0%, mem=36003536896/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=7.0%, mem=36003536896/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [5e, 96, 84, 2b, 27, 19, d4, b7]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [5e, 96, 84, 2b, 27, 19, d4, b7]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(70.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 36002586624 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3336 MB → 3498049536 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 70
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.3%, Mem: 36002586624/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.3%, mem=36002586624/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=36002586624/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.3%, mem=36002586624/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.3%, mem=36002586624/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [35, b6, 33, ec, 90, 4e, 12, 48]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [35, b6, 33, ec, 90, 4e, 12, 48]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(46.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35995262976 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 46
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.1%, Mem: 35995262976/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35995262976/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.1%, mem=35995262976/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35995262976/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.1%, mem=35995262976/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [7e, 33, 15, a0, 40, 94, f4, 5c]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [7e, 33, 15, a0, 40, 94, f4, 5c]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.3%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35992268800 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.3%, Mem: 35992268800/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35992268800/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.3%, mem=35992268800/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35992268800/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.3%, mem=35992268800/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [7c, 2d, d8, ab, 26, 0c, c9, dd]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [7c, 2d, d8, ab, 26, 0c, c9, dd]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(38.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35981766656 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 38
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 5.5%, Mem: 35981766656/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.5%, mem=35981766656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=5.5%, mem=35981766656/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.5%, mem=35981766656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=5.5%, mem=35981766656/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [1f, 16, b5, 69, e8, c8, 1b, 36]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [1f, 16, b5, 69, e8, c8, 1b, 36]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.4%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35981709312 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3336 MB → 3498049536 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.4%, Mem: 35981709312/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.4%, mem=35981709312/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.4%, mem=35981709312/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.4%, mem=35981709312/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.4%, mem=35981709312/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [85, e7, da, df, 68, d9, ba, f1]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [85, e7, da, df, 68, d9, ba, f1]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35952476160 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(12.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.6%, Mem: 35952476160/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.6%, mem=35952476160/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.6%, mem=35952476160/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.6%, mem=35952476160/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.6%, mem=35952476160/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [d4, eb, 3b, 63, d9, 87, 2e, 06]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [d4, eb, 3b, 63, d9, 87, 2e, 06]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35947462656 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3338 MB → 3500146688 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(15.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.5%, Mem: 35947462656/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35947462656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.5%, mem=35947462656/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35947462656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.5%, mem=35947462656/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [80, 67, 00, 2d, 8a, 01, 42, 94]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [80, 67, 00, 2d, 8a, 01, 42, 94]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.4%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35953545216 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3337 MB → 3499098112 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 6.4%, Mem: 35953545216/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=6.4%, mem=35953545216/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=6.4%, mem=35953545216/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=6.4%, mem=35953545216/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [c0, 11, 29, cf, e9, 16, 60, 11]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [c0, 11, 29, cf, e9, 16, 60, 11]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35933794304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3337 MB → 3499098112 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(10.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 5.1%, Mem: 35933794304/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.1%, mem=35933794304/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.1%, mem=35933794304/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [47, 35, bd, d4, 84, 3c, a2, 2f]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [47, 35, bd, d4, 84, 3c, a2, 2f]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35931496448 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3337 MB → 3499098112 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(15.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 39
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.5%, Mem: 35931496448/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35931496448/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35931496448/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [0e, 49, 8e, be, 4f, 97, d9, b1]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [0e, 49, 8e, be, 4f, 97, d9, b1]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(58.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35901911040 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3337 MB → 3499098112 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 58
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.2%, Mem: 35901911040/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35901911040/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35901911040/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [86, b9, 63, 3b, 45, ff, 77, 8f]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [86, b9, 63, 3b, 45, ff, 77, 8f]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35911450624 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.2%, Mem: 35911450624/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35911450624/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35911450624/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [8c, 8e, b5, b4, 59, 23, 62, c1]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [8c, 8e, b5, b4, 59, 23, 62, c1]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35912323072 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.7%, Mem: 35912323072/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35912323072/134819328000
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] cosmic_applet: Saved MinimonConfig to COSMIC config system
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35912323072/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [48, 8b, 48, ac, ca, e1, e8, ef]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [48, 8b, 48, ac, ca, e1, e8, ef]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.3%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35917996032 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.3%, Mem: 35917996032/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35917996032/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35917996032/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [aa, b6, 44, 36, a3, 14, 0c, c2]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [aa, b6, 44, 36, a3, 14, 0c, c2]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35943858176 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.7%, Mem: 35943858176/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35943858176/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35943858176/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.7%, mem=35943858176/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [98, fd, 89, 55, 50, 83, d2, 36]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [98, fd, 89, 55, 50, 83, d2, 36]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.9%, temp: Some(46.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35942338560 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(17.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 46
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.9%, Mem: 35942338560/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.9%, mem=35942338560/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.9%, mem=35942338560/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.9%, mem=35942338560/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.9%, mem=35942338560/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [69, e1, 28, a7, a3, 3f, 57, fd]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [69, e1, 28, a7, a3, 3f, 57, fd]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 7.6%, temp: Some(46.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35944062976 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3333 MB → 3494903808 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(15.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 46
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 7.6%, Mem: 35944062976/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=7.6%, mem=35944062976/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=7.6%, mem=35944062976/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=7.6%, mem=35944062976/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=7.6%, mem=35944062976/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [7f, 1a, e7, bf, 3b, 6d, 6d, f7]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [7f, 1a, e7, bf, 3b, 6d, 6d, f7]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.6%, temp: Some(48.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35947249664 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 48
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 5.6%, Mem: 35947249664/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.6%, mem=35947249664/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=5.6%, mem=35947249664/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [6a, cf, 85, 35, 17, 06, 79, c0]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [6a, cf, 85, 35, 17, 06, 79, c0]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 8.4%, temp: Some(70.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35949080576 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(15.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 70
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 8.4%, Mem: 35949080576/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=8.4%, mem=35949080576/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=8.4%, mem=35949080576/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [37, 6b, 5a, ab, 8d, 8a, 3f, 33]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [37, 6b, 5a, ab, 8d, 8a, 3f, 33]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35952427008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(12.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.7%, Mem: 35952427008/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35952427008/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35952427008/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [1a, b6, 9c, 56, 62, c8, 08, 8c]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [1a, b6, 9c, 56, 62, c8, 08, 8c]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35957739520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(10.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.1%, Mem: 35957739520/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35957739520/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35957739520/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [62, 6a, f3, 3f, cd, ff, 1b, 24]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [62, 6a, f3, 3f, cd, ff, 1b, 24]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35952472064 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.1%, Mem: 35952472064/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35952472064/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.1%, mem=35952472064/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [e7, 51, 21, ce, a2, b1, d9, de]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [e7, 51, 21, ce, a2, b1, d9, de]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(50.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35942027264 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3332 MB → 3493855232 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(14.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 50
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.6%, Mem: 35942027264/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.6%, mem=35942027264/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.6%, mem=35942027264/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [02, 26, 5d, 14, 97, f4, 2c, 47]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [02, 26, 5d, 14, 97, f4, 2c, 47]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(38.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35943849984 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3351 MB → 3513778176 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(18.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 38
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.2%, Mem: 35943849984/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35943849984/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35943849984/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [9a, b3, a6, c3, 09, 15, c1, 70]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [9a, b3, a6, c3, 09, 15, c1, 70]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.3%, temp: Some(38.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35940384768 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3349 MB → 3511681024 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(7.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 38
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.3%, Mem: 35940384768/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35940384768/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35940384768/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [a4, 9e, 18, b0, 2a, e2, 57, db]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [a4, 9e, 18, b0, 2a, e2, 57, db]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.5%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35940216832 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3347 MB → 3509583872 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.5%, Mem: 35940216832/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35940216832/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35940216832/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [0e, e3, 51, 60, 61, b1, 51, 9a]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [0e, e3, 51, 60, 61, b1, 51, 9a]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 1.9%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35904749568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3347 MB → 3509583872 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 1.9%, Mem: 35904749568/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=1.9%, mem=35904749568/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=1.9%, mem=35904749568/134819328000
+[DEBUG] cosmic_config: Using standard config dir: Some("/home/mark/.config")
+[INFO] cosmic_applet: Saved MinimonConfig to COSMIC config system
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [42, a0, e2, 4f, 27, 30, bd, e0]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [42, a0, e2, 4f, 27, 30, bd, e0]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.2%, temp: Some(33.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35904274432 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3347 MB → 3509583872 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 33
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.2%, Mem: 35904274432/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35904274432/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35904274432/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [52, 2d, 6d, 49, 79, 35, ab, bd]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [52, 2d, 6d, 49, 79, 35, ab, bd]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(33.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35906596864 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3345 MB → 3507486720 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 33
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.2%, Mem: 35906596864/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35906596864/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.2%, mem=35906596864/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [81, 6d, 05, 58, 0a, fe, 0a, c9]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [81, 6d, 05, 58, 0a, fe, 0a, c9]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.5%, temp: Some(56.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35908034560 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 56
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.5%, Mem: 35908034560/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35908034560/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35908034560/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [27, 8b, f6, 62, 22, c4, 76, c0]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [27, 8b, f6, 62, 22, c4, 76, c0]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.0%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35908984832 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.0%, Mem: 35908984832/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.0%, mem=35908984832/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.0%, mem=35908984832/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [58, 4b, aa, 46, 2d, 19, de, 7d]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [58, 4b, aa, 46, 2d, 19, de, 7d]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.4%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35910344704 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.4%, Mem: 35910344704/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35910344704/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35910344704/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [dc, ab, 43, e8, c3, 7e, 42, 07]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [dc, ab, 43, e8, c3, 7e, 42, 07]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.4%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35912548352 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(2.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.4%, Mem: 35912548352/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35912548352/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35912548352/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [c5, e9, fa, e1, 50, 6b, f1, 19]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [c5, e9, fa, e1, 50, 6b, f1, 19]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.2%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35912622080 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.2%, Mem: 35912622080/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35912622080/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35912622080/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [33, e2, 1f, 7d, 08, 00, 46, 11]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [33, e2, 1f, 7d, 08, 00, 46, 11]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 1.6%, temp: Some(33.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35913027584 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 33
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 1.6%, Mem: 35913027584/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=1.6%, mem=35913027584/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=1.6%, mem=35913027584/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=1.6%, mem=35913027584/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=1.6%, mem=35913027584/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [6f, 1b, 8f, 8a, b1, 58, ee, ec]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [6f, 1b, 8f, 8a, b1, 58, ee, ec]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.3%, temp: Some(33.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35912957952 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 33
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.3%, Mem: 35912957952/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.3%, mem=35912957952/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.3%, mem=35912957952/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.3%, mem=35912957952/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.3%, mem=35912957952/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [4e, 3e, 52, c8, 2e, 53, 20, 63]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [4e, 3e, 52, c8, 2e, 53, 20, 63]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.5%, temp: Some(33.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35913986048 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 33
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.5%, Mem: 35913986048/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35913986048/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35913986048/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35913986048/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35913986048/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [19, 5d, ac, 55, 2e, 13, 97, ef]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [19, 5d, ac, 55, 2e, 13, 97, ef]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.7%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35916226560 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(2.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.7%, Mem: 35916226560/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.7%, mem=35916226560/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.7%, mem=35916226560/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.7%, mem=35916226560/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.7%, mem=35916226560/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [d1, a6, 94, 6a, 29, e1, 68, b1]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [d1, a6, 94, 6a, 29, e1, 68, b1]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35916935168 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.7%, Mem: 35916935168/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35916935168/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.7%, mem=35916935168/134819328000
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.7%, mem=35916935168/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.7%, mem=35916935168/134819328000
+[WARN] iced_tiny_skia::geometry: Invalid path: " M 18.0 33.98"
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [96, bf, b5, 24, 6f, 11, 1d, d0]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [96, bf, b5, 24, 6f, 11, 1d, d0]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.2%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35917434880 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.2%, Mem: 35917434880/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35917434880/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.2%, mem=35917434880/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35917434880/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.2%, mem=35917434880/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [96, 87, 1c, c1, ee, 57, c4, 6f]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [96, 87, 1c, c1, ee, 57, c4, 6f]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.3%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35917377536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3325 MB → 3486515200 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.3%, Mem: 35917377536/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.3%, mem=35917377536/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.3%, mem=35917377536/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.3%, mem=35917377536/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.3%, mem=35917377536/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [63, b5, 3a, 05, 59, d3, 03, 10]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [63, b5, 3a, 05, 59, d3, 03, 10]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.0%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35921182720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3338 MB → 3500146688 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(8.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.0%, Mem: 35921182720/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.0%, mem=35921182720/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.0%, mem=35921182720/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.0%, mem=35921182720/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.0%, mem=35921182720/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.0%, mem=35921182720/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [cd, 01, d6, d7, e3, fc, 61, 63]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [cd, 01, d6, d7, e3, fc, 61, 63]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.4%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35917070336 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3352 MB → 3514826752 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(16.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 6.4%, Mem: 35917070336/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=6.4%, mem=35917070336/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=6.4%, mem=35917070336/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=6.4%, mem=35917070336/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=6.4%, mem=35917070336/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [c7, 20, c5, eb, 7a, 05, d8, 3e]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [c7, 20, c5, eb, 7a, 05, d8, 3e]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 8.5%, temp: Some(55.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35857190912 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3354 MB → 3516923904 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 55
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 8.5%, Mem: 35857190912/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=8.5%, mem=35857190912/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=8.5%, mem=35857190912/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=8.5%, mem=35857190912/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=8.5%, mem=35857190912/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [67, 5a, 3b, b0, 97, 8e, 1f, d9]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [67, 5a, 3b, b0, 97, 8e, 1f, d9]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35852050432 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3353 MB → 3515875328 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(7.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.5%, Mem: 35852050432/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35852050432/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.5%, mem=35852050432/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.5%, mem=35852050432/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.5%, mem=35852050432/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [46, 1f, 4e, f5, af, 2b, 99, 12]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [46, 1f, 4e, f5, af, 2b, 99, 12]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.5%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35842977792 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3352 MB → 3514826752 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.5%, Mem: 35842977792/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35842977792/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35842977792/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35842977792/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35842977792/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [2a, 9a, 51, 49, 87, 96, 02, 70]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [2a, 9a, 51, 49, 87, 96, 02, 70]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.2%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35831840768 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3351 MB → 3513778176 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.2%, Mem: 35831840768/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.2%, mem=35831840768/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.2%, mem=35831840768/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.2%, mem=35831840768/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.2%, mem=35831840768/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [aa, 06, 06, 2a, a2, 68, ad, 96]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [aa, 06, 06, 2a, a2, 68, ad, 96]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.1%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35852300288 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3348 MB → 3510632448 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.1%, Mem: 35852300288/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.1%, mem=35852300288/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.1%, mem=35852300288/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.1%, mem=35852300288/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.1%, mem=35852300288/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [c5, c2, 9a, 2d, bb, 56, 58, a3]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [c5, c2, 9a, 2d, bb, 56, 58, a3]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.8%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35851173888 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3350 MB → 3512729600 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.8%, Mem: 35851173888/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.8%, mem=35851173888/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.8%, mem=35851173888/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.8%, mem=35851173888/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.8%, mem=35851173888/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [df, a3, 5e, c4, 82, 8c, 66, 0f]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [df, a3, 5e, c4, 82, 8c, 66, 0f]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(64.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35849949184 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3347 MB → 3509583872 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(4.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 64
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.5%, Mem: 35849949184/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.5%, mem=35849949184/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.5%, mem=35849949184/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.5%, mem=35849949184/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.5%, mem=35849949184/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [66, ca, 23, 11, f1, ce, d6, ff]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [66, ca, 23, 11, f1, ce, d6, ff]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.3%, temp: Some(64.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35843543040 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3346 MB → 3508535296 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(5.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 64
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.3%, Mem: 35843543040/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35843543040/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.3%, mem=35843543040/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.3%, mem=35843543040/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.3%, mem=35843543040/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [3f, f5, c8, f7, 7f, 27, 19, 80]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [3f, f5, c8, f7, 7f, 27, 19, 80]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.9%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35846266880 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3346 MB → 3508535296 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(2.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.9%, Mem: 35846266880/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.9%, mem=35846266880/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.9%, mem=35846266880/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.9%, mem=35846266880/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.9%, mem=35846266880/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [76, 4f, 9b, 4d, 5d, fa, 56, 83]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [76, 4f, 9b, 4d, 5d, fa, 56, 83]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.6%, temp: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35847008256 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3346 MB → 3508535296 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 35
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.6%, Mem: 35847008256/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.6%, mem=35847008256/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.6%, mem=35847008256/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.6%, mem=35847008256/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.6%, mem=35847008256/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [49, 4a, f1, ad, 9b, 9e, 24, 99]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [49, 4a, f1, ad, 9b, 9e, 24, 99]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.6%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35845369856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3336 MB → 3498049536 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(2.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.6%, Mem: 35845369856/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.6%, mem=35845369856/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.6%, mem=35845369856/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.6%, mem=35845369856/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.6%, mem=35845369856/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [d4, 4a, 2c, 28, 30, d7, 91, f0]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [d4, 4a, 2c, 28, 30, d7, 91, f0]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.4%, temp: Some(34.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35848654848 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3340 MB → 3502243840 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(5.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 34
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.4%, Mem: 35848654848/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35848654848/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.4%, mem=35848654848/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.4%, mem=35848654848/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.4%, mem=35848654848/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [49, 44, 94, e6, 21, 89, 71, 5e]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [49, 44, 94, e6, 21, 89, 71, 5e]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(37.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35830321152 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3338 MB → 3500146688 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 37
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 4.7%, Mem: 35830321152/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.7%, mem=35830321152/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.7%, mem=35830321152/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=4.7%, mem=35830321152/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=4.7%, mem=35830321152/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [4e, 81, b5, 64, 68, 77, fb, 60]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [4e, 81, b5, 64, 68, 77, fb, 60]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.1%, temp: Some(36.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35840897024 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3335 MB → 3497000960 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 36
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 3.1%, Mem: 35840897024/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.1%, mem=35840897024/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.1%, mem=35840897024/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=3.1%, mem=35840897024/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=3.1%, mem=35840897024/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [2d, 17, bd, 02, a5, 08, 91, e1]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [2d, 17, bd, 02, a5, 08, 91, e1]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.5%, temp: Some(38.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35833798656 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3334 MB → 3495952384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 38
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.5%, Mem: 35833798656/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35833798656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35833798656/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.5%, mem=35833798656/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.5%, mem=35833798656/134819328000
+[DEBUG] cosmic_applet::network::udp_receiver:   Tag offset in buffer: 360 (buffer len: 392)
+[DEBUG] cosmic_applet::network::udp_receiver: 🔐 HMAC verification:
+[DEBUG] cosmic_applet::network::udp_receiver:   Secret key (first 8 bytes): [30, 31, 32, 33, 34, 35, 36, 37]
+[DEBUG] cosmic_applet::network::udp_receiver:   Received tag:  [97, 1e, 00, a3, 57, b0, 15, db]
+[DEBUG] cosmic_applet::network::udp_receiver:   Computed tag:  [97, 1e, 00, a3, 57, b0, 15, db]
+[DEBUG] cosmic_applet::network::udp_receiver:   ✓ Tags match
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 2.2%, temp: Some(38.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 35826286592 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 3331 MB → 3492806656 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(35.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 38
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: test-machine (CPU: 2.2%, Mem: 35826286592/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35826286592/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.2%, mem=35826286592/134819328000
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'test-machine' CPU=2.2%, mem=35826286592/134819328000
+[DEBUG] cosmic_applet: 🖼️  Rendering Panel: machine 'test-machine' CPU=2.2%, mem=35826286592/134819328000

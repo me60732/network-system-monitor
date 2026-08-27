@@ -1,8 +1,10 @@
 //! System temperature statistics.
 //!
-/// Collects CPU and GPU temperatures in Celsius using `/sys/class/thermal/` on Linux.
+/// Collects CPU and GPU temperatures in Celsius using `/sys/class/hwmon/` on Linux.
+/// Prioritizes Tdie/Tctl labels for AMD CPUs, and core/Package labels for Intel CPUs (like minimon-applet).
 /// On unsupported hardware, fields return `None`.
 
+use log::info;
 use serde::{Deserialize, Serialize};
 
 /// Temperature readings from system sensors — optional because not all systems expose thermal data.
@@ -16,13 +18,18 @@ pub struct TemperatureStats {
 
 /// Collect current temperature statistics.
 ///
-/// Reads CPU temperature from `/sys/class/thermal/thermal_zone*/temp` files (values are in millidegrees Celsius).
-/// Attempts to read GPU temperature from `/sys/class/drm/card0/device/hwmon/hwmon*/temp1_input` if available.
+/// Reads CPU temperature from `/sys/class/hwmon/` with sensor label prioritization:
+/// - **AMD**: Tdie > Tctl > Core* > Package*
+/// - **Intel**: Core* > Package*
+/// For GPU temperature, prioritizes gpu::collect().gpu_temp (NVML for NVIDIA) over sysfs fallback.
 /// Returns `None` for any sensor that cannot be read, rather than panicking — this allows the system
 /// to gracefully degrade on hardware without thermal sensors (e.g., some virtual machines or containers).
 pub fn collect() -> TemperatureStats {
-    let cpu_temp = read_cpu_temperature();
-    let gpu_temp = read_gpu_temperature();
+    let cpu_temp = find_cpu_temperature();
+    
+    // For GPU temp, prioritize GPU collector (which uses NVML for NVIDIA)
+    let gpu_stats = crate::gpu::collect();
+    let gpu_temp = gpu_stats.gpu_temp.or_else(|| read_gpu_temperature());
 
     TemperatureStats {
         cpu_temp,
@@ -30,42 +37,89 @@ pub fn collect() -> TemperatureStats {
     }
 }
 
-/// Read the CPU temperature from `/sys/class/thermal/` thermal zones.
-/// Iterates over all `thermal_zone*` directories and returns the first valid temperature in Celsius.
-fn read_cpu_temperature() -> Option<f32> {
+/// Find and read the most relevant CPU temperature sensor using hwmon label prioritization.
+/// AMD: Tdie > Tctl > Core* > Package*
+/// Intel: Core* > Package*
+fn find_cpu_temperature() -> Option<f32> {
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::Path;
 
-    let base = PathBuf::from("/sys/class/thermal");
+    let hwmon_base = Path::new("/sys/class/hwmon");
 
-    // Read directory entries for thermal_zone* directories
-    let entries = match fs::read_dir(&base) {
-        Ok(entries) => entries,
-        Err(_) => return None,
-    };
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if !path.is_dir() {
+    for entry in fs::read_dir(hwmon_base).ok()? {
+        let hwmon_path = entry.ok()?.path();
+        let name_path = hwmon_path.join("name");
+        
+        // Read the hwmon device name (coretemp, k10temp, etc.)
+        let name = match fs::read_to_string(&name_path) {
+            Ok(n) => n.trim().to_lowercase(),
+            Err(_) => continue,
+        };
+        
+        // Only process if it's a CPU temperature sensor
+        if !name.contains("coretemp") && 
+           !name.contains("k10temp") && 
+           !name.contains("zenpower") &&
+           !name.contains("cpu") {
             continue;
         }
-
-        // Check if the directory name starts with "thermal_zone"
-        if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
-            if dir_name.starts_with("thermal_zone") {
-                // Read the temp file — value is in millidegrees Celsius
-                let temp_path = path.join("temp");
-                if let Ok(content) = fs::read_to_string(&temp_path) {
-                    if let Ok(millideg) = content.trim().parse::<u64>() {
-                        // Convert millidegrees to degrees Celsius
-                        return Some((millideg as f32) / 1000.0);
-                    }
+        
+        info!("Found CPU hwmon: {}", name);
+        
+        // Look for temperature labels and inputs
+        let mut tdie_path: Option<std::path::PathBuf> = None;
+        let mut tctl_path: Option<std::path::PathBuf> = None;
+        let mut core_paths: Vec<std::path::PathBuf> = Vec::new();
+        
+        for i in 0..100 {
+            let label_path = hwmon_path.join(format!("temp{}_label", i));
+            let input_path = hwmon_path.join(format!("temp{}_input", i));
+            
+            if !input_path.exists() {
+                continue;
+            }
+            
+            if let Ok(label) = fs::read_to_string(&label_path) {
+                let label = label.trim();
+                
+                // Prioritize Tdie > Tctl
+                if label.eq_ignore_ascii_case("Tdie") {
+                    tdie_path = Some(input_path.clone());
+                    info!("  Found Tdie sensor");
+                } else if label.eq_ignore_ascii_case("Tctl") {
+                    tctl_path = Some(input_path.clone());
+                    info!("  Found Tctl sensor");
+                } else if label.starts_with("Core") || label.contains("Package") {
+                    core_paths.push(input_path.clone());
+                    info!("  Found {} sensor", label);
                 }
+            }
+        }
+        
+        // Use prioritized path: Tdie > Tctl > Core* > Package*
+        if let Some(path) = tdie_path.or(tctl_path) {
+            if let Some(millideg) = read_temp_millidegrees(&path) {
+                return Some(millideg as f32 / 1000.0);
+            }
+        }
+        
+        // Fallback to first core/Package sensor
+        for path in &core_paths {
+            if let Some(millideg) = read_temp_millidegrees(path) {
+                return Some(millideg as f32 / 1000.0);
             }
         }
     }
 
     None
+}
+
+/// Read temperature from a millidegree Celsius file and return the raw value.
+fn read_temp_millidegrees(path: &std::path::Path) -> Option<i32> {
+    use std::fs;
+    
+    let content = fs::read_to_string(path).ok()?;
+    content.trim().parse::<i32>().ok()
 }
 
 /// Read the GPU temperature from AMD/Intel DRM hwmon interface.
@@ -135,7 +189,7 @@ mod tests {
     #[test]
     fn test_read_cpu_temp_nonexistent() {
         // On systems without /sys/class/thermal (e.g., some containers), this should return None
-        let result = read_cpu_temperature();
+        let result = find_cpu_temperature();
         // We can't assert it's Some or None — depends on the system. Just verify no panic.
         if let Some(temp) = result {
             assert!(temp >= 0.0 && temp < 200.0);

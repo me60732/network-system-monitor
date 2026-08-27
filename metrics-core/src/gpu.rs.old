@@ -1,0 +1,208 @@
+//! GPU statistics — VRAM and utilization.
+//!
+//! Collects GPU video memory (VRAM) usage and GPU load percentage on systems with NVIDIA, AMD or Intel GPUs.
+/// Detects GPU vendor by scanning `/sys/class/drm/card*/device/vendor`:
+/// - **0x10de (NVIDIA)**: Uses NVML library for accurate VRAM/load stats
+/// - **0x1002 (AMD)** or **0x8086 (Intel)**: Reads from card0 sysfs (mem_info_vram_*, gpu_busy_percent)
+
+use nvml_wrapper::Nvml;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::sync::OnceLock;
+
+/// GPU statistics — optional because not all systems have a discrete GPU.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct GpuStats {
+    /// Total VRAM in bytes, or `None` if no discrete GPU is detected.
+    pub vram_total: Option<u64>,
+    /// Used VRAM in bytes, or `None` if unavailable.
+    pub vram_used: Option<u64>,
+    /// GPU utilization load percentage (0.0–100.0), or `None` if unavailable.
+    ///
+    /// ## Data Sources
+    ///
+    /// - **NVIDIA**: NVML device utilization rates (gpu field)
+    /// - **AMD/Intel**: Reads from `/sys/class/drm/card*/device/gpu_busy_percent`
+    /// - Returns `None` if GPU is absent or utilization file doesn't exist
+    pub gpu_load_percent: Option<f32>,
+    /// GPU temperature in Celsius, or `None` if unavailable.
+    ///
+    /// ## Data Sources
+    ///
+    /// - **NVIDIA**: NVML temperature sensor
+    /// - **AMD/Intel**: sysfs hwmon (if available)
+    /// - Returns `None` if GPU temp sensor not accessible
+    pub gpu_temp: Option<f32>,
+}
+
+/// Collect current GPU statistics.
+///
+/// Scans all DRM cards to detect vendor:
+/// - **NVIDIA (0x10de)**: Uses NVML for accurate VRAM and load stats
+/// - **AMD/Intel**: Reads from card0 sysfs if NVML not available or no NVIDIA GPU found
+pub fn collect() -> GpuStats {
+    // First, scan for NVIDIA GPUs using vendor detection
+    let nvidia_detected = has_nvidia_gpu();
+    
+    if nvidia_detected {
+        // Use NVML for NVIDIA GPU stats
+        return collect_nvidia_stats();
+    }
+    
+    // Fall back to sysfs for AMD/Intel (or no discrete GPU)
+    collect_sysfs_stats()
+}
+
+/// Detect if NVIDIA GPU is present by scanning /sys/class/drm/card*/device/vendor
+fn has_nvidia_gpu() -> bool {
+    let base = "/sys/class/drm";
+    
+    match fs::read_dir(base) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let vendor_path = path.join("device/vendor");
+                
+                if vendor_path.exists() {
+                    if let Ok(vendor_id) = fs::read_to_string(&vendor_path) {
+                        if vendor_id.trim() == "0x10de" {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        Err(_) => return false,
+    }
+    
+    false
+}
+
+/// Collect GPU stats using NVML for NVIDIA GPUs
+fn collect_nvidia_stats() -> GpuStats {
+    static NVML: OnceLock<Option<Nvml>> = OnceLock::new();
+    
+    let nvml = match NVML.get_or_init(|| Nvml::init().ok()) {
+        Some(n) => n,
+        None => return GpuStats::default(),
+    };
+    
+    // Try to get device count
+    let device_count = match nvml.device_count() {
+        Ok(count) => count,
+        Err(_) => return GpuStats::default(),
+    };
+    
+    if device_count == 0 {
+        return GpuStats::default();
+    }
+    
+    // Use first GPU (index 0)
+    let mut vram_total: Option<u64> = None;
+    let mut vram_used: Option<u64> = None;
+    let mut gpu_load_percent: Option<f32> = None;
+    let mut gpu_temp: Option<f32> = None;
+    
+    if let Ok(device) = nvml.device_by_index(0) {
+        // Get VRAM in bytes
+        if let Ok(mem) = device.memory_info() {
+            vram_total = Some(mem.total);
+            vram_used = Some(mem.used);
+        }
+        
+        // Get GPU load percentage (0-100)
+        if let Ok(rates) = device.utilization_rates() {
+            gpu_load_percent = Some(rates.gpu as f32);
+        }
+        
+        // Get GPU temperature in Celsius
+        if let Ok(temp) = device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu) {
+            gpu_temp = Some(temp as f32);
+        }
+    }
+    
+    GpuStats {
+        vram_total,
+        vram_used,
+        gpu_load_percent,
+        gpu_temp,
+    }
+}
+
+/// Collect GPU stats from sysfs (for AMD/Intel or fallback)
+fn collect_sysfs_stats() -> GpuStats {
+    // Scan all DRM cards to find first valid one
+    let base = "/sys/class/drm";
+    
+    let mut card_found: Option<String> = None;
+    
+    if let Ok(entries) = fs::read_dir(base) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            
+            // Check for VRAM total file (indicates valid GPU)
+            let vram_total_path = path.join("device/mem_info_vram_total");
+            
+            if vram_total_path.exists() {
+                if let Some(card_name) = path.file_name().and_then(|n| n.to_str()) {
+                    card_found = Some(card_name.to_string());
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Use first found card or default to card0
+    let card = card_found.unwrap_or_else(|| "card0".to_string());
+    
+    let vram_total = read_sysfs_file(&format!("/sys/class/drm/{}/device/mem_info_vram_total", card));
+    let vram_used = read_sysfs_file(&format!("/sys/class/drm/{}/device/mem_info_vram_used", card));
+
+    // GPU utilization load percentage (AMD/Intel: gpu_busy_percent)
+    let gpu_load_percent = read_sysfs_file(&format!("/sys/class/drm/{}/device/gpu_busy_percent", card))
+        .map(|percent| percent as f32);
+
+    GpuStats {
+        vram_total,
+        vram_used,
+        gpu_load_percent,
+        gpu_temp: None,  // AMD/Intel sysfs doesn't reliably expose GPU temp
+    }
+}
+
+/// Read a sysfs file and parse its contents as u64. Returns None if the file doesn't exist or can't be parsed.
+fn read_sysfs_file(path: &str) -> Option<u64> {
+    let content = fs::read_to_string(path).ok()?;
+    // sysfs files may contain trailing newlines and whitespace
+    let trimmed = content.trim();
+    trimmed.parse::<u64>().ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Handles None gracefully on unsupported hardware (Beverly writes after implementation).
+    #[test]
+    fn test_gpu_optional_handling() {
+        let stats = collect();
+        // On systems without a discrete GPU, both should be None.
+        // On GPU-equipped systems, they may return Some values — just verify no panic occurs.
+        if stats.vram_total.is_some() {
+            assert!(stats.vram_total.unwrap() > 0);
+        }
+        if stats.vram_used.is_some() {
+            // Used VRAM should not exceed total (if both are available)
+            if let Some(total) = stats.vram_total {
+                assert!(stats.vram_used.unwrap() <= total, "VRAM used exceeds total");
+            }
+        }
+    }
+
+    /// Verify that the sysfs file reader returns None for nonexistent paths.
+    #[test]
+    fn test_read_sysfs_nonexistent_path() {
+        let result = read_sysfs_file("/sys/class/drm/card0/device/nonexistent_file_12345");
+        assert!(result.is_none());
+    }
+}
