@@ -128538,3 +128538,1973 @@
 [DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
 [DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.4%, Mem: 31519674368/134819328000 bytes)
 [DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=4.4%, mem=31519674368/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31524937728 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(89.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.4%, Mem: 31524937728/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31524937728 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(89.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.4%, Mem: 31524937728/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31570702336 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(89.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.3%, Mem: 31570702336/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31570702336 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(89.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.3%, Mem: 31570702336/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31571988480 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.2%, Mem: 31571988480/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31571988480 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.2%, Mem: 31571988480/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572234240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.3%, Mem: 31572234240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572234240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.3%, Mem: 31572234240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572234240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.3%, Mem: 31572234240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572234240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.3%, Mem: 31572234240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572234240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.3%, Mem: 31572234240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31572721664 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.2%, Mem: 31572721664/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573241856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.2%, Mem: 31573241856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573241856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.2%, Mem: 31573241856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573241856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.2%, Mem: 31573241856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573241856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.2%, Mem: 31573241856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573241856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.3%, Mem: 31573241856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31573495808 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2459 MB → 2578448384 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.2%, Mem: 31573495808/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549599744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.6%, Mem: 31549599744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31549341696 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.7%, Mem: 31549341696/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=5.7%, mem=31549341696/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31551037440 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.7%, Mem: 31551037440/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31551037440 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.7%, Mem: 31551037440/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31552520192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.1%, Mem: 31552520192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31552520192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(13.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.0%, Mem: 31552520192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553290240 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.9%, Mem: 31553290240/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553536000 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.0%, Mem: 31553536000/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553781760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.0%, Mem: 31553781760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553781760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.0%, Mem: 31553781760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553781760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.0%, Mem: 31553781760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553781760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.0%, Mem: 31553781760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31553781760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.0%, Mem: 31553781760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.8%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.8%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.8%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.8%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.9%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554027520 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.9%, Mem: 31554027520/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31554863104 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.9%, Mem: 31554863104/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31532130304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(6.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.6%, Mem: 31532130304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31531618304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.7%, Mem: 31531618304/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=4.7%, mem=31531618304/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31527059456 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.7%, Mem: 31527059456/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31527059456 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.7%, Mem: 31527059456/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31522869248 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.1%, Mem: 31522869248/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31522869248 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(41.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.2%, Mem: 31522869248/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.9%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.8%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.9%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.9%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.0%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.0%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523516416 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.0%, Mem: 31523516416/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523999744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.0%, Mem: 31523999744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523999744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.1%, Mem: 31523999744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523999744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.1%, Mem: 31523999744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523999744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.1%, Mem: 31523999744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523999744 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.0%, Mem: 31523999744/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523483648 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.1%, Mem: 31523483648/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31523495936 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.1%, Mem: 31523495936/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518433280 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.0%, Mem: 31518433280/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.8%, Mem: 31514808320/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.8%, Mem: 31514808320/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.8%, Mem: 31514808320/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.8%, Mem: 31514808320/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.8%, Mem: 31514808320/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.9%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514808320 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.9%, Mem: 31514808320/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=3.8%, mem=31514808320/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515791360 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.8%, Mem: 31515791360/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.8%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515791360 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.8%, Mem: 31515791360/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31516024832 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.7%, Mem: 31516024832/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31516024832 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(11.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.7%, Mem: 31516024832/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515144192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.7%, Mem: 31515144192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515144192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.7%, Mem: 31515144192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515131904 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.6%, Mem: 31515131904/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515131904 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.6%, Mem: 31515131904/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515131904 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.5%, Mem: 31515131904/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515131904 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.5%, Mem: 31515131904/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515131904 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 40
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.5%, Mem: 31515131904/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515385856 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.5%, Mem: 31515385856/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510814720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.5%, Mem: 31510814720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510814720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.5%, Mem: 31510814720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.5%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510814720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.5%, Mem: 31510814720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510700032 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.6%, Mem: 31510700032/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.4%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510700032 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.4%, Mem: 31510700032/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511277568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.6%, Mem: 31511277568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.6%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511232512 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 3.6%, Mem: 31511232512/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=3.6%, mem=31511232512/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31512240128 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 3.7%, Mem: 31512240128/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 3.7%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31512240128 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 3.7%, Mem: 31512240128/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31513968640 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.0%, Mem: 31513968640/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514222592 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(19.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.0%, Mem: 31514222592/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.3%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514861568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.2%, Mem: 31514861568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515361280 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.3%, Mem: 31515361280/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515353088 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.3%, Mem: 31515353088/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515353088 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.3%, Mem: 31515353088/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515353088 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.3%, Mem: 31515353088/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515353088 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.3%, Mem: 31515353088/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31514222592 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.3%, Mem: 31514222592/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31515103232 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.4%, Mem: 31515103232/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511056384 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(9.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.4%, Mem: 31511056384/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.5%, Mem: 31511302144/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.5%, Mem: 31511302144/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.5%, Mem: 31511302144/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.6%, Mem: 31511302144/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.6%, Mem: 31511302144/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31511302144 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.6%, Mem: 31511302144/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=4.5%, mem=31511302144/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31512051712 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.5%, Mem: 31512051712/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31512051712 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.5%, Mem: 31512051712/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31546220544 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.2%, Mem: 31546220544/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31546466304 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(23.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.2%, Mem: 31546466304/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.2%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.3%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.3%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.3%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.3%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31547691008 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.4%, Mem: 31547691008/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.2%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31539412992 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.2%, Mem: 31539412992/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518015488 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(21.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.1%, Mem: 31518015488/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518003200 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.0%, Mem: 31518003200/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=5.0%, mem=31518003200/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31517941760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.0%, Mem: 31517941760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31517941760 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.0%, Mem: 31517941760/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31517831168 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.4%, Mem: 31517831168/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31518089216 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(25.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.4%, Mem: 31518089216/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.3%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.3%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.1%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.1%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.1%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.1%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520116736 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.1%, Mem: 31520116736/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520362496 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.3%, Mem: 31520362496/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520362496 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.3%, Mem: 31520362496/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520362496 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.3%, Mem: 31520362496/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520362496 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.3%, Mem: 31520362496/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520362496 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.2%, Mem: 31520362496/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.2%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31519121408 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2489 MB → 2609905664 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.2%, Mem: 31519121408/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.1%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31520112640 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2490 MB → 2610954240 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.1%, Mem: 31520112640/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510405120 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(1.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(39.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.5%, Mem: 31510405120/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.6%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31510536192 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.6%, Mem: 31510536192/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=4.6%, mem=31510536192/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31503212544 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.9%, Mem: 31503212544/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31503212544 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.9%, Mem: 31503212544/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31503708160 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.0%, Mem: 31503708160/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31503708160 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(80.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.0%, Mem: 31503708160/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.3%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505133568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.3%, Mem: 31505133568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505133568 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.4%, Mem: 31505133568/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504871424 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.5%, Mem: 31504871424/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504871424 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.5%, Mem: 31504871424/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504871424 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.5%, Mem: 31504871424/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504871424 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.5%, Mem: 31504871424/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504871424 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.5%, Mem: 31504871424/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504461824 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 6.1%, Mem: 31504461824/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.2%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31504941056 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 6.2%, Mem: 31504941056/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.2%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505465344 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 6.2%, Mem: 31505465344/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.2%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505465344 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 6.2%, Mem: 31505465344/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(61.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505453056 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 61
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 6.1%, Mem: 31505453056/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31505453056 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 6.1%, Mem: 31505453056/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.2%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31506743296 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 6.2%, Mem: 31506743296/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494696960 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(20.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 6.1%, Mem: 31494696960/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 6.1%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31494942720 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 6.1%, Mem: 31494942720/134819328000 bytes)
+[DEBUG] cosmic_applet: 🔄 RefreshMetrics: machine 'c' CPU=6.1%, mem=31494942720/134819328000
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31495811072 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 5.8%, Mem: 31495811072/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.8%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31495811072 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 5.8%, Mem: 31495811072/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.5%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 5.5%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.4%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(42.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 5.4%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 5.0%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 5.0%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.9%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497555968 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.9%, Mem: 31497555968/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497547776 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.4%, Mem: 31497547776/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for e: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497793536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: e (CPU: 4.3%, Mem: 31497793536/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for b: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497793536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: b (CPU: 4.3%, Mem: 31497793536/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497793536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.3%, Mem: 31497793536/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for c: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.3%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497793536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: c (CPU: 4.3%, Mem: 31497793536/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for d: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(32.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31497793536 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 32
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: d (CPU: 4.4%, Mem: 31497793536/134819328000 bytes)
+[WARN] cosmic_applet::network::udp_receiver: Per-machine key decryption failed for a: AEAD tag verification failed (tampered, forged, or wrong key), falling back to TEMP_SHARED_KEY
+[DEBUG] cosmic_applet::simple_sensors: 📊 CPU packet data - usage: 4.4%, temp: Some(31.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Memory packet data - used: 31498788864 bytes, total: 134819328000 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM used: 2455 MB → 2574254080 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU VRAM total: 24564 MB → 25757220864 bytes
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU load percent: Some(0.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 GPU temperature: Some(40.0)
+[DEBUG] cosmic_applet::simple_sensors: 📊 Temperature packet data - celsius: 31
+[DEBUG] cosmic_applet::network::udp_receiver: 📊 Updated metrics for machine: a (CPU: 4.4%, Mem: 31498788864/134819328000 bytes)

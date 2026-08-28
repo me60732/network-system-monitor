@@ -6350,3 +6350,103 @@ warning: `cosmic-applet` (manifest) generated 1 warning
 [2026-08-28T15:34:34Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
 [2026-08-28T15:34:34Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=570, nonce=[52, 5a, b3, d6]…, wire=356 bytes
 [2026-08-28T15:34:34Z DEBUG nmd_service] Sent metrics — seq=570, cpu=5.4%, mem=23.4%
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:35Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2459), vram_total=Some(24564), load=Some(6.0)%, temp=Some(41.0)°C
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:35Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:35Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=571, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:35Z DEBUG nmd_service] Sent metrics — seq=571, cpu=5.2%, mem=23.4%
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Network collection: 0ms
+[2026-08-28T15:34:36Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2490), vram_total=Some(24564), load=Some(6.0)%, temp=Some(42.0)°C
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:36Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 1ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:36Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=572, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:36Z DEBUG nmd_service] Sent metrics — seq=572, cpu=4.9%, mem=23.4%
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:37Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2489), vram_total=Some(24564), load=Some(1.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:37Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:37Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=573, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:37Z DEBUG nmd_service] Sent metrics — seq=573, cpu=3.9%, mem=23.4%
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:38Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2489), vram_total=Some(24564), load=Some(0.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:38Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:38Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=574, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:38Z DEBUG nmd_service] Sent metrics — seq=574, cpu=3.7%, mem=23.4%
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Network collection: 0ms
+[2026-08-28T15:34:39Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2489), vram_total=Some(24564), load=Some(9.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:39Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 1ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:39Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=575, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:39Z DEBUG nmd_service] Sent metrics — seq=575, cpu=4.3%, mem=23.4%
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:40Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2489), vram_total=Some(24564), load=Some(21.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:40Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:40Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=576, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:40Z DEBUG nmd_service] Sent metrics — seq=576, cpu=5.2%, mem=23.4%
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:41Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2489), vram_total=Some(24564), load=Some(1.0)%, temp=Some(39.0)°C
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:41Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:41Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=577, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:41Z DEBUG nmd_service] Sent metrics — seq=577, cpu=4.3%, mem=23.4%
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:42Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2455), vram_total=Some(24564), load=Some(20.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:42Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 2ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:42Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=578, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:42Z DEBUG nmd_service] Sent metrics — seq=578, cpu=5.3%, mem=23.4%
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] CPU collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Network collection: 1ms
+[2026-08-28T15:34:43Z DEBUG metrics_core::gpu] NVIDIA GPU stats: vram_used=Some(2455), vram_total=Some(24564), load=Some(0.0)%, temp=Some(40.0)°C
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] GPU collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Memory collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Swap collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Refreshing disk partitions cache
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Disk collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Disk IO collection: 0ms
+[2026-08-28T15:34:43Z DEBUG nmd_service::metrics_aggregator] Metrics aggregation completed in 3ms (cached memory_total=134819328000, vram_total=Some(24564), partitions=4)
+[2026-08-28T15:34:43Z DEBUG nmd_service::udp_sender] 🔐 Encrypted packet: seq=579, nonce=[52, 5a, b3, d6]…, wire=356 bytes
+[2026-08-28T15:34:43Z DEBUG nmd_service] Sent metrics — seq=579, cpu=4.9%, mem=23.4%
