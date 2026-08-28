@@ -1,6 +1,0 @@
-# Test configuration for nmd-service
-host = "127.0.0.1"
-port = 51057
-refresh_interval_secs = 2
-machine_id = "test-machine"
-hmac_secret_path = "/home/mark/Documents/in_cloud/Development/network-system-monitor/test-env/etc/nmd/secret.key"

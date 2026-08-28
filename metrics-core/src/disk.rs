@@ -4,7 +4,6 @@
 //! Total/used bytes are read directly from each Disk via built-in methods — no libc or statvfs dependency required.
 //! IO statistics come in two forms:
 //!
-//! * [`collect_io()`] - legacy function, returns cumulative totals since boot
 //! * [`DiskIoCollector`] - stateful collector that returns delta bytes since last call (recommended)
 
 use serde::{Deserialize, Serialize};
@@ -12,7 +11,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{BufRead, BufReader};
-use sysinfo::{DiskRefreshKind, Disks};
+use sysinfo::Disks;
 
 /// Disk partition statistics for one mount point.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -41,34 +40,6 @@ pub struct DiskIoStats {
 pub struct DiskStats {
     /// One entry per detected mount point with usage data.
     pub partitions: Vec<PartitionStat>,
-}
-
-// Legacy function for backward compatibility - creates new instance each call, returns cumulative.
-// Legacy function kept for backward compatibility. Creates new instance each call.
-// Legacy function for backward compatibility - creates new instance each call, returns cumulative.
-/// # Deprecated
-///
-/// This function creates a new Disks instance on each call and cannot track deltas properly.
-/// Use [`DiskIoCollector`] instead which maintains state between calls.
-pub fn collect_io() -> DiskIoStats {
-    let r = DiskRefreshKind::nothing().with_io_usage();
-    let mut disks = Disks::new();
-    disks.refresh_specifics(true, r);
-
-    let mut total_read = 0u64;
-    let mut total_write = 0u64;
-
-    for disk in disks.list() {
-        let usage = disk.usage();
-        // Legacy: uses cumulative values since new instance has no old state
-        total_read += usage.total_read_bytes;
-        total_write += usage.total_written_bytes;
-    }
-
-    DiskIoStats {
-        read_bytes: total_read,
-        write_bytes: total_write,
-    }
 }
 
 /// Raw sector counts from /proc/diskstats for a single device.
@@ -333,39 +304,6 @@ fn is_virtual_fs(fs_type: &OsStr) -> bool {
 mod tests {
     use super::*;
 
-    /// Diagnostic: test the new /proc/diskstats-based DiskIoCollector over 2 seconds
-    #[test]
-    fn test_disk_io_diagnostic() {
-        use std::{
-            thread,
-            time::{Duration, Instant},
-        };
-
-        let mut collector = DiskIoCollector::new();
-        // First collect drains the baseline
-        let _ = collector.collect();
-
-        println!("\nDiskIoCollector baseline established. Sleeping 2 seconds...");
-        let t = Instant::now();
-        thread::sleep(Duration::from_secs(2));
-
-        let stats = collector.collect();
-        let secs = t.elapsed().as_secs_f64();
-
-        println!("Over {:.2}s:", secs);
-        println!(
-            "  Read:  {} bytes  ({:.2} MB/s)",
-            stats.read_bytes,
-            stats.read_bytes as f64 / secs / 1_048_576.0
-        );
-        println!(
-            "  Write: {} bytes  ({:.2} MB/s)",
-            stats.write_bytes,
-            stats.write_bytes as f64 / secs / 1_048_576.0
-        );
-        println!("  (idle system shows near-zero; run under disk load for non-zero)");
-    }
-
     /// DiskIoCollector returns delta bytes since last call (valid after second call)
     #[test]
     fn test_disk_io_collector_delta_second_call() {
@@ -379,7 +317,7 @@ mod tests {
         assert!(second.write_bytes <= u64::MAX);
     }
 
-    /// At least one partition returned on Linux (Beverly writes after implementation).
+    /// At least one partition returned on Linux.
     #[test]
     fn test_disk_partitions_nonempty() {
         let stats = collect();

@@ -355,8 +355,6 @@ impl Default for AppState {
 }
 
 /// Entry point — registers the application with Cosmic's panel system.
-/// (dead_code allowed: unused when this file is compiled as the lib target for tests/benches.)
-#[allow(dead_code)]
 fn main() -> Result<(), cosmic::iced::Error> {
     // Initialize logging to file
     use env_logger::Builder;

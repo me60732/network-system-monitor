@@ -30,10 +30,10 @@ impl LocalMonitor {
     fn detect_monitor_app() -> String {
         // Check common system monitor binaries in order of preference.
         let candidates = [
-            "cosmic-system-monitor",  // Preferred — matches Cosmic desktop environment.
-            "gnome-system-monitor",   // GNOME fallback.
-            "htop",                   // Terminal-based fallback (may not have GUI).
-            "ksysguard",              // KDE fallback.
+            "cosmic-system-monitor", // Preferred — matches Cosmic desktop environment.
+            "gnome-system-monitor",  // GNOME fallback.
+            "htop",                  // Terminal-based fallback (may not have GUI).
+            "ksysguard",             // KDE fallback.
         ];
 
         for cmd in &candidates {
@@ -62,8 +62,7 @@ impl LocalMonitor {
         log::info!("Launching system monitor: {}", self.monitor_cmd);
 
         // Spawn the monitor app as a detached process (don't block the applet).
-        let child = Command::new(&self.monitor_cmd)
-            .spawn()?;  // TODO: Add proper error handling + fallback chain (Beverly implements after review).
+        let child = Command::new(&self.monitor_cmd).spawn()?; // TODO: Add proper error handling + fallback chain (Beverly implements after review).
 
         log::info!("System monitor launched with PID {}", child.id());
         Ok(())
@@ -74,12 +73,6 @@ impl LocalMonitor {
     pub fn open_system_monitor() -> Result<(), std::io::Error> {
         let monitor = LocalMonitor::new();
         monitor.open()
-    }
-
-    /// Log placeholder message for local monitor launch.
-    pub fn print_placeholder() {
-        log::info!("LocalMonitor: Open local system monitor (not yet implemented)");
-        log::info!("LocalMonitor::print_placeholder called — stub only");
     }
 }
 
@@ -99,25 +92,30 @@ mod tests {
         let cmd = LocalMonitor::detect_monitor_app();
         // Should return one of the known candidate commands.
         assert!(
-            ["cosmic-system-monitor", "gnome-system-monitor", "htop", "ksysguard"]
-                .contains(&cmd.as_str()),
-            "Detected monitor command should be a known candidate, got: {}", cmd
+            [
+                "cosmic-system-monitor",
+                "gnome-system-monitor",
+                "htop",
+                "ksysguard"
+            ]
+            .contains(&cmd.as_str()),
+            "Detected monitor command should be a known candidate, got: {}",
+            cmd
         );
     }
 
-    /// LocalMonitor initializes with auto-detect enabled (Beverly writes).
+    /// LocalMonitor initializes with auto-detect enabled.
     #[test]
     fn test_default_init() {
         let monitor = LocalMonitor::default();
-        assert!(monitor.auto_detect, "Auto-detection should be enabled by default");
+        assert!(
+            monitor.auto_detect,
+            "Auto-detection should be enabled by default"
+        );
         // Monitor command should be set to a detected or fallback value.
-        assert!(!monitor.monitor_cmd.is_empty(), "Monitor command should not be empty");
-    }
-
-    /// Placeholder prints expected message without launching (Beverly writes).
-    #[test]
-    fn test_placeholder() {
-        LocalMonitor::print_placeholder();  // Should print and return without error.
-        assert!(true, "Placeholder call completed successfully");
+        assert!(
+            !monitor.monitor_cmd.is_empty(),
+            "Monitor command should not be empty"
+        );
     }
 }

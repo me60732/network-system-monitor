@@ -44,7 +44,8 @@ pub struct UdpSender {
     socket: UdpSocket,
     dest: SocketAddr,
     cipher: ChaCha20Poly1305,
-    #[allow(dead_code)] // Held for Phase 2 ECDH pairing — persisted identity established in Phase 1.
+    #[allow(dead_code)]
+    // Held for Phase 2 ECDH pairing — persisted identity established in Phase 1.
     identity_key: SigningKey,
     sequence_counter: AtomicU32,
     nonce_prefix: [u8; 4],
@@ -69,15 +70,18 @@ impl UdpSender {
         use std::io::Read;
         File::open("/dev/urandom")
             .and_then(|mut f| f.read_exact(&mut random_bytes))
-            .map_err(|e| std::io::Error::other(
-                format!("Failed to generate session randomness: {}", e),
-            ))?;
+            .map_err(|e| {
+                std::io::Error::other(format!("Failed to generate session randomness: {}", e))
+            })?;
         let mut sender_session_id = [0u8; 16];
         sender_session_id.copy_from_slice(&random_bytes[..16]);
         let mut nonce_prefix = [0u8; 4];
         nonce_prefix.copy_from_slice(&random_bytes[16..]);
 
-        log::info!("🔐 Generated sender_session_id: {:02x?}", &sender_session_id[..4]);
+        log::info!(
+            "🔐 Generated sender_session_id: {:02x?}",
+            &sender_session_id[..4]
+        );
 
         // Load or generate the persistent Ed25519 identity keypair (Phase 2 pairing identity).
         let identity_key = Self::load_or_generate_keypair(Self::default_keypair_path())?;
@@ -97,7 +101,10 @@ impl UdpSender {
     /// Default on-disk location of the Ed25519 keypair: `~/.config/nmd/keypair.key`.
     fn default_keypair_path() -> PathBuf {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".config").join("nmd").join(KEYPAIR_FILENAME)
+        PathBuf::from(home)
+            .join(".config")
+            .join("nmd")
+            .join(KEYPAIR_FILENAME)
     }
 
     /// Load the Ed25519 keypair from `path`, generating and persisting a new one if absent.
@@ -110,7 +117,11 @@ impl UdpSender {
             let keypair_bytes: [u8; 64] = bytes.as_slice().try_into().map_err(|_| {
                 std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    format!("Keypair file {} must be exactly 64 bytes, got {}", path.display(), bytes.len()),
+                    format!(
+                        "Keypair file {} must be exactly 64 bytes, got {}",
+                        path.display(),
+                        bytes.len()
+                    ),
                 )
             })?;
             let key = SigningKey::from_keypair_bytes(&keypair_bytes).map_err(|e| {
@@ -133,7 +144,10 @@ impl UdpSender {
             use std::os::unix::fs::PermissionsExt;
             std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
         }
-        log::info!("🔑 Generated new Ed25519 identity keypair at {}", path.display());
+        log::info!(
+            "🔑 Generated new Ed25519 identity keypair at {}",
+            path.display()
+        );
         Ok(key)
     }
 
@@ -156,9 +170,7 @@ impl UdpSender {
 
         // Serialize the packet (plaintext — encrypted below, never sent as-is)
         let packet_buf = rkyv::to_bytes::<rkyv::rancor::Error>(&outgoing)
-            .map_err(|e| std::io::Error::other(
-                format!("Rkyv serialization failed: {}", e),
-            ))?;
+            .map_err(|e| std::io::Error::other(format!("Rkyv serialization failed: {}", e)))?;
 
         // Unique nonce: random per-session prefix + monotonic counter (never reused — see module docs)
         let nonce = crypto::build_nonce(
@@ -171,7 +183,9 @@ impl UdpSender {
 
         log::debug!(
             "🔐 Encrypted packet: seq={}, nonce={:02x?}…, wire={} bytes",
-            outgoing.sequence, &nonce[..4], wire_packet.len()
+            outgoing.sequence,
+            &nonce[..4],
+            wire_packet.len()
         );
 
         // Send over UDP
@@ -189,10 +203,12 @@ impl UdpSender {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::packet::{ArchivedMetricPacket, CpuMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics, DiskMetrics};
+    use crate::packet::{
+        ArchivedMetricPacket, CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics,
+    };
     use std::sync::atomic::Ordering;
 
-    /// Sending to an invalid address doesn't panic (Beverly writes after implementation).
+    /// Sending to an invalid address fails gracefully.
     #[test]
     fn test_send_to_invalid_addr_fails_gracefully() {
         let dest: SocketAddr = "127.0.0.1:51057".parse().unwrap();
@@ -200,7 +216,9 @@ mod tests {
 
         let packet = MetricPacket {
             version: crate::packet::PROTOCOL_VERSION,
-            machine_id: [b't', b'e', b's', b't', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            machine_id: [
+                b't', b'e', b's', b't', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
             sender_session_id: [0u8; 16],
             timestamp: 12345,
             sequence: 99,
@@ -246,7 +264,9 @@ mod tests {
 
         let packet = MetricPacket {
             version: crate::packet::PROTOCOL_VERSION,
-            machine_id: [b's', b'e', b'q', b't', b'e', b's', b't', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            machine_id: [
+                b's', b'e', b'q', b't', b'e', b's', b't', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
             sender_session_id: [0u8; 16],
             timestamp: 100,
             sequence: 0,
@@ -283,7 +303,7 @@ mod tests {
         sender.send(&packet).expect("First send failed");
         let seq_after_first = sender.sequence_counter.load(Ordering::SeqCst);
         assert_eq!(seq_after_first, 1); // Should have incremented to 1
-        
+
         // Second send — sequence should be 1 (fetch_add returns previous value).
         sender.send(&packet).expect("Second send failed");
         let seq_after_second = sender.sequence_counter.load(Ordering::SeqCst);
@@ -296,15 +316,38 @@ mod tests {
     fn test_encryption_roundtrip() {
         let packet = MetricPacket {
             version: crate::packet::PROTOCOL_VERSION,
-            machine_id: [b'r', b't', b'r', b'i', b'p', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            machine_id: [
+                b'r', b't', b'r', b'i', b'p', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
             sender_session_id: [7u8; 16],
             timestamp: 1_700_000_000,
             sequence: 5,
-            cpu: CpuMetrics { usage_percent: 33.5, temperature_celsius: Some(61.0) },
-            gpu: GpuMetrics { load_percent: Some(12.0), vram_used_mb: Some(1024), vram_total_mb: Some(8192), temperature_celsius: None },
-            memory: MemoryMetrics { used_bytes: 4_000_000_000, total_bytes: 16_000_000_000, swap_used_pct: 1.5 },
-            network: NetworkMetrics { rx_bytes: 111, tx_bytes: 222 },
-            disk: DiskMetrics { used_bytes: 10, total_bytes: 100, read_bytes: None, write_bytes: None, partitions: Vec::new() },
+            cpu: CpuMetrics {
+                usage_percent: 33.5,
+                temperature_celsius: Some(61.0),
+            },
+            gpu: GpuMetrics {
+                load_percent: Some(12.0),
+                vram_used_mb: Some(1024),
+                vram_total_mb: Some(8192),
+                temperature_celsius: None,
+            },
+            memory: MemoryMetrics {
+                used_bytes: 4_000_000_000,
+                total_bytes: 16_000_000_000,
+                swap_used_pct: 1.5,
+            },
+            network: NetworkMetrics {
+                rx_bytes: 111,
+                tx_bytes: 222,
+            },
+            disk: DiskMetrics {
+                used_bytes: 10,
+                total_bytes: 100,
+                read_bytes: None,
+                write_bytes: None,
+                partitions: Vec::new(),
+            },
             uptime_seconds: 42,
         };
 
@@ -343,7 +386,11 @@ mod tests {
         assert_eq!(meta.len(), 64, "keypair file must be 64 bytes");
         {
             use std::os::unix::fs::PermissionsExt;
-            assert_eq!(meta.permissions().mode() & 0o777, 0o600, "keypair file must be 0600");
+            assert_eq!(
+                meta.permissions().mode() & 0o777,
+                0o600,
+                "keypair file must be 0600"
+            );
         }
 
         let loaded = UdpSender::load_or_generate_keypair(path.clone()).expect("load");

@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use ed25519_dalek::SigningKey;
-#[allow(unused_imports)]
 use getrandom::getrandom;
 use hex::serde as hex_serde;
 use serde_derive::{Deserialize, Serialize};

@@ -91,71 +91,9 @@ impl NetworkCollector {
     }
 }
 
-// Legacy standalone function for backward compatibility - uses cumulative values.
-/// # Deprecated
-///
-/// This function creates a new Networks instance on each call and cannot track deltas properly.
-/// Use [`NetworkCollector::collect`] instead which maintains state between calls.
-pub fn collect() -> NetworkStats {
-    // In sysinfo 0.35, Networks is a standalone type with new_with_refreshed_list().
-    let networks = Networks::new_with_refreshed_list();
-
-    let interfaces: Vec<InterfaceStat> = networks
-        .list()
-        .iter()
-        .map(|(name, data)| {
-            // Note: sysinfo 0.39 Networks data does not expose packet counters or dropped counts.
-            // Those require direct /proc/net/dev parsing (third field: packets, fourth: dropped).
-            // For now, we report None; future enhancement could add procfs-based packet stats.
-
-            InterfaceStat {
-                name: name.clone(),
-                rx_bytes: data.total_received(),
-                tx_bytes: data.total_transmitted(),
-                rx_packets: None,
-                tx_packets: None,
-                rx_dropped: None,
-                tx_dropped: None,
-            }
-        })
-        .collect();
-
-    NetworkStats { interfaces }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// Loopback or eth0/wlan0 present (Beverly writes after implementation).
-    #[test]
-    fn test_network_interfaces_present() {
-        let stats = collect();
-        // On any Linux system, at least the loopback interface ("lo") should be present.
-        assert!(
-            !stats.interfaces.is_empty(),
-            "Expected at least one network interface (loopback)"
-        );
-    }
-
-    /// Loopback interface must be present on Linux.
-    #[test]
-    fn test_loopback_present() {
-        let stats = collect();
-        let has_lo = stats.interfaces.iter().any(|iface| iface.name == "lo");
-        assert!(has_lo, "Expected loopback interface 'lo' in network stats");
-    }
-
-    /// RX and TX byte counters should be non-negative (they're u64, so always >= 0).
-    #[test]
-    fn test_byte_counters_valid() {
-        let stats = collect();
-        for iface in &stats.interfaces {
-            // Counters are cumulative since boot — they can theoretically be zero if no traffic.
-            assert!(iface.rx_bytes <= u64::MAX);
-            assert!(iface.tx_bytes <= u64::MAX);
-        }
-    }
 
     /// NetworkCollector returns delta bytes since last call (valid after second call)
     #[test]
@@ -165,7 +103,7 @@ mod tests {
         let _first = collector.collect();
         // Second call returns delta since first call
         let second = collector.collect();
-        // After two calls, the delta should be valid (non-None, u64 values)
+        // After two calls, the delta should be valid (u64 values)
         for iface in &second.interfaces {
             assert!(iface.rx_bytes <= u64::MAX);
             assert!(iface.tx_bytes <= u64::MAX);
