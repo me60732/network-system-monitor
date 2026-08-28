@@ -355,6 +355,9 @@ impl Default for AppState {
 }
 
 /// Entry point — registers the application with Cosmic's panel system.
+/// `#[allow(dead_code)]` is required because this file is compiled as both a lib and bin
+/// target; the lib compilation sees `main` as unreachable.
+#[allow(dead_code)]
 fn main() -> Result<(), cosmic::iced::Error> {
     // Initialize logging to file
     use env_logger::Builder;

@@ -82,10 +82,3 @@ path = "src/main.rs"
 # Unit tests run via the lib target — avoid compiling/running them twice.
 test = false
 bench = false
-
-[dev-dependencies]
-criterion = { workspace = true }
-
-[[bench]]
-name = "performance_bench"
-harness = false

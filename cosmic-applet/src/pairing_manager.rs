@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use ed25519_dalek::SigningKey;
-use getrandom::getrandom;
+
 use hex::serde as hex_serde;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -249,6 +249,7 @@ impl PairingManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use getrandom::getrandom;
     use std::path::PathBuf;
 
     #[test]

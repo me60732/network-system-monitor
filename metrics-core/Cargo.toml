@@ -27,10 +27,6 @@ default = []
 rkyv-serializable = ["dep:rkyv"]
 
 [[bench]]
-name = "cpu_bench"
-harness = false
-
-[[bench]]
 name = "memory_bench"
 harness = false
 
