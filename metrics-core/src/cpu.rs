@@ -45,6 +45,8 @@ pub struct CpuStats {
     pub usage: f32,
     /// Per-core breakdown — one entry per logical processor.
     pub cores: Vec<CoreStat>,
+    /// CPU package temperature in Celsius, or `None` if unavailable.
+    pub cpu_temp: Option<f32>,
 }
 
 /// Raw CPU time statistics from /proc/stat parsing.
@@ -79,6 +81,8 @@ pub struct CpuStat {
 /// ## Usage Pattern
 ///
 /// ```no_run
+/// use metrics_core::CpuCollector;
+/// 
 /// let mut collector = CpuCollector::new();
 /// 
 /// // Prime state with initial read (done in new())
@@ -104,6 +108,8 @@ pub struct CpuCollector {
     current_stats: HashMap<usize, CpuStat>,
     /// Per-core CPU load storage (transient, cleared each collect())
     cores: Vec<CoreStat>,
+    /// Cached CPU temperature sensor path (discovered once at initialization)
+    cpu_sensor_path: Option<std::path::PathBuf>,
 }
 
 impl CpuCollector {
@@ -112,11 +118,22 @@ impl CpuCollector {
     /// Performs one initial read of `/proc/stat` to populate `current_stats`,
     /// then clones it into `prev_stats`. The first call to `collect()` will
     /// compare this initial state against the next read, yielding accurate deltas.
+    /// 
+    /// Also discovers CPU temperature sensor path once at initialization.
     pub fn new() -> Self {
+        let cpu_sensor_path = find_cpu_sensor_path();
+        
+        if let Some(ref path) = cpu_sensor_path {
+            log::info!("CpuCollector: Found CPU sensor at {:?}", path);
+        } else {
+            log::warn!("CpuCollector: No CPU temperature sensor found");
+        }
+        
         let mut collector = Self {
             prev_stats: HashMap::new(),
             current_stats: HashMap::new(),
             cores: Vec::new(),  // Initialize empty per-core stats storage
+            cpu_sensor_path,
         };
         
         // Prime with initial read - both maps get the same data initially
@@ -243,7 +260,15 @@ impl CpuCollector {
         // Swap temp_stats into current_stats for next iteration baseline
         std::mem::swap(&mut self.current_stats, &mut temp_stats);
         
-        CpuStats { usage, cores: std::mem::take(&mut self.cores) }
+        // Read CPU temperature from cached sensor path
+        let cpu_temp = self.cpu_sensor_path.as_ref()
+            .and_then(|path| read_temperature_from_path(path));
+        
+        CpuStats { 
+            usage, 
+            cores: std::mem::take(&mut self.cores),
+            cpu_temp,
+        }
     }
 }
 
@@ -251,6 +276,93 @@ impl Default for CpuCollector {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Find CPU temperature sensor path by scanning /sys/class/hwmon/*.
+///
+/// Returns the path to the highest-priority temperature sensor input file:
+/// - **AMD**: Tdie > Tctl > Core* > Package*
+/// - **Intel**: Core* > Package*
+///
+/// This function performs expensive hwmon directory scanning but only needs to be called once
+/// at initialization. The resulting path is cached by CpuCollector for fast reads.
+fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
+    use std::fs;
+    use std::path::Path;
+
+    let hwmon_base = Path::new("/sys/class/hwmon");
+
+    for entry in fs::read_dir(hwmon_base).ok()? {
+        let hwmon_path = entry.ok()?.path();
+        let name_path = hwmon_path.join("name");
+        
+        // Read the hwmon device name (coretemp, k10temp, etc.)
+        let name = match fs::read_to_string(&name_path) {
+            Ok(n) => n.trim().to_lowercase(),
+            Err(_) => continue,
+        };
+        
+        // Only process if it's a CPU temperature sensor
+        if !name.contains("coretemp") && 
+           !name.contains("k10temp") && 
+           !name.contains("zenpower") &&
+           !name.contains("cpu") {
+            continue;
+        }
+        
+        log::info!("Found CPU hwmon: {}", name);
+        
+        // Look for temperature labels and inputs
+        let mut tdie_path: Option<std::path::PathBuf> = None;
+        let mut tctl_path: Option<std::path::PathBuf> = None;
+        let mut core_paths: Vec<std::path::PathBuf> = Vec::new();
+        
+        for i in 0..100 {
+            let label_path = hwmon_path.join(format!("temp{}_label", i));
+            let input_path = hwmon_path.join(format!("temp{}_input", i));
+            
+            if !input_path.exists() {
+                continue;
+            }
+            
+            if let Ok(label) = fs::read_to_string(&label_path) {
+                let label = label.trim();
+                
+                // Prioritize Tdie > Tctl
+                if label.eq_ignore_ascii_case("Tdie") {
+                    tdie_path = Some(input_path.clone());
+                    log::info!("  Found Tdie sensor");
+                } else if label.eq_ignore_ascii_case("Tctl") {
+                    tctl_path = Some(input_path.clone());
+                    log::info!("  Found Tctl sensor");
+                } else if label.starts_with("Core") || label.contains("Package") {
+                    core_paths.push(input_path.clone());
+                    log::info!("  Found {} sensor", label);
+                }
+            }
+        }
+        
+        // Use prioritized path: Tdie > Tctl > Core* > Package*
+        if let Some(path) = tdie_path.or(tctl_path) {
+            return Some(path);
+        }
+        
+        // Fallback to first core/Package sensor
+        if let Some(path) = core_paths.first() {
+            return Some(path.clone());
+        }
+    }
+
+    None
+}
+
+/// Read temperature value from a sensor path (e.g., /sys/class/hwmon/hwmon0/temp1_input).
+/// Returns temperature in Celsius, or None if read fails.
+fn read_temperature_from_path(path: &std::path::Path) -> Option<f32> {
+    use std::fs;
+    let raw = fs::read_to_string(path).ok()?;
+    let millidegrees: i32 = raw.trim().parse().ok()?;
+    Some(millidegrees as f32 / 1000.0)
 }
 
 #[cfg(test)]
@@ -273,10 +385,16 @@ mod tests {
     fn test_collector_collect_multiple_times() {
         let mut collector = CpuCollector::new();
         
+        // Sleep briefly to ensure CPU activity registers between priming and first collect
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        
         // First collect should compute deltas from the initial baseline
         let stats1 = collector.collect();
         assert!(stats1.usage >= 0.0 && stats1.usage <= 100.0);
         assert!(!stats1.cores.is_empty());
+        
+        // Sleep before second collect
+        std::thread::sleep(std::time::Duration::from_millis(100));
         
         // Second collect should use the previous result as baseline
         let stats2 = collector.collect();

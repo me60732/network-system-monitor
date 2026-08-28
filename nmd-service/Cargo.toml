@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Remote systemd service for Network System Monitor — pushes rkyv-encoded MetricPacket via UDP with HMAC-SHA256 authentication."
+description = "Remote systemd service for Network System Monitor — pushes rkyv-encoded MetricPacket via UDP with ChaCha20-Poly1305 AEAD encryption."
 
 [dependencies]
 # Shared metric collection library (same workspace)
@@ -14,10 +14,14 @@ metrics-core = { path = "../metrics-core" }
 # Serialization: rkyv for zero-copy packet encoding (rkyv 0.8.x: derive macros built-in)
 rkyv = { workspace = true, features = ["alloc"] }
 
-# HMAC-SHA256 authentication per Worf's security analysis (Worf Phase 1A)
-# hmac 0.13 requires sha2 from the digest 0.11 ecosystem — both are workspace deps now.
-hmac = { workspace = true }
-sha2 = { workspace = true }
+# ChaCha20-Poly1305 AEAD encryption for packet transport (Pairing System V1, Phase 1)
+chacha20poly1305 = { workspace = true }
+
+# Ed25519 identity keypair generation/storage (used for ECDH pairing in Phase 2)
+ed25519-dalek = { workspace = true }
+
+# OsRng for keypair + nonce-prefix generation
+rand = { workspace = true }
 
 # System info for machine_id and uptime collection at service level
 sysinfo = { workspace = true }

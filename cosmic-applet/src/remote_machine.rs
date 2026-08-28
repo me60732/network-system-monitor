@@ -87,6 +87,26 @@ impl RemoteMachine {
             .as_secs();
     }
     
+    /// Check if machine is offline (no packets received in timeout window)
+    pub fn is_offline(&self, timeout_secs: u64) -> bool {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        
+        now - self.last_update > timeout_secs
+    }
+    
+    /// Get time since last update in seconds
+    pub fn seconds_since_update(&self) -> u64 {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        
+        now - self.last_update
+    }
+    
     /// Render machine panel with all sensors - clickable to open settings
     pub fn render(&self) -> Element<'static, crate::AppMessage> {
         use cosmic::widget::{column, text, container, button};
@@ -94,11 +114,21 @@ impl RemoteMachine {
         let name = self.name.clone();
         let sensors_view = self.sensors.render();
         
+        // Check offline status (30 second timeout)
+        let is_offline = self.is_offline(30);
+        
+        let name_text = if is_offline {
+            let secs_ago = self.seconds_since_update();
+            format!("{} (offline {}s)", name, secs_ago)
+        } else {
+            name.clone()
+        };
+        
         // Wrap in button to make entire machine row clickable
         button::custom(
             container(
                 column![
-                    text(name.clone()).size(16),
+                    text(name_text).size(16),
                     sensors_view,
                 ]
                 .spacing(8)

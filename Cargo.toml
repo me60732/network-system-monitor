@@ -26,13 +26,23 @@ procfs = "0.17"
 rkyv = { version = "0.8", default-features = false, features = ["alloc", "bytecheck"] }
 serde = { version = "1.0", features = ["derive"] }
 
-# HMAC-SHA256 authentication — hmac 0.13 requires sha2 from the digest 0.11 ecosystem.
-# sha2 0.11 uses digest 0.11 (matching hmac 0.13's dependency); sha2 0.10 is incompatible with hmac 0.13.
-hmac = { version = "0.13", default-features = false }
-sha2 = { version = "0.11" }
+# ChaCha20-Poly1305 AEAD encryption for MetricPacket transport (Pairing System V1, Phase 1).
+# Replaces HMAC-SHA256: one encrypt/decrypt operation gives confidentiality + authenticity.
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
 
-# Constant-time comparison for HMAC tag verification (re-exported from crypto-common, matches hmac 0.13).
-crypto-common = { version = "0.2", default-features = false }
+# Ed25519 identity keypairs for the pairing system (Phase 2 will use these for ECDH/signing).
+# 'rand_core' feature enables SigningKey::generate(&mut OsRng).
+ed25519-dalek = { version = "2.1", default-features = false, features = ["std", "rand_core"] }
+
+# X25519 for ECDH key exchange in the pairing system (Phase 2).
+# 'static_secrets' feature enables StaticSecret::from/derive.
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+
+# chrono for datetime serialization in pairing.toml config files.
+chrono = { version = "0.4", features = ["serde"] }
+
+# Random number generation (nonce prefixes, keypair generation via rand::rngs::OsRng).
+rand = { version = "0.8", features = ["std"] }
 
 # Development dependencies (shared) - cannot be 'optional' at workspace level
 criterion = { version = "0.5" }

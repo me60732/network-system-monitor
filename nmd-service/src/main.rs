@@ -2,22 +2,23 @@
 //!
 //! This binary runs as a systemd service on each remote Linux machine (Pluto, Spark, etc.).
 //! It collects system metrics every 2 seconds via [`metrics_core::collect_all()`], packs them into
-//! an rkyv-encoded [`MetricPacket`], and sends the packet over UDP with HMAC-SHA256 authentication
-//! to the desktop Cosmic applet.
+//! an rkyv-encoded [`MetricPacket`], and sends the packet over UDP encrypted with
+//! ChaCha20-Poly1305 AEAD to the desktop Cosmic applet.
 //!
 //! ## Lifecycle (systemd entry point)
 //!
 //! ```text
-//! main() → parse CLI args (--config path) → load ServiceConfig + secret key
-//!   → init UdpSender + MetricsAggregator
+//! main() → parse CLI args (--config path) → load ServiceConfig
+//!   → init UdpSender (loads/generates Ed25519 identity keypair) + MetricsAggregator
 //!   → install SIGTERM/SIGINT handler for graceful shutdown
 //!   → loop: aggregate() → udp_sender.send() every interval_ms
 //!   → on signal: flush, log shutdown, exit cleanly (code 0)
 //! ```
 //!
-//! ## Security (Worf Phase 1A)
+//! ## Security (Pairing System V1, Phase 1)
 //!
-//! - HMAC-SHA256 authentication with pre-shared key at `/etc/nmd/secret.key` (0600).
+//! - ChaCha20-Poly1305 AEAD encryption — confidentiality + authenticity in one operation
+//!   (Phase 1 uses a temporary hardcoded key; Phase 2 derives per-machine keys via ECDH).
 //! - Replay protection: timestamp freshness (< 10s old) + monotonic sequence number.
 //! - Service runs as `nobody:nogroup` via systemd hardening directives.
 
@@ -62,42 +63,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.machine_id
     );
 
-    // 4. Load HMAC pre-shared key from /etc/nmd/secret.key (Worf Phase 1A).
-    let secret_key = match config.load_secret_key() {
-        Ok(key) => {
-            log::info!("HMAC secret key loaded successfully");
-            key
-        }
-        Err(e) => {
-            log::error!("Failed to load HMAC secret key: {}", e);
-            return Err(format!("Secret key loading failed: {}", e).into());
-        }
-    };
-
-    // 5. Initialize UDP sender with destination address + secret key + machine_id for pre-serialized buffer.
+    // 4. Initialize UDP sender — loads/generates the Ed25519 identity keypair and sets up the
+    //    ChaCha20-Poly1305 cipher (Phase 1: hardcoded TEMP_SHARED_KEY, ECDH-derived in Phase 2).
     let dest = config.dest_addr();
-    let mut sender = UdpSender::new(dest, secret_key, &config.machine_id)?;
+    let mut sender = UdpSender::new(dest, &config.machine_id)?;
     log::info!("UDP sender initialized — sending to {} (machine_id={})", dest, config.machine_id);
 
-    // 6. Initialize metrics aggregator.
+    // 5. Initialize metrics aggregator.
     let mut aggregator = MetricsAggregator::new(config.clone());
 
-    // 7. Install signal handlers for graceful shutdown (SIGTERM from systemd + SIGINT/Ctrl-C).
+    // 6. Install signal handlers for graceful shutdown (SIGTERM from systemd + SIGINT/Ctrl-C).
     install_signal_handlers();
 
     log::info!("Entering main loop — interval={}s", config.refresh_interval_secs);
 
-    // 8. Main collection + transmission loop.
+    // 7. Main collection + transmission loop.
     while !SHUTDOWN_REQUESTED.load(Ordering::SeqCst) {
         let start = std::time::Instant::now();
 
         // Collect metrics and pack into MetricPacket (delegates to metrics-core).
-        let flat_packet = aggregator.aggregate();
-        
-        // Convert flat packet to nested for UDP sender interface compatibility
-        let packet = flat_packet.to_nested();
+        let packet = aggregator.aggregate();
 
-        // Send via UDP with HMAC-SHA256 authentication — in-place buffer mutation, zero allocations.
+        // Send via UDP with ChaCha20-Poly1305 AEAD encryption.
         if let Err(e) = (&mut sender).send(&packet) {
             log::warn!("UDP send failed: {}", e);
         } else {
@@ -106,9 +93,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 0.0
             };
+            // Note: sequence counter was already incremented by send(), so subtract 1 for the packet we just sent
             log::debug!(
                 "Sent metrics — seq={}, cpu={:.1}%, mem={:.1}%",
-                packet.sequence,
+                sender.get_sequence() - 1,
                 packet.cpu.usage_percent,
                 mem_percent
             );

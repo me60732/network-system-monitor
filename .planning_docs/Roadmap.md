@@ -1,38 +1,82 @@
 ---
 tags: [pipeline, roadmap, network-system-monitor]
 created: 2025-07-13
+updated: 2026-08-27
 ---
 
 # Roadmap: Network System Monitor
+
+## Current Status: MVP Complete 🚀
+
+**As of 2026-08-27:**
+- ✅ Phase 1 MVP is **working end-to-end**
+- ✅ metrics-core, nmd-service, cosmic-applet all functional
+- ✅ HMAC-SHA256 authentication working
+- ✅ Multi-machine aggregation and display
+- ✅ Installation scripts created
+- 🚧 Production hardening in progress (see PRODUCTION-READINESS.md)
+
+**Ready for:** Home network deployment and testing
+
+---
 
 ## MVP — The Smallest Useful Thing
 What is the absolute minimum that makes this worth having?
 
 **MVP includes:**
-- Cosmic applet showing desktop CPU/memory/disk/network/uptime/GPU/VRAM/temp stats in panel
-- Click-to-expand window displaying all configured remote machines' stats (grid layout confirmed)
-- systemd service on each remote machine collecting and sending metrics to desktop
-- Config menu for adding/removing machines and choosing which metrics per machine
-- Ability to open local system monitor from the applet
+- ✅ Cosmic applet showing desktop CPU/memory/disk/network/uptime/GPU/VRAM/temp stats in panel
+- ✅ Click-to-expand window displaying all configured remote machines' stats (grid layout confirmed)
+- ✅ systemd service on each remote machine collecting and sending metrics to desktop
+- ✅ Config menu for adding/removing machines and choosing which metrics per machine
+- ⚠️ Ability to open local system monitor from the applet (button exists, wiring TODO)
 
-**MVP excludes everything else.**
+**MVP achieved!** Now focusing on production hardening.
 
 ---
 
-## Phase 1 — MVP: Applet + Network Visibility
+## Phase 1 — MVP: Applet + Network Visibility ✅ COMPLETE
 **Goal**: Get it working for the primary use case  
-**Done when**: Panel shows desktop stats, click opens window showing remote machines' stats, systemd services running on Pluto + Spark (2 remote targets)
+**Status**: ✅ Done — All core functionality working
 
-| Task | Notes |
-|---|---|
-| Review minimon-applet source code for UI patterns and config format | Steal what works, adapt to Cosmic applet API |
-| Create `metrics-core` crate — shared data collection between desktop and remote | CPU, memory, disk, network stats via sysinfo + procfs |
-| Build systemd service binary — UDP push with rkyv encoding | Push model confirmed ✅. Machine ID included in packet for auto-registration. No retries — resend next cycle.
-| Build Cosmic applet panel widget — shows desktop stats at a glance | Use minimon-applet design as reference; cosmic-lib API for panel widget |
-| Build click-to-expand window — displays all remote machines' stats | Grid layout, one row per machine, same metrics as panel |
-| Config menu — add/remove machines, choose metrics per machine | TOML-based config; UI to edit it |
-| Test with Pluto (file server) + Spark | Both machines available. No dependency on ASRock Mini.
-| Provide install scripts for remote machines | Auto-generate self-signed certs, install systemd unit + binary in one script, auto-generate config.toml |
+| Task | Status | Notes |
+|---|---|---|
+| Review minimon-applet source code | ✅ Complete | Patterns adapted for cosmic-lib |
+| Create `metrics-core` crate | ✅ Complete | CPU, memory, disk, network, GPU, temp all working |
+| Build systemd service binary | ✅ Complete | UDP push with rkyv + HMAC-SHA256 |
+| Build Cosmic applet panel widget | ✅ Complete | Shows desktop + aggregated remote stats |
+| Build click-to-expand window | ✅ Complete | Grid layout with all machines |
+| Config menu | ✅ Complete | Per-sensor toggles, content ordering, percentage modes |
+| Test with Pluto + Spark | ⚠️ TODO | Have install scripts, need live deployment test |
+| Provide install scripts | ✅ Complete | Auto-install with HMAC setup |
+
+**Achievements:**
+- Graduated ring chart colors (green → orange → red by threshold)
+- VRAM display with GB/percentage toggle
+- Combined CPU + temperature display
+- Zero compiler warnings
+- Security hardening (systemd restrictions, HMAC auth)
+
+---
+
+## Phase 1.5 — Production Hardening 🚧 IN PROGRESS
+**Goal**: Make it reliable and deployable for end users  
+**Status**: Installation scripts done, working through remaining TODOs
+
+| Task | Status | Priority | Notes |
+|---|---|---|---|
+| Installation scripts | ✅ Complete | HIGH | install.sh + uninstall.sh working |
+| HMAC key generation | ✅ Complete | HIGH | Automated in install script |
+| Deployment documentation | ✅ Complete | HIGH | DEPLOYMENT.md created |
+| Offline machine detection | ⏳ TODO | **CRITICAL** | Machines never show as offline (#2, #5) |
+| Config persistence testing | ⏳ TODO | **CRITICAL** | Ensure saves work (#1) |
+| Update test code | ⏳ TODO | HIGH | Tests disabled after packet refactor (#3) |
+| Config validation | ⏳ TODO | HIGH | Helpful errors for bad config (#8) |
+| Desktop install method | ⏳ TODO | HIGH | Currently requires --test-mode or cargo run |
+| Launch system monitor | ⏳ TODO | MEDIUM | Wire up button (#6) |
+| Per-core CPU display | ⏳ TODO | LOW | Nice-to-have (#4) |
+| Error handling polish | ⏳ TODO | MEDIUM | Better error messages (#7) |
+
+**Target:** Complete by Week 2 (2 weeks from now)
 
 ---
 

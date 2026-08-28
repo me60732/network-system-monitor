@@ -1,10 +1,10 @@
-//! # MetricPacket — rkyv-serializable UDP payload with HMAC-SHA256 authentication
+//! # MetricPacket — rkyv-serializable UDP payload (encrypted on the wire)
 //!
 //! Defines the `MetricPacket` struct that is serialized via rkyv and sent over UDP from each
-//! remote machine's systemd service to the desktop Cosmic applet. This module implements
-//! Worf's security analysis: every packet carries a timestamp, monotonic sequence counter,
-//! and HMAC-SHA256 tag computed over all fields using a pre-shared key stored at
-//! `/etc/nmd/secret.key`.
+//! remote machine's systemd service to the desktop Cosmic applet. The serialized bytes are
+//! encrypted with ChaCha20-Poly1305 AEAD by [`crate::udp_sender::UdpSender`] (see
+//! [`crate::crypto`] for the wire format) — authenticity and confidentiality come from the
+//! AEAD tag, so the packet itself carries no authentication field.
 //!
 //! ## Design Philosophy
 //!
@@ -12,24 +12,27 @@
 //! percentages. This allows the desktop applet to handle display preferences (show as percentage
 //! or absolute values) without requiring service changes.
 //!
-//! ## Security Fields (Worf — Phase 1A)
+//! ## Security Fields
 //!
 //! | Field          | Type       | Purpose                                                    |
 //! |----------------|------------|------------------------------------------------------------|
 //! | `timestamp`    | `u64`      | Unix seconds; replay protection via freshness (< 10s old)  |
 //! | `sequence`     | `u32`      | Monotonic counter per machine_id for replay detection      |
-//! | `hmac_tag`     | `[u8; 32]`| HMAC-SHA256 over all serialized fields (excluding tag)    |
+//!
+//! Packet authenticity/integrity is enforced by the Poly1305 tag on the encrypted wire packet,
+//! verified automatically during decryption (Pairing System V1, Phase 1).
 //!
 //! ## Protocol Version History
 //!
 //! - **v1**: Original flat structure with basic metrics
 //! - **v2**: Added optional IO/network stats, no struct change needed (rkyv handles missing fields)
 //! - **v3**: Refactored to nested metric group structs for better type safety and extensibility
+//! - **v4**: Removed embedded `hmac_tag`; transport switched to ChaCha20-Poly1305 AEAD encryption
 //!
 //! ## rkyv Compatibility
 //!
-//! The struct derives [`rkyv::Archive`] so it can be zero-copy deserialized on the desktop side.
-//! The `hmac_tag` field is excluded from the HMAC computation itself to avoid a circular dependency.
+//! The struct derives [`rkyv::Archive`] so it can be zero-copy deserialized on the desktop side
+//! (from the decrypted plaintext buffer).
 
 use rkyv::{Archive, Deserialize, Serialize};
 
@@ -103,14 +106,13 @@ pub struct DiskMetrics {
 
 /// A single metrics snapshot sent over UDP from remote machine → desktop applet.
 ///
-/// All fields except `hmac_tag` are included in the HMAC-SHA256 digest computed by
-/// [`crate::udp_sender::UdpSender::send`]. The tag is verified on receipt and packets
-/// failing verification or freshness checks (< 10s old) are silently dropped per Worf's spec.
+/// The serialized packet is encrypted with ChaCha20-Poly1305 by
+/// [`crate::udp_sender::UdpSender::send`]; the AEAD tag verifies authenticity + integrity on
+/// receipt. Packets failing decryption or freshness checks (< 10s old) are silently dropped.
 ///
-/// **Protocol Version 3**: Refactored to nested metric group structs for better type safety,
-/// extensibility, and clearer semantics. Each metrics group (CPU, GPU, Memory, Network, Disk)
-/// bundles related fields together, eliminating type confusion and making extension easier.
-pub const PROTOCOL_VERSION: u32 = 3;
+/// **Protocol Version 4**: Removed the embedded `hmac_tag` field — authentication moved to the
+/// AEAD tag on the encrypted wire packet (Pairing System V1, Phase 1).
+pub const PROTOCOL_VERSION: u32 = 4;
 
 #[derive(Debug, Clone, Archive, Serialize, Deserialize)]
 pub struct MetricPacket {
@@ -125,6 +127,12 @@ pub struct MetricPacket {
     /// Fixed length ensures all subsequent fields remain at constant offsets in the rkyv buffer,
     /// enabling true zero-copy in-place mutation via the munge API on every send cycle.
     pub machine_id: [u8; 20],
+
+    /// Random session identifier generated at sender startup (SEC-03 fix).
+    /// Used to differentiate restarts and avoid permanent sequence lockout.
+    /// Receiver tracks sequence numbers per (machine_id, sender_session_id) tuple.
+    /// Prevents sequence reset after sender restart from causing indefinite packet rejection.
+    pub sender_session_id: [u8; 16],
 
     /// Unix timestamp in seconds when this packet was assembled.
     /// The receiver checks `now - timestamp < 10s` for replay protection.
@@ -154,11 +162,6 @@ pub struct MetricPacket {
     /// System uptime in seconds since last boot.
     pub uptime_seconds: u64,
 
-    // ── Authentication Tag (Worf Phase 1A) ────────────────────────────────
-
-    /// HMAC-SHA256 tag over all fields above this one, computed by UdpSender before transmission.
-    /// The receiver recomputes and compares to verify packet integrity + authenticity.
-    pub hmac_tag: [u8; 32],
 }
 
 #[cfg(test)]
@@ -172,6 +175,7 @@ mod tests {
         let packet = MetricPacket {
             version: PROTOCOL_VERSION,
             machine_id: [0u8; 20], // Null-padded empty machine ID.
+            sender_session_id: [0u8; 16], // Empty session ID for test
             timestamp: 0,
             sequence: 0,
             cpu: CpuMetrics {
@@ -201,7 +205,6 @@ mod tests {
                 partitions: Vec::new(),
             },
             uptime_seconds: 0,
-            hmac_tag: [0u8; 32],
         };
         
         // Verify nested struct initialization

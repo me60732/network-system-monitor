@@ -23,10 +23,11 @@
 //! metrics-core = { path = "../metrics-core" }
 //! ```
 //!
-//! Then call any collector function directly:
+//! Then create and use a collector:
 //! ```no_run
-//! use metrics_core::cpu;
-//! let stats = cpu::collect();
+//! use metrics_core::CpuCollector;
+//! let mut collector = CpuCollector::new();
+//! let stats = collector.collect();
 //! println!("CPU usage: {:.1}%", stats.usage);
 //! ```
 //!
@@ -50,7 +51,6 @@ pub mod disk;
 pub mod gpu;
 pub mod memory;
 pub mod network;
-pub mod temperature;
 pub mod uptime;
 
 // Re-export top-level structs for ergonomic imports: `use metrics_core::CpuStats;`
@@ -59,29 +59,29 @@ pub use disk::{DiskStats, DiskIoStats, PartitionStat};
 pub use gpu::GpuStats;
 pub use memory::MemoryStats;
 pub use network::{InterfaceStat, NetworkCollector, NetworkStats};
-pub use temperature::TemperatureStats;
 pub use uptime::UptimeStats;
 
-// Re-export CPU collection functions - stateful collector is now primary
-pub use cpu::{CpuCollector};
+// Re-export stateful collectors
+pub use cpu::CpuCollector;
+pub use gpu::GpuCollector;
 
 /// Convenience function: collect all metrics in a single pass.
 ///
-/// Returns a tuple of `(CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats, TemperatureStats)`.
+/// Returns a tuple of `(CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats)`.
 /// This is the primary entry point for `nmd-service`'s aggregator and benchmarks.
 ///
 /// **Performance target**: < 50ms total on typical Linux hardware.
 ///
 /// ## Implementation Notes
 ///
-/// CPU uses a stateful collector (`CpuCollector`) for accurate delta measurement. Since this function
-/// cannot maintain state between calls, it creates a fresh collector, primes it with one read,
-/// and immediately collects to get accurate deltas from that initial baseline.
+/// CPU uses a stateful collector (`CpuCollector`) for accurate delta measurement and includes
+/// CPU temperature in the returned CpuStats. GPU collector includes GPU temperature in GpuStats.
+/// Since this function cannot maintain state between calls, it creates fresh collectors, primes
+/// them with one read, and immediately collects to get accurate deltas from that initial baseline.
 ///
 /// Memory, disk, network, and uptime metrics all read from `/proc` via sysinfo.
 /// This function creates a single `sysinfo::System` instance with `new_all()` to minimize
-/// syscall overhead — one batched read covers CPU (via collector), memory, and processes.
-/// GPU and temperature are handled separately since they require direct sysfs reads (`/sys/class/drm/`, `/sys/class/thermal/`).
+/// syscall overhead — one batched read covers memory and processes.
 ///
 /// ## CPU Measurement Accuracy Note
 ///
@@ -89,14 +89,14 @@ pub use cpu::{CpuCollector};
 /// The collector is initialized fresh each call, so the first read primes state and the second
 /// (in collect()) computes deltas from that baseline. This yields more accurate CPU percentages
 /// than single-snapshot approaches but adds ~1-2ms overhead.
-pub fn collect_all() -> (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats, TemperatureStats) {
+pub fn collect_all() -> (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeStats, GpuStats) {
     // Create a System instance and refresh all data sources in one batched pass.
     // new_all() refreshes CPU, memory, and processes from /proc/stat and /proc/meminfo.
     let sys = sysinfo::System::new_all();
     
-    // Use stateful CPU collector for accurate delta measurement
-    let mut cpu_collector = CpuCollector::new();  // Prime with initial read
-    let cpu_stats = cpu_collector.collect();      // Compute deltas from baseline
+    // Use stateful CPU collector for accurate delta measurement (includes CPU temp)
+    let mut cpu_collector = CpuCollector::new();  // Prime with initial read + discover CPU temp sensor
+    let cpu_stats = cpu_collector.collect();      // Compute deltas from baseline + read CPU temp
 
     // Build results from the shared System instance — no additional syscalls per module.
     let memory_stats = MemoryStats {
@@ -138,11 +138,10 @@ pub fn collect_all() -> (CpuStats, MemoryStats, DiskStats, NetworkStats, UptimeS
         load_avg: parse_loadavg_for_lib().unwrap_or((0.0, 0.0, 0.0)),
     };
 
-    // GPU and temperature use direct sysfs reads — cannot be batched through sysinfo.
+    // GPU uses direct sysfs reads or NVML — cannot be batched through sysinfo (includes GPU temp)
     let gpu_stats = gpu::collect();
-    let temp_stats = temperature::collect();
 
-    (cpu_stats, memory_stats, disk_stats, network_stats, uptime_stats, gpu_stats, temp_stats)
+    (cpu_stats, memory_stats, disk_stats, network_stats, uptime_stats, gpu_stats)
 }
 
 /// Parse `/proc/loadavg` and return the three load average values as a tuple of f32.

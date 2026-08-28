@@ -93,8 +93,7 @@ impl PanelWidget {
         // Build metrics row dynamically based on content order and visibility flags
         let mut metrics_items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
         
-        eprintln!("=== Panel Widget Rendering ===");
-        eprintln!("Machines count: {}, content_order length: {}", machines.len(), content_order.order.len());
+        log::debug!("Panel Widget Rendering: {} machines, {} content items", machines.len(), content_order.order.len());
         
         for content_type in &content_order.order {
             // Check if sensor is enabled before rendering
@@ -107,7 +106,7 @@ impl PanelWidget {
                 ContentType::DiskUsage => false, // Not implemented yet
             };
             
-            eprintln!("  {:?} - should_render={}", content_type, should_render);
+            log::debug!("  {:?} - should_render={}", content_type, should_render);
             
             if !should_render {
                 continue;
@@ -123,12 +122,11 @@ impl PanelWidget {
                     continue; // Already filtered above but keep for safety
                 }
             };
-            eprintln!("    → Added to metrics_items");
+            log::debug!("    → Added to metrics_items");
             metrics_items.push(element);
         }
         
-        eprintln!("Total items rendered: {}", metrics_items.len());
-        eprintln!("==============================");
+        log::debug!("Total panel items rendered: {}", metrics_items.len());
         
         let metrics_row = row(metrics_items)
             .spacing(8)

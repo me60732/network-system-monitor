@@ -20,10 +20,7 @@ pub const INSTALL_PATH: &str = "/usr/local/bin/nmd-service";
 /// Default configuration file path for nmd-service.
 pub const CONFIG_PATH: &str = "/etc/nmd/config.toml";
 
-/// HMAC pre-shared key file path (0600 permissions, 32 bytes).
-pub const SECRET_KEY_PATH: &str = "/etc/nmd/secret.key";
-
-/// Directory containing config + secret files on remote machines.
+/// Directory containing config files on remote machines.
 pub const CONFIG_DIR: &str = "/etc/nmd";
 
 /// User account under which the service runs (least-privilege principle per Worf's review).
@@ -100,7 +97,8 @@ pub fn uninstall_unit_file() -> Result<(), std::io::Error> {
 /// Generate the complete install script content for remote machine setup.
 ///
 /// This is used by `install-scripts/install.sh` to create `/etc/nmd/` directory, write config.toml,
-/// generate the HMAC secret key, copy the binary, and enable the systemd service — all in one step.
+/// copy the binary, and enable the systemd service — all in one step. The Ed25519 identity keypair
+/// is auto-generated at runtime on first start by nmd-service (no manual key distribution needed).
 pub const INSTALL_SCRIPT: &str = r#"#!/usr/bin/env bash
 # nmd-service install script — runs on remote machines (Pluto, Spark, etc.)
 set -euo pipefail
@@ -111,27 +109,19 @@ UNIT_FILE="/etc/systemd/system/nmd.service"
 
 echo "[nmd] Installing Network System Monitor service..."
 
-# 1. Create config directory with restricted permissions (Worf Phase 1A)
+# 1. Create config directory with restricted permissions
 mkdir -p "$CONFIG_DIR"
 chmod 750 "$CONFIG_DIR"
 
-# 2. Generate HMAC pre-shared key (32 raw bytes — must match load_secret_key() validation)
-if [ ! -f "$CONFIG_DIR/secret.key" ]; then
-    echo "[nmd] Generating HMAC secret key..."
-    head -c 32 /dev/urandom > "$CONFIG_DIR/secret.key"
-fi
-chmod 600 "$CONFIG_DIR/secret.key"
-
-# 3. Write default config.toml (edit host/port to match your desktop)
+# 2. Write default config.toml (edit host/port to match your desktop)
 cat > "$CONFIG_DIR/config.toml" << 'TOMLEOF'
 host = "192.168.1.10"   # ← EDIT: desktop applet IP address
 port = 51057
-interval_ms = 2000
+refresh_interval_secs = 1
 machine_id = ""          # ← Auto-detected from hostname if empty
-hmac_secret_path = "/etc/nmd/secret.key"
 TOMLEOF
 
-# 4. Install binary (assumes it's in current directory or PATH)
+# 3. Install binary (assumes it's in current directory or PATH)
 if [ -f "./target/release/nmd-service" ]; then
     cp ./target/release/nmd-service "$BINARY_PATH"
 elif command -v nmd-service &>/dev/null; then
@@ -142,7 +132,7 @@ else
 fi
 chmod 755 "$BINARY_PATH"
 
-# 5. Install systemd unit file
+# 4. Install systemd unit file
 cat > "$UNIT_FILE" << 'UNITEOF'
 [Unit]
 Description=Network System Monitor — Remote Metrics Service
@@ -164,18 +154,14 @@ ReadWritePaths=/etc/nmd/
 WantedBy=multi-user.target
 UNITEOF
 
-# 6. Reload systemd, enable + start the service
+# 5. Reload systemd, enable + start the service
 systemctl daemon-reload
 systemctl enable nmd.service
 systemctl restart nmd.service
 
 echo "[nmd] Service installed and started!"
 echo "[nmd]   Config:    $CONFIG_DIR/config.toml"
-echo "[nmd]   Secret:    $CONFIG_DIR/secret.key (0600)"
 echo "[nmd]   Binary:    $BINARY_PATH"
-echo ""
-echo "IMPORTANT: Copy the secret key to your desktop machine's nmd-applet config."
-echo "  Desktop applet needs this same key for HMAC verification."
 "#;
 
 #[cfg(test)]
@@ -208,10 +194,9 @@ mod tests {
         }
     }
 
-    /// Secret key path is under /etc/nmd/ (Beverly writes after implementation).
+    /// Config directory is /etc/nmd (Beverly writes after implementation).
     #[test]
-    fn test_secret_key_path_under_config_dir() {
-        assert!(SECRET_KEY_PATH.starts_with(CONFIG_DIR));
-        assert_eq!(SECRET_KEY_PATH, "/etc/nmd/secret.key");
+    fn test_config_dir_path() {
+        assert_eq!(CONFIG_DIR, "/etc/nmd");
     }
 }

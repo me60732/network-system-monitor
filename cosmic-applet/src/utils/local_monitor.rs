@@ -76,9 +76,9 @@ impl LocalMonitor {
         monitor.open()
     }
 
-    /// Print "Open local monitor" to console — used during scaffolding before real launch is wired up.
+    /// Log placeholder message for local monitor launch.
     pub fn print_placeholder() {
-        println!("cosmic-applet: Open local system monitor (not yet implemented)");
+        log::info!("LocalMonitor: Open local system monitor (not yet implemented)");
         log::info!("LocalMonitor::print_placeholder called — stub only");
     }
 }

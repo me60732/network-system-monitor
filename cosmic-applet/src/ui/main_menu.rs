@@ -34,7 +34,7 @@ pub fn view(
         .spacing(8)
         .align_y(Alignment::Center)
     )
-    .on_press(AppMessage::NoOp)  // TODO: launch external app
+    .on_press(AppMessage::LaunchSystemMonitor)
     .width(Length::Fill);
     
     // General settings option

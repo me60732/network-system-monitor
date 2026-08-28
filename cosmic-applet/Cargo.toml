@@ -23,21 +23,25 @@ cosmic = { package = "libcosmic", git = "https://github.com/pop-os/libcosmic.git
 # rkyv for zero-copy deserialization of incoming MetricPacket from remote machines (rkyv 0.8.x: derive built-in)
 rkyv = { workspace = true, features = ["alloc"] }
 
-# HMAC-SHA256 verification for incoming UDP packets (Worf Phase 1A security)
-# hmac 0.13 requires sha2 from the digest 0.11 ecosystem — both are workspace deps now.
-hmac = { workspace = true }
-sha2 = { workspace = true }
+# ChaCha20-Poly1305 AEAD decryption for incoming UDP packets (Pairing System V1, Phase 1).
+# AEAD tag verification replaces the old HMAC-SHA256 + subtle constant-time comparison.
+chacha20poly1305 = { workspace = true }
+
+# Ed25519 identity keys — used by the pairing flow in Phase 2 (declared now per Phase 1 spec)
+ed25519-dalek = { workspace = true }
+
+# X25519 for ECDH key exchange in the pairing system (Phase 2)
+x25519-dalek = { workspace = true }
+
+# chrono for datetime serialization in pairing.toml config files
+chrono = { workspace = true }
+
+# serde_derive for derive macros when minimon_config shadows the root serde
+serde_derive = "1.0"
 
 # Logging macros used throughout the applet modules
 log = "0.4"
 env_logger = "0.11"
-
-# Constant-time comparison for HMAC tag verification (subtle::ConstantTimeEq).
-# crypto-common 0.2.x no longer re-exports constant_time — use subtle directly instead.
-subtle = { version = "2", default-features = false }
-
-# crypto-common is still a transitive dependency via hmac/digest, kept here for reference.
-crypto-common = { version = "0.2", default-features = false }
 
 # TOML configuration parsing (extends minimon-applet format — needs parse + display for to_string/from_str).
 toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
@@ -47,7 +51,8 @@ serde = { workspace = true }
 tokio = { version = "1", features = ["full"] }
 
 # Random number generation for debug/fake data mode
-rand = "0.8"
+rand = { version = "0.8", default-features = false, features = ["std"] }
+getrandom = { version = "0.2", features = ["std"] }
 
 # System process spawning (for local_monitor.rs — opens system monitor app)
 std-subprocess = { package = "subprocess", version = "0.2" }
@@ -59,7 +64,28 @@ anyhow = { version = "1.0", features = ["backtrace"] }  # Error handling
 zbus = { version = "5.7" }        # D-Bus for laptop battery detection
 zvariant = "5.6"                  # D-Bus types
 bounded-vec-deque = "0.1"         # Fixed-size VecDeque for chart history
-hex = "0.4"                       # Hex string conversion for color picker
+hex = { version = "0.4", features = ["serde"] }  # Hex string conversion with serde support
 i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"] }
 i18n-embed-fl = "0.10"            # Fluent localization macros
 rust-embed = "8.3"                # Embed localization files
+
+# Library target compiled from the same source as the binary — exposes AppState, UdpReceiver,
+# RemoteMachine, ConfigManager etc. to integration tests (tests/) and benchmarks (benches/).
+[lib]
+name = "cosmic_applet"
+path = "src/main.rs"
+doctest = false
+
+[[bin]]
+name = "cosmic-applet"
+path = "src/main.rs"
+# Unit tests run via the lib target — avoid compiling/running them twice.
+test = false
+bench = false
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "performance_bench"
+harness = false

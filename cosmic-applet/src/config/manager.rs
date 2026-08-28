@@ -19,7 +19,7 @@ pub const OFFLINE_TIMEOUT_SECS: u64 = 30;
 /// Configuration manager that loads, modifies, and saves the applet's TOML configuration.
 ///
 /// Extends minimon-applet's format by adding per-machine metric selection checkboxes,
-/// UDP receiver settings (port + secret key path), and grid window preferences.
+/// UDP receiver settings (port), and grid window preferences.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigManager {
     /// All configured machines to monitor — includes localhost entry by default.
@@ -28,10 +28,8 @@ pub struct ConfigManager {
     /// UDP port the applet listens on for incoming MetricPacket traffic from remote nmd-service instances.
     pub udp_port: u16,
 
-    /// Path to the HMAC-SHA256 pre-shared key file (shared with remote machines).
-    pub hmac_secret_path: String,
-
     /// Whether the grid window auto-expands when a new machine comes online.
+    #[serde(default = "default_true")]
     pub auto_expand_grid: bool,
 
     /// File path where this configuration is persisted (loaded from on startup).
@@ -124,7 +122,6 @@ impl Default for ConfigManager {
         ConfigManager {
             machines,
             udp_port: DEFAULT_UDP_PORT,
-            hmac_secret_path: "/etc/nmd/secret.key".to_string(),
             auto_expand_grid: true,
             config_path: PathBuf::from(DEFAULT_CONFIG_PATH),
         }
@@ -132,6 +129,45 @@ impl Default for ConfigManager {
 }
 
 impl ConfigManager {
+    /// Validate the configuration and return detailed error messages if invalid.
+    /// Returns Ok(()) if valid, Err with human-readable error message otherwise.
+    pub fn validate(&self) -> Result<(), String> {
+        // Check for empty machine list
+        if self.machines.is_empty() {
+            return Err("Configuration must include at least one machine (typically localhost)".to_string());
+        }
+        
+        // Check for duplicate machine names
+        let mut seen_names = std::collections::HashSet::new();
+        for machine in &self.machines {
+            if !seen_names.insert(&machine.name) {
+                return Err(format!("Duplicate machine name '{}' found — each machine must have a unique name", machine.name));
+            }
+        }
+        
+        // Validate UDP port range
+        if self.udp_port == 0 {
+            return Err("UDP port cannot be 0 — choose a port between 1024-65535 (recommend 51057)".to_string());
+        }
+        
+        // Validate machine configurations
+        for machine in &self.machines {
+            if machine.name.trim().is_empty() {
+                return Err("Machine name cannot be empty".to_string());
+            }
+            
+            if machine.host.trim().is_empty() {
+                return Err(format!("Machine '{}' has empty host — specify IP address or hostname", machine.name));
+            }
+            
+            if machine.port == 0 {
+                return Err(format!("Machine '{}' has invalid port 0", machine.name));
+            }
+        }
+        
+        Ok(())
+    }
+    
     /// Load configuration from a TOML file at the given path.
     /// Falls back to default config (with localhost entry) if file doesn't exist or is malformed.
     pub fn load(path: &str) -> Self {
@@ -143,11 +179,24 @@ impl ConfigManager {
                 match toml::from_str::<ConfigManager>(&content) {
                     Ok(mut config) => {
                         config.config_path = config_path;
+                        
+                        // Validate loaded config
+                        if let Err(validation_error) = config.validate() {
+                            log::error!("Config validation failed: {} — using defaults", validation_error);
+                            log::error!("   Using default configuration instead.");
+                            log::error!("   Fix {} and restart the applet.", path);
+                            let mut default = ConfigManager::default();
+                            default.config_path = config.config_path;
+                            return default;
+                        }
+                        
                         log::info!("Loaded config from {} — {} machines configured", path, config.machines.len());
                         config
                     }
                     Err(e) => {
-                        log::warn!("Failed to parse config at {}: {} — using defaults", path, e);
+                        log::error!("Failed to parse TOML at {}: {} — using defaults", path, e);
+                        log::error!("   Check TOML syntax in {}", path);
+                        log::error!("   Using default configuration instead.");
                         let mut default = ConfigManager::default();
                         default.config_path = config_path;
                         default
@@ -276,10 +325,88 @@ mod tests {
     /// Save/load roundtrip preserves configuration (Beverly writes).
     #[test]
     fn test_save_load_roundtrip() {
+        let temp_dir = std::env::temp_dir();
+        let test_config_path = temp_dir.join(format!("test_config_{}.toml", std::process::id()));
+        
+        // Create config with custom values
         let mut config = ConfigManager::default();
+        config.config_path = test_config_path.clone();
         config.add_machine("spark", "192.168.1.30");
-        // TODO: Test actual file save/load once filesystem access is wired up (Beverly).
-
-        assert_eq!(config.machines.len(), 2, "Should have localhost + spark after add");
+        config.add_machine("pluto", "192.168.1.99");
+        config.udp_port = 51058; // Non-default port
+        config.auto_expand_grid = false;
+        
+        // Disable GPU metric on pluto machine
+        if let Some(pluto) = config.machines.iter_mut().find(|m| m.name == "pluto") {
+            pluto.show_gpu_vram = false;
+        }
+        
+        // Save to temp file
+        config.save().expect("Save should succeed");
+        
+        // Load back from file
+        let loaded = ConfigManager::load(test_config_path.to_str().unwrap());
+        
+        // Verify all fields preserved
+        assert_eq!(loaded.machines.len(), 3, "Should have localhost + spark + pluto");
+        assert_eq!(loaded.udp_port, 51058, "Custom UDP port preserved");
+        assert_eq!(loaded.auto_expand_grid, false, "Grid expand preference preserved");
+        
+        // Verify machine order and properties
+        assert_eq!(loaded.machines[0].name, "localhost");
+        assert_eq!(loaded.machines[1].name, "spark");
+        assert_eq!(loaded.machines[1].host, "192.168.1.30");
+        assert_eq!(loaded.machines[2].name, "pluto");
+        
+        // Verify per-machine metric toggles preserved
+        let pluto = &loaded.machines[2];
+        assert!(!pluto.show_gpu_vram, "GPU toggle should be disabled for pluto");
+        assert!(pluto.show_cpu, "Other metrics should remain enabled");
+        
+        // Cleanup
+        let _ = std::fs::remove_file(test_config_path);
+    }
+    
+    /// Config validation catches common errors with helpful messages (Beverly writes).
+    #[test]
+    fn test_config_validation() {
+        // Valid config should pass
+        let valid_config = ConfigManager::default();
+        assert!(valid_config.validate().is_ok(), "Default config should be valid");
+        
+        // Empty machines list should fail
+        let mut empty_machines = ConfigManager::default();
+        empty_machines.machines.clear();
+        assert!(empty_machines.validate().is_err(), "Empty machine list should fail validation");
+        let err = empty_machines.validate().unwrap_err();
+        assert!(err.contains("at least one machine"), "Error should mention empty machine list");
+        
+        // Duplicate machine names should fail
+        let mut duplicate_names = ConfigManager::default();
+        duplicate_names.add_machine("spark", "192.168.1.30");
+        duplicate_names.machines.push(MachineConfig::new("spark".to_string(), "192.168.1.99".to_string()));
+        assert!(duplicate_names.validate().is_err(), "Duplicate names should fail validation");
+        let err = duplicate_names.validate().unwrap_err();
+        assert!(err.contains("Duplicate") && err.contains("spark"), "Error should mention duplicate name");
+        
+        // Zero UDP port should fail
+        let mut zero_port = ConfigManager::default();
+        zero_port.udp_port = 0;
+        assert!(zero_port.validate().is_err(), "Zero UDP port should fail validation");
+        
+        // Empty machine list should fail
+        let mut empty_machines = ConfigManager::default();
+        empty_machines.machines.clear();
+        assert!(empty_machines.validate().is_err(), "Empty machine list should fail validation");
+        
+        // Machine with empty name should fail
+        let mut empty_name = ConfigManager::default();
+        empty_name.machines[0].name = "".to_string();
+        assert!(empty_name.validate().is_err(), "Empty machine name should fail validation");
+        
+        // Machine with empty host should fail
+        let mut empty_host = ConfigManager::default();
+        empty_host.machines[0].host = "".to_string();
+        assert!(empty_host.validate().is_err(), "Empty machine host should fail validation");
     }
 }
