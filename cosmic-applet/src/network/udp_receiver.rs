@@ -257,9 +257,23 @@ impl UdpReceiver {
         shared_state: &Arc<std::sync::RwLock<AppState>>,
         ui_tx: &Option<Sender<UdpMessage>>,
     ) {
+        // Wire format (Phase 2): [32-byte sender_x25519_pubkey][12-byte nonce][ciphertext+tag]
+        // Extract sender pubkey from header first.
+        if data.len() < crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN {
+            log::warn!(
+                "Packet too short for Phase 2 wire format: {} bytes (min={})",
+                data.len(),
+                crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN
+            );
+            return;
+        }
+        let (sender_x25519_pubkey_bytes, remainder) = data.split_at(crypto::SENDER_PUBKEY_LEN);
+        let sender_x25519_pubkey: [u8; 32] = sender_x25519_pubkey_bytes.try_into().unwrap();
+
         // Decrypt + verify the AEAD tag (critical security step — tag verification
         // is intrinsic to decrypt; tampered/forged/wrong-key packets fail here).
-        let plaintext = match crypto::open(cipher, data) {
+        // Use TEMP_SHARED_KEY for bootstrap/unpaired mode.
+        let plaintext = match crypto::open(cipher, remainder) {
             Ok(pt) => pt,
             Err(e) => {
                 log::warn!("Decryption failed for packet from {}: {}", src, e);
@@ -309,16 +323,17 @@ impl UdpReceiver {
         let is_paired = pairing_manager.read().unwrap().is_paired(&machine_id_str);
 
         if !is_paired {
-            // Unknown sender — write directly to shared_state.pending_pairings
-            // (deduplication by machine_id) and also emit via tx if available.
+            // Unknown sender — create PairingRequest with REAL X25519 pubkey from packet header.
+            let pubkey_hex = hex::encode(&sender_x25519_pubkey);
             log::info!(
-                "🔔 Received pairing request from unpaired machine: {} (host: {})",
+                "🔔 Received pairing request from unpaired machine: {} (host: {}, x25519_pubkey={:.8}…)",
                 machine_id_str,
-                src.ip()
+                src.ip(),
+                &pubkey_hex[..8]
             );
             let pairing_request = crate::pairing_manager::PairingRequest {
                 machine_id: machine_id_str.to_string(),
-                sender_pubkey: [0u8; 32], // Placeholder pubkey — Phase 3 will use real ECDH key
+                sender_pubkey: sender_x25519_pubkey, // REAL X25519 pubkey from packet header
                 host: src.ip().to_string(),
                 received_at: std::time::Instant::now(),
             };
@@ -478,12 +493,22 @@ impl UdpReceiver {
         }
     }
 
-    /// Decrypt a wire packet (`[12-byte nonce][ciphertext+tag]`) into rkyv plaintext bytes.
+    /// Decrypt a wire packet (`[32-byte sender_x25519_pubkey][12-byte nonce][ciphertext+tag]`) into rkyv plaintext bytes.
     /// AEAD tag verification happens inside `open()` — an Err means the packet was tampered
     /// with, truncated, or encrypted under a different key.
     /// Public so integration tests and criterion benchmarks can exercise the decryption path directly.
     pub fn decrypt_packet(&self, wire: &[u8]) -> Result<rkyv::util::AlignedVec, String> {
-        crypto::open(&self.cipher, wire)
+        // Wire format (Phase 2): [32-byte sender_x25519_pubkey][12-byte nonce][ciphertext+tag]
+        if wire.len() < crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN {
+            return Err(format!(
+                "wire packet too short: {} bytes (min={})",
+                wire.len(),
+                crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN
+            ));
+        }
+        // Extract remainder after sender pubkey header for decryption
+        let (_, remainder) = wire.split_at(crypto::SENDER_PUBKEY_LEN);
+        crypto::open(&self.cipher, remainder)
     }
 
     /// Convert a fixed-length [u8; 20] machine_id field from an ArchivedMetricPacket to a displayable string.
@@ -1046,10 +1071,15 @@ mod tests {
             "Untampered packet should decrypt"
         );
 
+        // Wire format (Phase 2): [32-byte sender_pubkey][12-byte nonce][ciphertext+tag]
+        let nonce_offset = nmd_service::crypto::SENDER_PUBKEY_LEN;
         // Flip one bit in the nonce, first ciphertext byte, and last tag byte — all must fail.
         for (idx, what) in [
-            (0usize, "nonce"),
-            (nmd_service::crypto::NONCE_LEN, "first ciphertext byte"),
+            (nonce_offset, "nonce"),
+            (
+                nonce_offset + nmd_service::crypto::NONCE_LEN,
+                "first ciphertext byte",
+            ),
             (wire.len() - 1, "last tag byte"),
         ] {
             let mut mutated = wire.clone();

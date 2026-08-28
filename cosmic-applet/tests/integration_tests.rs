@@ -22,18 +22,21 @@ const OFFLINE_TIMEOUT_SECS: u64 = 30;
 /// Build a minimal headless AppState (no cosmic window required — pure state).
 fn make_state() -> Arc<RwLock<AppState>> {
     let config_manager = Arc::new(RwLock::new(ConfigManager::default()));
-    let settings_window = SettingsWindow::new(config_manager.clone());
+    let pairing_manager = Arc::new(RwLock::new(
+        cosmic_applet::pairing_manager::PairingManager::new(std::path::PathBuf::from(
+            "/tmp/test_integration_pairing.toml",
+        )),
+    ));
+    let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
+    let settings_window = SettingsWindow::new(config_manager.clone(), receiver_pubkey.clone());
     Arc::new(RwLock::new(AppState {
         config_manager,
         current_view: View::Panel,
         settings_window,
         machines: HashMap::new(),
-        pairing_manager: Arc::new(RwLock::new(
-            cosmic_applet::pairing_manager::PairingManager::new(std::path::PathBuf::from(
-                "/tmp/test_integration_pairing.toml",
-            )),
-        )),
+        pairing_manager,
         pending_pairings: Vec::new(),
+        receiver_pubkey: receiver_pubkey,
     }))
 }
 

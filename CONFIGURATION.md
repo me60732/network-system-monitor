@@ -5,36 +5,28 @@ Complete reference for Network System Monitor configuration files.
 ## File Locations
 
 ### Desktop Machine (cosmic-applet)
-- **Config file**: `/etc/nmd/config.toml`
-- **HMAC secret**: `/etc/nmd/secret.key` (0600 permissions)
-- **User config**: `~/.config/cosmic-applet/minimon.toml` (UI preferences)
+- **Config file**: `~/.config/cosmic-applet/config.toml` or `config.toml` in working directory
+- **Pairing storage**: `~/.config/cosmic-applet/pairing.toml`
+- **Receiver keypair**: Auto-generated at `~/.config/cosmic-applet/receiver.key` (Ed25519)
 
 ### Remote Machines (nmd-service)
 - **Config file**: `/etc/nmd/config.toml`
-- **HMAC secret**: `/etc/nmd/secret.key` (0600 permissions, must match desktop)
+- **Sender keypair**: Auto-generated at `~/.config/nmd/keypair.key` (Ed25519)
 
 ---
 
-## Desktop Configuration (`/etc/nmd/config.toml`)
+## Desktop Configuration (`~/.config/cosmic-applet/config.toml` or `config.toml`)
 
 ### UDP Receiver Section
 
 ```toml
-[udp_receiver]
-port = 51057                                 # UDP port to listen on
-hmac_secret_path = "/etc/nmd/secret.key"     # Path to HMAC secret key file
+udp_port = 51057                                 # UDP port to listen on
 ```
 
-**port** (integer, default: 51057)
+**udp_port** (integer, default: 51057)
 - UDP port for receiving metrics from remote machines
 - Must be accessible from all remote machines on your network
 - Firewall rule required: `sudo ufw allow 51057/udp`
-
-**hmac_secret_path** (string, required)
-- Absolute path to the HMAC secret key file
-- File must contain 32 bytes of random hex data (64 hex characters)
-- Permissions must be 0600 (read/write for owner only)
-- Must be identical on all machines (desktop + all remotes)
 
 ### Machine Registration
 
@@ -42,6 +34,7 @@ hmac_secret_path = "/etc/nmd/secret.key"     # Path to HMAC secret key file
 [[machines]]
 name = "desktop"
 host = "127.0.0.1"
+port = 51057
 enabled = true
 
 [machines.metrics]
@@ -56,6 +49,7 @@ temperature = true
 [[machines]]
 name = "pluto"
 host = "192.168.1.50"
+port = 51057
 enabled = true
 
 [machines.metrics]
@@ -71,12 +65,15 @@ temperature = true
 **name** (string, required)
 - Unique identifier for this machine
 - Used for display in the applet
-- Must match the `machine_name` in remote machine's config
+- Must match the `machine_id` in remote machine's config
 
 **host** (string, required)
 - IP address or hostname
 - Not currently used for connection (UDP is push-based)
 - Reserved for future features (offline detection, SSH integration)
+
+**port** (integer, default: 51057)
+- UDP port on the remote nmd-service instance
 
 **enabled** (boolean, default: true)
 - Whether to display this machine in the applet
@@ -99,33 +96,30 @@ temperature = true
 ### Service Section
 
 ```toml
-[service]
-machine_name = "pluto"                       # Unique machine identifier
-destination = "192.168.1.100:51057"          # Desktop IP:port
-interval_ms = 2000                           # Metrics push interval
-hmac_secret_path = "/etc/nmd/secret.key"     # Path to HMAC secret
+host = "192.168.1.100"           # Desktop IP address
+port = 51057                     # Desktop UDP port
+refresh_interval_secs = 1        # Metrics push interval (seconds)
+machine_id = "pluto"             # Unique machine identifier
 ```
 
-**machine_name** (string, required)
-- Unique identifier for this machine
-- Must match a machine name in desktop config (or will auto-register)
-- Used for identification in UDP packets
-
-**destination** (string, required)
-- Desktop machine IP address and UDP port
-- Format: `IP:PORT` (e.g., `192.168.1.100:51057`)
+**host** (string, required)
+- Desktop machine IP address to send UDP packets to
+- Format: IP string (e.g., `192.168.1.100`)
 - Must be reachable from this machine
 
-**interval_ms** (integer, default: 2000)
-- How often to collect and send metrics (milliseconds)
-- Recommended: 2000-5000 (2-5 seconds)
+**port** (integer, default: 51057)
+- UDP port on the desktop applet
+
+**refresh_interval_secs** (integer, default: 1)
+- How often to collect and send metrics (seconds)
+- Recommended: 1-5 seconds
 - Lower values = more network traffic, more CPU usage
 - Higher values = less responsive UI updates
 
-**hmac_secret_path** (string, required)
-- Absolute path to HMAC secret key file
-- File must contain the same 32-byte hex key as desktop machine
-- Permissions must be 0600
+**machine_id** (string, required)
+- Unique identifier for this machine
+- Auto-detected from hostname if not set
+- Used for identification in UDP packets and pairing flow
 
 ### Metrics Section
 
@@ -172,56 +166,73 @@ temperature = true
 
 ---
 
-## HMAC Secret Key
-
-The HMAC secret key file authenticates all metrics packets between remote machines and the desktop.
-
-### Generate Secret Key
-
-```bash
-sudo mkdir -p /etc/nmd
-sudo head -c 32 /dev/urandom | sudo xxd -p -c 32 | sudo tee /etc/nmd/secret.key
-sudo chmod 600 /etc/nmd/secret.key
-```
+## Pairing System Configuration (`~/.config/cosmic-applet/pairing.toml`)
 
 ### Format
-- 32 bytes (256 bits) of random data
-- Stored as 64 hexadecimal characters
-- Example: `a3f2c91d8e7b6f5a4d3c2b1a0987654fedcba9876543210fedcba987654321`
 
-### Security
-- Treat this like a password — anyone with the key can send fake metrics
-- Use 0600 permissions (owner read/write only)
-- Generated from `/dev/urandom` (cryptographically secure)
-- Copy to all machines manually (do not transmit over insecure channels)
+```toml
+# Machine pairing registry
+# Generated automatically when accept pairing UI prompt
 
-### Copying to Remote Machines
+[[paired_machines]]
+machine_id = "pluto"
+shared_key = "a1b2c3d4e5f6..."  # 32-byte ChaCha20 key (64 hex chars)
+paired_at = "2026-08-28T14:32:00Z"
+host = "192.168.1.100"
 
-**Via SSH (recommended):**
-```bash
-# On desktop
-cat /etc/nmd/secret.key
-
-# On remote machine
-sudo tee /etc/nmd/secret.key <<EOF
-<paste key here>
-EOF
-sudo chmod 600 /etc/nmd/secret.key
+[[paired_machines]]
+machine_id = "server-alpha"
+shared_key = "1a2b3c4d5e6f..."
+paired_at = "2026-08-27T09:15:00Z"
+host = "192.168.1.50"
 ```
 
-**Via USB drive (air-gapped networks):**
-```bash
-# Copy key to USB
-cp /etc/nmd/secret.key /media/usb/
+**machine_id** (string, required)
+- Unique identifier of the paired machine
 
-# On remote machine
-sudo cp /media/usb/secret.key /etc/nmd/
-sudo chmod 600 /etc/nmd/secret.key
-```
+**shared_key** (hex string, 64 chars)
+- 32-byte ChaCha20 key derived via ECDH during pairing
+- Hex-encoded for TOML storage
+
+**paired_at** (ISO 8601 datetime string)
+- Timestamp when pairing was established
+
+**host** (string)
+- IP address or hostname of the paired machine at time of pairing
+
+### Permissions: `0600` (critical — contains shared encryption keys)
 
 ---
 
-## User Preferences (`~/.config/cosmic-applet/minimon.toml`)
+## Key Generation
+
+### Sender Keypair (`~/.config/nmd/keypair.key`)
+- Ed25519 identity keypair (64 bytes: 32 private + 32 public)
+- Auto-generated on first nmd-service start
+- Used for ECDH key derivation during pairing
+- Permissions: `0600` (owner read/write only)
+
+### Receiver Keypair (`~/.config/cosmic-applet/receiver.key`)
+- Ed25519 identity keypair (auto-generated)
+- Used to verify sender ECDH key during pairing
+- Permissions: `0600`
+
+---
+
+## HMAC Secret Key — REMOVED
+
+**Note:** The old HMAC secret key system has been replaced by ChaCha20-Poly1305 AEAD encryption with TOFU pairing.
+
+The following are **no longer applicable**:
+- `/etc/nmd/secret.key` file generation
+- `hmac_secret_path` config field
+- Manual key copying between machines
+
+All machines currently use the same temporary `TEMP_SHARED_KEY = [0x42; 32]` placeholder. Per-machine ECDH-derived keys are wired in the pairing flow but not yet fully enabled (sender pubkey field is `[0u8; 32]` placeholder).
+
+---
+
+## User Preferences
 
 Generated automatically by the applet UI. Contains per-sensor display preferences.
 
@@ -301,32 +312,32 @@ order = ["cpu", "cpu_temp", "memory", "gpu_load", "gpu_vram", "network", "disk"]
 
 ```bash
 # Check desktop config
-cat /etc/nmd/config.toml
+cat ~/.config/cosmic-applet/config.toml
 
 # Check remote config
 ssh remote-machine cat /etc/nmd/config.toml
 
-# Verify HMAC keys match
-diff <(cat /etc/nmd/secret.key) <(ssh remote-machine cat /etc/nmd/secret.key)
+# Verify machine_id matches between configs
+grep machine_id /etc/nmd/config.toml
 ```
 
 ### Common Config Errors
-
-**"HMAC verification failed"**
-- Cause: Secret keys don't match between desktop and remote
-- Fix: Copy the same secret.key to all machines
-
-**"Permission denied reading secret key"**
-- Cause: File permissions too restrictive or key file missing
-- Fix: `sudo chmod 600 /etc/nmd/secret.key`
 
 **"No metrics received"**
 - Cause: Firewall blocking UDP port, wrong destination IP, or service not running
 - Fix: Check firewall (`sudo ufw allow 51057/udp`), verify destination IP, check service status (`systemctl status nmd-service`)
 
+**"Permission denied reading config"**
+- Cause: File permissions too restrictive or file missing
+- Fix: Ensure config files are readable by the running user
+
 **"Invalid TOML syntax"**
 - Cause: Typo in config file
 - Fix: Use a TOML validator or check syntax carefully (quotes, brackets, commas)
+
+**"Pairing request not appearing"**
+- Cause: Receiver not listening or packet decryption failed
+- Fix: Check applet logs (`./cosmic-applet --test`), verify UDP port is open
 
 ---
 
@@ -336,16 +347,15 @@ diff <(cat /etc/nmd/secret.key) <(ssh remote-machine cat /etc/nmd/secret.key)
 
 If port 51057 conflicts with another service:
 
-1. Desktop `/etc/nmd/config.toml`:
+1. Desktop `~/.config/cosmic-applet/config.toml`:
    ```toml
-   [udp_receiver]
-   port = 52000  # New port
+   udp_port = 52000  # New port
    ```
 
 2. Remote `/etc/nmd/config.toml`:
    ```toml
-   [service]
-   destination = "192.168.1.100:52000"  # Match desktop port
+   host = "192.168.1.100"
+   port = 52000  # Match desktop port
    ```
 
 3. Update firewall:
@@ -370,7 +380,6 @@ memory = true
 disk = false
 network = false
 uptime = false
-gpu = false
 temperature = false
 ```
 
@@ -379,8 +388,7 @@ temperature = false
 For high-latency or low-bandwidth networks:
 
 ```toml
-[service]
-interval_ms = 5000  # 5 seconds instead of 2
+refresh_interval_secs = 5  # 5 seconds instead of 1
 ```
 
 ---
@@ -389,4 +397,4 @@ interval_ms = 5000  # 5 seconds instead of 2
 
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Installation and setup guide
 - [README.md](README.md) — Project overview
-- [PRODUCTION-READINESS.md](PRODUCTION-READINESS.md) — Status and roadmap
+- [docs/PAIRING-SYSTEM-V1.md](docs/PAIRING-SYSTEM-V1.md) — Encryption + pairing system specification

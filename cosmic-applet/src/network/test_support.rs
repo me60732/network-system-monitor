@@ -5,16 +5,27 @@
 //! integration tests in `tests/integration_tests.rs`, and the criterion benchmarks in
 //! `benches/performance_bench.rs`.
 //! Not part of the public applet API (`#[doc(hidden)]` at the module declaration).
+//!
+//! ## Wire Format (Phase 2)
+//!
+//! ```text
+//! [32-byte sender X25519 public key][12-byte nonce][ChaCha20-encrypted rkyv packet][16-byte Poly1305 tag]
+//! ```
 
 use nmd_service::crypto;
 use nmd_service::packet::{
-    CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricPacket, NetworkMetrics,
-    PartitionInfo,
+    CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricPacket, NetworkMetrics, PartitionInfo,
 };
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Process-wide nonce counter — guarantees every test/bench wire packet gets a unique nonce.
 static TEST_NONCE_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+/// Fixed X25519 public key for deterministic test packets (32 bytes, hex-encoded).
+const TEST_SENDER_X25519_PUBKEY: [u8; 32] = [
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+];
 
 /// Current Unix time in seconds — convenience for freshness-sensitive test packets.
 pub fn unix_now() -> u64 {
@@ -31,7 +42,14 @@ pub fn create_test_packet(
     memory_used: u64,
     memory_total: u64,
 ) -> MetricPacket {
-    create_test_packet_full(machine_name, cpu_usage, memory_used, memory_total, 42, unix_now())
+    create_test_packet_full(
+        machine_name,
+        cpu_usage,
+        memory_used,
+        memory_total,
+        42,
+        unix_now(),
+    )
 }
 
 /// Full-control variant: caller supplies the sequence number and timestamp.
@@ -51,8 +69,8 @@ pub fn create_test_packet_full(
 
     // SEC-03: Generate fixed test session ID (reproducible for tests)
     let sender_session_id: [u8; 16] = [
-        0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-        0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
+        0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32,
+        0x10,
     ];
 
     MetricPacket {
@@ -102,21 +120,46 @@ pub fn create_test_packet_full(
 }
 
 /// Serialize a packet via rkyv and encrypt it into the wire format
-/// `[12-byte nonce][ciphertext + 16-byte Poly1305 tag]` under the given 32-byte key.
+/// `[32-byte sender_x25519_pubkey][12-byte nonce][ciphertext + 16-byte Poly1305 tag]` under the given 32-byte key.
 /// Mirrors nmd-service's sender path; each call uses a fresh counter-derived nonce.
 pub fn encrypt_packet(packet: MetricPacket, key: &[u8; 32]) -> Vec<u8> {
-    let plaintext = rkyv::to_bytes::<rkyv::rancor::Error>(&packet)
-        .expect("Serialization should succeed");
+    let plaintext =
+        rkyv::to_bytes::<rkyv::rancor::Error>(&packet).expect("Serialization should succeed");
 
     let cipher = crypto::cipher_from_key(key);
     let nonce = crypto::build_nonce(
         b"TEST", // fixed prefix — distinct from real senders' random prefixes
         TEST_NONCE_COUNTER.fetch_add(1, Ordering::SeqCst),
     );
-    crypto::seal(&cipher, &nonce, plaintext.as_ref()).expect("Encryption should succeed")
+    // Use seal_with_sender_pubkey to prepend the sender's X25519 pubkey header
+    crypto::seal_with_sender_pubkey(
+        &cipher,
+        &nonce,
+        plaintext.as_ref(),
+        &TEST_SENDER_X25519_PUBKEY,
+    )
+    .expect("Encryption should succeed")
 }
 
 /// Convenience: encrypt under the Phase 1 temporary shared key the receiver uses.
 pub fn encrypt_packet_default(packet: MetricPacket) -> Vec<u8> {
     encrypt_packet(packet, &crypto::TEMP_SHARED_KEY)
+}
+
+/// Encrypt packet with a specific sender X25519 public key for test scenarios.
+pub fn encrypt_packet_with_sender_pubkey(
+    packet: MetricPacket,
+    key: &[u8; 32],
+    sender_pubkey: &[u8; 32],
+) -> Vec<u8> {
+    let plaintext =
+        rkyv::to_bytes::<rkyv::rancor::Error>(&packet).expect("Serialization should succeed");
+
+    let cipher = crypto::cipher_from_key(key);
+    let nonce = crypto::build_nonce(
+        b"TEST", // fixed prefix — distinct from real senders' random prefixes
+        TEST_NONCE_COUNTER.fetch_add(1, Ordering::SeqCst),
+    );
+    crypto::seal_with_sender_pubkey(&cipher, &nonce, plaintext.as_ref(), sender_pubkey)
+        .expect("Encryption should succeed")
 }

@@ -208,6 +208,8 @@ pub struct AppState {
     pub pairing_manager: std::sync::Arc<std::sync::RwLock<crate::pairing_manager::PairingManager>>,
     /// In-memory queue of pending pairing requests waiting for user approval (60-second timeout)
     pub pending_pairings: Vec<crate::pairing_manager::PairingRequest>,
+    /// Receiver's X25519 public key (hex-encoded) for encrypted pairing configuration
+    pub receiver_pubkey: String,
 }
 
 impl AppState {
@@ -291,10 +293,12 @@ impl AppState {
         }
         drop(config_read);
 
-        let mut settings_window = SettingsWindow::new(settings_window_config);
-        settings_window.update_config(minimon_config);
-
         let pairing_manager = Self::create_pairing_manager();
+        let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
+
+        let mut settings_window =
+            SettingsWindow::new(settings_window_config, receiver_pubkey.clone());
+        settings_window.update_config(minimon_config);
 
         AppState {
             config_manager,
@@ -303,6 +307,7 @@ impl AppState {
             machines,
             pairing_manager,
             pending_pairings: Vec::new(),
+            receiver_pubkey,
         }
     }
 }
@@ -338,10 +343,12 @@ impl Default for AppState {
         }
         drop(config_read);
 
-        let mut settings_window = SettingsWindow::new(settings_window_config);
-        settings_window.update_config(minimon_config);
-
         let pairing_manager = Self::create_pairing_manager();
+        let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
+
+        let mut settings_window =
+            SettingsWindow::new(settings_window_config, receiver_pubkey.clone());
+        settings_window.update_config(minimon_config);
 
         AppState {
             config_manager,
@@ -350,6 +357,7 @@ impl Default for AppState {
             machines,
             pairing_manager,
             pending_pairings: Vec::new(),
+            receiver_pubkey,
         }
     }
 }
@@ -1227,9 +1235,10 @@ impl Application for PanelApplet {
             // Show SettingsWindow when visible (overlay mode).
             let state = self.shared_state.read().unwrap();
             let minimon_config = state.settings_window.minimon_config.clone();
+            let receiver_pubkey = state.receiver_pubkey.clone();
             drop(state);
 
-            return crate::ui::settings_window::view_with_config(&minimon_config)
+            return crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
                 .map(|msg| AppMessage::Settings(msg));
         }
 
@@ -1312,9 +1321,10 @@ impl Application for PanelApplet {
                 // Show general settings
                 let state = self.shared_state.read().unwrap();
                 let minimon_config = state.settings_window.minimon_config.clone();
+                let receiver_pubkey = state.receiver_pubkey.clone();
                 drop(state);
 
-                crate::ui::settings_window::view_with_config(&minimon_config)
+                crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
                     .map(|msg| AppMessage::Settings(msg))
             }
             View::CpuConfig => {

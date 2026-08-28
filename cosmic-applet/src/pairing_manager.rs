@@ -244,6 +244,14 @@ impl PairingManager {
 
         Ok(())
     }
+
+    /// Returns the receiver's X25519 public key as a hex-encoded string.
+    /// This is used for ECDH encryption with remote senders.
+    pub fn get_receiver_x25519_pubkey(&self) -> String {
+        let x25519_secret = X25519Secret::from(self.receiver_key.to_bytes());
+        let x25519_pub = X25519PublicKey::from(&x25519_secret);
+        hex::encode(x25519_pub.as_bytes())
+    }
 }
 
 #[cfg(test)]

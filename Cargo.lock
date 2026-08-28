@@ -3693,6 +3693,7 @@ dependencies = [
  "criterion",
  "ed25519-dalek",
  "env_logger",
+ "hex",
  "log",
  "metrics-core",
  "munge",
@@ -3703,6 +3704,7 @@ dependencies = [
  "signal-hook",
  "sysinfo",
  "toml 0.8.23",
+ "x25519-dalek",
 ]
 
 [[package]]

@@ -44,5 +44,8 @@ chrono = { version = "0.4", features = ["serde"] }
 # Random number generation (nonce prefixes, keypair generation via rand::rngs::OsRng).
 rand = { version = "0.8", features = ["std"] }
 
+# Hex encoding/decoding for X25519 public key serialization in config
+hex = { version = "0.4", features = ["serde"] }
+
 # Development dependencies (shared) - cannot be 'optional' at workspace level
 criterion = { version = "0.5" }

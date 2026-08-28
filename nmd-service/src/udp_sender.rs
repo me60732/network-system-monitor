@@ -1,18 +1,19 @@
-//! # UdpSender — ChaCha20-Poly1305 encrypted UDP packet transmission
+//! # UdpSender — ChaCha20-Poly1305 encrypted UDP packet transmission (Phase 2 ECDH enabled)
 //!
 //! Sends [`MetricPacket`] structs over UDP to the desktop Cosmic applet. Each send serializes
 //! the packet via rkyv, encrypts it with ChaCha20-Poly1305 AEAD, and transmits the wire packet
-//! `[12-byte nonce][ciphertext + 16-byte Poly1305 tag]` (see [`crate::crypto`]).
+//! `[32-byte sender X25519 pubkey][12-byte nonce][ciphertext + 16-byte Poly1305 tag]` (see [`crate::crypto`]).
 //!
-//! ## Security Design (Pairing System V1, Phase 1)
+//! ## Security Design (Pairing System V1, Phase 2)
 //!
 //! - **Confidentiality + authenticity**: ChaCha20-Poly1305 AEAD — the Poly1305 tag replaces the
 //!   old HMAC-SHA256 signature and additionally encrypts all metric data on the wire.
 //! - **Replay protection**: Receiver checks timestamp freshness (< 10s old) + monotonic sequence.
 //! - **Identity**: An Ed25519 keypair is generated on first run and persisted to
-//!   `~/.config/nmd/keypair.key` (0600). Unused in Phase 1; Phase 2 uses it for ECDH pairing.
-//! - **Key**: Phase 1 uses the hardcoded [`crypto::TEMP_SHARED_KEY`] — replaced by an
-//!   ECDH-derived per-machine key in Phase 2.
+//!   `~/.config/nmd/keypair.key` (0600). Used in Phase 2 for ECDH shared key derivation.
+//! - **Key derivation**:
+//!   * Bootstrap mode (no receiver_pubkey): uses TEMP_SHARED_KEY
+//!   * Paired mode: derives ECDH(sender_x25519_priv, receiver_x25519_pub) → per-machine ChaCha20 key
 //! - **Nonce discipline**: `[4-byte random prefix][8-byte counter]` — the counter never repeats
 //!   within a session, and the random prefix separates senders sharing the Phase 1 key.
 
@@ -33,9 +34,12 @@ const KEYPAIR_FILENAME: &str = "keypair.key";
 ///
 /// * `socket`: Bound UDP socket used to send packets to the desktop applet.
 /// * `dest`: Destination address of the desktop Cosmic applet (typically port 51057).
-/// * `cipher`: ChaCha20-Poly1305 cipher — Phase 1: keyed with `crypto::TEMP_SHARED_KEY`.
+/// * `cipher`: ChaCha20-Poly1305 cipher — Phase 2: ECDH-derived per-machine key or TEMP_SHARED_KEY for bootstrap.
 /// * `identity_key`: Ed25519 identity keypair, loaded from `~/.config/nmd/keypair.key`.
-///   Unused in Phase 1; Phase 2 derives the shared ChaCha20 key from it via ECDH.
+///   Used in Phase 2 to derive X25519 secret for ECDH shared key calculation.
+/// * `x25519_pubkey`: Derived X25519 public key (32 bytes), prepended to each wire packet header.
+/// * `receiver_x25519_pubkey_opt`: Optional receiver's X25519 pubkey from config for ECDH key derivation.
+///   When `Some`, uses per-machine ECDH-derived key; when `None`, uses TEMP_SHARED_KEY (bootstrap mode).
 /// * `sequence_counter`: Monotonic per-send counter embedded in the packet (replay protection).
 /// * `nonce_prefix`: Random 4-byte prefix making this sender's nonce space unique (see module docs).
 /// * `nonce_counter`: Monotonic 8-byte counter forming the tail of each AEAD nonce — never reused.
@@ -45,8 +49,8 @@ pub struct UdpSender {
     dest: SocketAddr,
     cipher: ChaCha20Poly1305,
     #[allow(dead_code)]
-    // Held for Phase 2 ECDH pairing — persisted identity established in Phase 1.
     identity_key: SigningKey,
+    x25519_pubkey: [u8; 32],
     sequence_counter: AtomicU32,
     nonce_prefix: [u8; 4],
     nonce_counter: AtomicU64,
@@ -56,10 +60,23 @@ pub struct UdpSender {
 impl UdpSender {
     /// Create a new `UdpSender` bound to an ephemeral local port, targeting the given destination.
     ///
-    /// Loads (or generates on first run) the Ed25519 identity keypair, initializes the
-    /// ChaCha20-Poly1305 cipher with the Phase 1 temporary key, and generates the random
-    /// sender_session_id (SEC-03) + nonce prefix.
+    /// Loads (or generates on first run) the Ed25519 identity keypair, derives X25519 pubkey,
+    /// initializes the ChaCha20-Poly1305 cipher (bootstrap mode with TEMP_SHARED_KEY), and
+    /// generates the random sender_session_id (SEC-03) + nonce prefix.
     pub fn new(dest: SocketAddr, _machine_id: &str) -> Result<Self, std::io::Error> {
+        Self::new_with_config(dest, _machine_id, None)
+    }
+
+    /// Create a new `UdpSender` with ECDH key derivation enabled via receiver_pubkey.
+    ///
+    /// When `receiver_pubkey_opt` is `Some(hex_string)`, parses and converts to X25519 pubkey,
+    /// then derives the per-machine ECDH shared secret as the cipher key.
+    /// When `None`, uses TEMP_SHARED_KEY (bootstrap/unpaired mode).
+    pub fn new_with_config(
+        dest: SocketAddr,
+        _machine_id: &str,
+        receiver_pubkey_opt: Option<String>,
+    ) -> Result<Self, std::io::Error> {
         // Bind to an ephemeral local port for sending only (no inbound traffic expected).
         let socket = UdpSocket::bind("0.0.0.0:0")?;
 
@@ -86,11 +103,55 @@ impl UdpSender {
         // Load or generate the persistent Ed25519 identity keypair (Phase 2 pairing identity).
         let identity_key = Self::load_or_generate_keypair(Self::default_keypair_path())?;
 
+        // Derive X25519 public key from Ed25519 secret for wire packet header.
+        let x25519_pubkey =
+            crypto::derive_x25519_pubkey_from_ed25519_secret(&identity_key.to_bytes());
+
+        // Parse receiver pubkey (if provided) and derive ECDH shared key, or use TEMP_SHARED_KEY for bootstrap.
+        let (cipher, _receiver_x25519_pubkey_opt): (ChaCha20Poly1305, Option<[u8; 32]>) =
+            match receiver_pubkey_opt {
+                Some(hex_string) => {
+                    // Parse hex-encoded 32-byte X25519 public key
+                    let receiver_x25519_bytes = hex::decode(&hex_string).map_err(|e| {
+                        std::io::Error::other(format!(
+                            "Failed to decode receiver_pubkey hex: {}",
+                            e
+                        ))
+                    })?;
+                    if receiver_x25519_bytes.len() != 32 {
+                        return Err(std::io::Error::other(format!(
+                            "receiver_pubkey must be exactly 32 bytes ({} bytes provided)",
+                            receiver_x25519_bytes.len()
+                        )));
+                    }
+                    let receiver_x25519_pubkey: [u8; 32] =
+                        receiver_x25519_bytes.try_into().unwrap();
+
+                    // Derive ECDH shared secret as the cipher key
+                    let sender_secret = identity_key.to_bytes();
+                    let ecdh_key = crypto::derive_ecdh_key(&sender_secret, &receiver_x25519_pubkey);
+                    log::info!(
+                        "🔐 ECDH-derived per-machine ChaCha20 key (machine_id={})",
+                        _machine_id
+                    );
+
+                    (crypto::cipher_from_key(&ecdh_key), None)
+                }
+                None => {
+                    // Bootstrap mode: use TEMP_SHARED_KEY
+                    log::info!(
+                        "🔐 Using bootstrap mode with TEMP_SHARED_KEY (no receiver_pubkey configured)"
+                    );
+                    (crypto::cipher_from_key(&crypto::TEMP_SHARED_KEY), None)
+                }
+            };
+
         Ok(UdpSender {
             socket,
             dest,
-            cipher: crypto::cipher_from_key(&crypto::TEMP_SHARED_KEY),
+            cipher,
             identity_key,
+            x25519_pubkey,
             sequence_counter: AtomicU32::new(0),
             nonce_prefix,
             nonce_counter: AtomicU64::new(0),
@@ -156,8 +217,8 @@ impl UdpSender {
     /// Process:
     /// 1. Fill in sender_session_id, sequence, and timestamp
     /// 2. Serialize the packet via rkyv
-    /// 3. Build a unique nonce (`prefix ‖ counter`) and encrypt (tag appended by AEAD)
-    /// 4. Send `[nonce][ciphertext+tag]`
+    /// 3. Build a unique nonce (`prefix \u2016 counter`)
+    /// 4. Encrypt → `[32-byte sender_x25519_pubkey][nonce][ciphertext+tag]`
     pub fn send(&mut self, packet: &MetricPacket) -> Result<(), std::io::Error> {
         // Clone packet and fill in runtime fields
         let mut outgoing = packet.clone();
@@ -178,8 +239,13 @@ impl UdpSender {
             self.nonce_counter.fetch_add(1, Ordering::SeqCst),
         );
 
-        // Encrypt → [12-byte nonce][ciphertext + 16-byte Poly1305 tag]
-        let wire_packet = crypto::seal(&self.cipher, &nonce, packet_buf.as_ref())?;
+        // Encrypt with sender pubkey header: [32-byte sender_pubkey][nonce][ciphertext+tag]
+        let wire_packet = crypto::seal_with_sender_pubkey(
+            &self.cipher,
+            &nonce,
+            packet_buf.as_ref(),
+            &self.x25519_pubkey,
+        )?;
 
         log::debug!(
             "🔐 Encrypted packet: seq={}, nonce={:02x?}…, wire={} bytes",

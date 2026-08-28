@@ -29,7 +29,11 @@ use std::time::Duration;
 
 /// Command-line arguments parsed via clap derive macro.
 #[derive(Parser, Debug)]
-#[command(name = "nmd-service", version, about = "Network System Monitor — remote metrics service")]
+#[command(
+    name = "nmd-service",
+    version,
+    about = "Network System Monitor — remote metrics service"
+)]
 struct Cli {
     /// Path to the TOML configuration file (default: /etc/nmd/config.toml).
     #[arg(short, long, default_value = nmd_service::DEFAULT_CONFIG_PATH)]
@@ -63,11 +67,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.machine_id
     );
 
-    // 4. Initialize UDP sender — loads/generates the Ed25519 identity keypair and sets up the
-    //    ChaCha20-Poly1305 cipher (Phase 1: hardcoded TEMP_SHARED_KEY, ECDH-derived in Phase 2).
+    // 4. Initialize UDP sender with ECDH key derivation.
+    //    If receiver_pubkey is configured in TOML, derives per-machine ECDH key;
+    //    otherwise uses TEMP_SHARED_KEY for bootstrap/unpaired mode.
     let dest = config.dest_addr();
-    let mut sender = UdpSender::new(dest, &config.machine_id)?;
-    log::info!("UDP sender initialized — sending to {} (machine_id={})", dest, config.machine_id);
+    let mut sender =
+        UdpSender::new_with_config(dest, &config.machine_id, config.receiver_pubkey.clone())?;
+    log::info!(
+        "UDP sender initialized — sending to {} (machine_id={})",
+        dest,
+        config.machine_id
+    );
+
+    if let Some(ref pubkey) = config.receiver_pubkey {
+        log::info!("🔐 ECDH mode: receiver_pubkey configured ({:.8}…)", pubkey);
+    } else {
+        log::info!("🔐 Bootstrap mode: no receiver_pubkey configured (using TEMP_SHARED_KEY)");
+    }
 
     // 5. Initialize metrics aggregator.
     let mut aggregator = MetricsAggregator::new(config.clone());
@@ -75,7 +91,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 6. Install signal handlers for graceful shutdown (SIGTERM from systemd + SIGINT/Ctrl-C).
     install_signal_handlers();
 
-    log::info!("Entering main loop — interval={}s", config.refresh_interval_secs);
+    log::info!(
+        "Entering main loop — interval={}s",
+        config.refresh_interval_secs
+    );
 
     // 7. Main collection + transmission loop.
     while !SHUTDOWN_REQUESTED.load(Ordering::SeqCst) {

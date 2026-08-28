@@ -14,6 +14,11 @@
 //!
 //! # Unique machine identifier — auto-detected from hostname if not set
 //! machine_id = "pluto"
+//!
+//! # Optional: receiver's X25519 public key (hex-encoded, 32 bytes)
+//! # When absent, sender operates in bootstrap mode using TEMP_SHARED_KEY.
+//! # After pairing is accepted, this field is populated with the real receiver pubkey.
+//! receiver_pubkey = "hex-encoded-32-byte-x25519-pubkey"
 //! ```
 //!
 //! ## Security (Pairing System V1, Phase 1)
@@ -51,13 +56,25 @@ pub struct ServiceConfig {
     /// Falls back to the system hostname if not set in config or empty string.
     #[serde(default = "default_machine_id")]
     pub machine_id: String,
+    /// Receiver's X25519 public key (hex-encoded, 32 bytes) for ECDH-derived per-machine cipher.
+    /// When absent (None), sender uses TEMP_SHARED_KEY (bootstrap/unpaired mode).
+    #[serde(default)]
+    pub receiver_pubkey: Option<String>,
 }
 
 /// Serde default functions for partial TOML config support.
-fn default_host() -> String { DEFAULT_HOST.to_string() }
-fn default_port() -> u16 { DEFAULT_PORT }
-fn default_refresh_interval_secs() -> u64 { DEFAULT_REFRESH_INTERVAL_SECS }
-fn default_machine_id() -> String { "unknown".to_string() }
+fn default_host() -> String {
+    DEFAULT_HOST.to_string()
+}
+fn default_port() -> u16 {
+    DEFAULT_PORT
+}
+fn default_refresh_interval_secs() -> u64 {
+    DEFAULT_REFRESH_INTERVAL_SECS
+}
+fn default_machine_id() -> String {
+    "unknown".to_string()
+}
 
 impl Default for ServiceConfig {
     fn default() -> Self {
@@ -71,6 +88,7 @@ impl Default for ServiceConfig {
             port: DEFAULT_PORT,
             refresh_interval_secs: DEFAULT_REFRESH_INTERVAL_SECS,
             machine_id,
+            receiver_pubkey: None,
         }
     }
 }
@@ -97,13 +115,20 @@ impl ServiceConfig {
                         if !parsed.machine_id.is_empty() && parsed.machine_id != "unknown" {
                             config.machine_id = parsed.machine_id;
                         }
-                        log::info!("Loaded config from {} — host={}, port={}, refresh_interval={}s",
-                                   config_path, config.host, config.port, config.refresh_interval_secs);
+                        log::info!(
+                            "Loaded config from {} — host={}, port={}, refresh_interval={}s",
+                            config_path,
+                            config.host,
+                            config.port,
+                            config.refresh_interval_secs
+                        );
                     }
                     Err(e) => {
                         log::warn!(
                             "Failed to parse config at {}: {} — using defaults (machine_id={})",
-                            config_path, e, config.machine_id
+                            config_path,
+                            e,
+                            config.machine_id
                         );
                     }
                 }

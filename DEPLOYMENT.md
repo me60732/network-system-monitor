@@ -7,13 +7,13 @@ Complete guide for deploying Network System Monitor across your home network.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Desktop Machine (COSMIC Desktop)                                │
-│  - cosmic-applet (panel widget + config UI)                     │
-│  - UDP receiver on port 51057                                   │
-│  - HMAC secret key: /etc/nmd/secret.key                         │
+│  - cosmic-applet (panel widget + config UI + pairing manager)   │
+│  - ChaCha20-Poly1305 receiver on port 51057                     │
+│  - TOFU pairing: ~/.config/cosmic-applet/pairing.toml           │
 └─────────────────────────────────────────────────────────────────┘
                               ▲
-                              │ UDP packets every 2s
-                              │ (rkyv + HMAC-SHA256)
+                              │ UDP packets every 1s
+                              │ (ChaCha20-Poly1305 AEAD)
                               │
         ┌─────────────────────┼─────────────────────┐
         │                     │                     │
@@ -50,31 +50,20 @@ cd network-system-monitor
 cargo build --release -p cosmic-applet
 ```
 
-#### Generate shared HMAC secret
-
-```bash
-sudo mkdir -p /etc/nmd
-# SEC-01: Generate 32 raw bytes (not hex-encoded)
-(umask 077 && sudo head -c 32 /dev/urandom | sudo tee /etc/nmd/secret.key > /dev/null)
-# Fix ownership for desktop user access
-sudo chown $USER:$USER /etc/nmd/secret.key
-sudo chmod 600 /etc/nmd/secret.key
-```
-
-**Save this key — you'll need to copy it to every remote machine using `scp` or similar.**
-
 #### Create config file
 
-```bash
-sudo tee /etc/nmd/config.toml <<EOF
-[udp_receiver]
-port = 51057
-hmac_secret_path = "/etc/nmd/secret.key"
+The cosmic-applet loads its configuration from `~/.config/cosmic-applet/config.toml` (or `config.toml` in the working directory during `--test` mode):
 
-# Remote machines will auto-register on first packet
+```bash
+mkdir -p ~/.config/cosmic-applet
+
+sudo tee ~/.config/cosmic-applet/config.toml <<EOF
+udp_port = 51057
+
 [[machines]]
 name = "desktop"
 host = "127.0.0.1"
+port = 51057
 enabled = true
 
 [machines.metrics]
@@ -88,6 +77,8 @@ temperature = true
 EOF
 ```
 
+**Note:** No shared secret key is needed at setup time. The first connection from each remote machine triggers an automatic pairing request in the applet UI.
+
 #### Install and run applet
 
 **Option A: Test Mode (Development)**
@@ -95,7 +86,7 @@ EOF
 For quick testing without full installation:
 
 ```bash
-./target/release/cosmic-applet --test-mode
+./target/release/cosmic-applet --test
 ```
 
 This runs the applet in a standalone window without COSMIC panel integration.
@@ -142,7 +133,7 @@ sudo cp ./target/release/cosmic-applet /usr/share/cosmic/applets/network-monitor
 sudo chmod +x /usr/share/cosmic/applets/network-monitor
 ```
 
-**Note:** COSMIC applet registry integration is still evolving. If the applet doesn't appear in the "Add Applet" menu, use test mode (`--test-mode`) until the COSMIC Desktop applet discovery mechanism is finalized in your COSMIC version.
+**Note:** COSMIC applet registry integration is still evolving. If the applet doesn't appear in the "Add Applet" menu, use test mode (`--test`) until the COSMIC Desktop applet discovery mechanism is finalized in your COSMIC version.
 
 ### 2. Remote Machine Setup (Per Machine)
 
@@ -163,10 +154,9 @@ sudo ./nmd-service/install-scripts/install.sh
 The script will:
 1. Prompt for desktop machine IP and UDP port
 2. Generate local config at `/etc/nmd/config.toml`
-3. Copy the HMAC secret key (you'll paste it when prompted)
-4. Install binary to `/usr/local/bin/nmd-service`
-5. Create and enable systemd service
-6. Start the service
+3. Install binary to `/usr/local/bin/nmd-service`
+4. Create and enable systemd service
+5. Start the service
 
 #### Option B: Manual installation
 
@@ -177,19 +167,12 @@ cargo build --release -p nmd-service
 # Create config directory
 sudo mkdir -p /etc/nmd
 
-# Copy HMAC secret from desktop
-sudo tee /etc/nmd/secret.key <<EOF
-<paste the hex key from desktop>
-EOF
-sudo chmod 600 /etc/nmd/secret.key
-
-# Create config file
+# Create config file (no secret key needed)
 sudo tee /etc/nmd/config.toml <<EOF
-[service]
-machine_name = "$(hostname)"
-destination = "192.168.1.100:51057"  # Your desktop IP
-interval_ms = 2000
-hmac_secret_path = "/etc/nmd/secret.key"
+host = "192.168.1.100"         # Your desktop IP
+port = 51057
+refresh_interval_secs = 1
+machine_id = "$(hostname)"     # Unique name for this machine
 
 [metrics]
 cpu = true
@@ -235,9 +218,26 @@ sudo systemctl enable nmd-service
 sudo systemctl start nmd-service
 ```
 
-### 3. Verification
+### 3. Pairing Flow (First Connection)
 
-#### On remote machine
+When the first UDP packet arrives from a remote machine:
+
+1. The desktop applet detects an unknown sender
+2. A pairing request appears in the applet's dropdown menu
+3. The UI shows:
+   - Machine ID (from `machine_id` field in config)
+   - Sender IP address
+   - Accept/Deny buttons
+
+**Accept:** The receiver generates a ChaCha20 shared key via ECDH and stores it in `~/.config/cosmic-applet/pairing.toml`
+
+**Deny:** The packet is dropped, no pairing entry created
+
+**Pre-production note:** Currently all machines use the same `TEMP_SHARED_KEY = [0x42; 32]` placeholder. Per-machine ECDH keys are wired in but not yet fully enabled (sender pubkey field is `[0u8; 32]` placeholder).
+
+## Verification
+
+### On remote machine
 
 ```bash
 # Check service status
@@ -247,20 +247,22 @@ sudo systemctl status nmd-service
 sudo journalctl -u nmd-service -f
 
 # Expected output:
-#   "🔧 UDP sender initialized: buffer_len=XXX"
-#   "📤 Sending metrics to 192.168.1.100:51057"
+#   "Loaded config from /etc/nmd/config.toml — host=192.168.1.100, port=51057, refresh_interval=1s"
+#   "UDP sender initialized: dest=192.168.1.100:51057"
+#   "Sending metrics to 192.168.1.100:51057 (machine_id=pluto, interval=1s)"
 ```
 
-#### On desktop
+### On desktop
 
 ```bash
 # Check applet logs
-./cosmic-applet --test-mode
+./target/release/cosmic-applet --test
 
 # Expected output:
-#   "🔐 Receiver HMAC secret loaded from /etc/nmd/secret.key"
-#   "📡 Listening on 0.0.0.0:51057"
-#   "✓ Packet received from pluto (sequence 42)"
+#   "Loaded config from ~/.config/cosmic-applet/config.toml"
+#   "Listening on 0.0.0.0:51057"
+#   "🔔 Received pairing request from unpaired machine: pluto (host: 192.168.1.100)"
+#   "✅ Pairing accepted for machine: pluto"
 ```
 
 Open the COSMIC panel and verify the applet shows metrics from all machines.
@@ -269,14 +271,7 @@ Open the COSMIC panel and verify the applet shows metrics from all machines.
 
 ### Remote machine not appearing on desktop
 
-1. **Check HMAC secret matches**
-   ```bash
-   # On both machines
-   cat /etc/nmd/secret.key
-   ```
-   The keys must be identical.
-
-2. **Check network connectivity**
+1. **Check network connectivity**
    ```bash
    # On remote machine, test UDP send
    echo "test" | nc -u 192.168.1.100 51057
@@ -285,13 +280,13 @@ Open the COSMIC panel and verify the applet shows metrics from all machines.
    nc -lu 51057
    ```
 
-3. **Check firewall**
+2. **Check firewall**
    ```bash
    # On desktop, allow UDP 51057
    sudo ufw allow 51057/udp
    ```
 
-4. **Check service logs**
+3. **Check service logs**
    ```bash
    # Remote
    sudo journalctl -u nmd-service -n 50
@@ -299,50 +294,40 @@ Open the COSMIC panel and verify the applet shows metrics from all machines.
    # Desktop (applet logs to stdout)
    ```
 
-### HMAC verification failures
-
-Symptom: Desktop logs show "HMAC verification failed"
-
-Causes:
-- Secret keys don't match (most common)
-- Clock skew > 10 seconds between machines
-- Corrupted UDP packets
-
-Fix:
-```bash
-# Sync clocks
-sudo ntpdate -s time.nist.gov
-
-# Verify secrets match exactly
-diff <(ssh remote-machine cat /etc/nmd/secret.key) /etc/nmd/secret.key
-```
+4. **Verify config file format**
+   ```bash
+   # Check remote config has correct fields
+   cat /etc/nmd/config.toml
+   # Should contain: host, port, refresh_interval_secs, machine_id (NOT hmac_secret_path)
+   ```
 
 ### High CPU usage on remote machines
 
 Expected: < 1% CPU usage per nmd-service instance
 
 If higher:
-- Check metrics collection interval (default 2000ms is appropriate)
+- Check metrics collection interval (`refresh_interval_secs` in config — default 1s is appropriate)
 - Review which metrics are enabled
 - Check for I/O bottlenecks (disk metrics on slow drives)
 
 ### Metrics not updating
 
 1. Check service is running: `systemctl status nmd-service`
-2. Verify config interval: `grep interval_ms /etc/nmd/config.toml`
+2. Verify config interval: `grep refresh_interval_secs /etc/nmd/config.toml`
 3. Check applet is receiving packets: look for "Packet received" logs
+4. Verify pairing was accepted: check `~/.config/cosmic-applet/pairing.toml`
 
 ## Security Notes
 
-### HMAC Secret Key
-- **Critical**: The secret key authenticates all metrics. Treat it like a password.
-- Generated once on desktop, copied to all remote machines
-- 32 bytes (256 bits) random hex
-- Stored at `/etc/nmd/secret.key` with 0600 permissions
+### ChaCha20-Poly1305 AEAD Encryption
+- Confidentiality + authenticity in one operation (no separate HMAC)
+- 12-byte nonce + ciphertext + 16-byte Poly1305 tag per packet
+- Tampered packets are rejected during decryption
 
-### Replay Protection
-- Timestamp freshness: packets older than 10 seconds are rejected
-- Sequence number: monotonic per machine, prevents replay attacks
+### TOFU Pairing System
+- First connection from unknown sender triggers UI prompt
+- Accepted pairings store ECDH-derived shared key in `~/.config/cosmic-applet/pairing.toml`
+- Replay protection: timestamp freshness (< 10s) + monotonic sequence numbers per session
 
 ### systemd Hardening
 The service runs with restricted privileges:
@@ -354,7 +339,7 @@ The service runs with restricted privileges:
 
 ### Network Exposure
 - Desktop listens on `0.0.0.0:51057` (all interfaces)
-- Consider binding to LAN-only interface: edit config to `bind = "192.168.1.100:51057"`
+- Consider binding to LAN-only interface by editing config
 - Firewall: allow UDP 51057 only from local network
 
 ## Uninstallation
@@ -377,7 +362,7 @@ This will:
 # TODO: proper uninstall procedure
 
 # Remove config
-sudo rm -rf /etc/nmd
+rm -rf ~/.config/cosmic-applet/pairing.toml  # pairing data
 ```
 
 ## Advanced Configuration
@@ -387,8 +372,7 @@ sudo rm -rf /etc/nmd
 Edit `/etc/nmd/config.toml` on each remote machine:
 
 ```toml
-[service]
-interval_ms = 5000  # 5 seconds instead of 2
+refresh_interval_secs = 5  # 5 seconds instead of 1
 ```
 
 Then restart: `sudo systemctl restart nmd-service`
@@ -412,12 +396,12 @@ You can send metrics to multiple desktops by running multiple nmd-service instan
 
 ```bash
 # /etc/nmd/config-desktop1.toml
-[service]
-destination = "192.168.1.100:51057"
+host = "192.168.1.100"
+port = 51057
 
 # /etc/nmd/config-desktop2.toml
-[service]
-destination = "192.168.1.101:51057"
+host = "192.168.1.101"
+port = 51057
 
 # Create separate systemd units (nmd-service@desktop1.service, nmd-service@desktop2.service)
 ```
@@ -432,5 +416,5 @@ destination = "192.168.1.101:51057"
 ## Support
 
 - Report issues: https://github.com/USER/REPO/issues
-- View logs: `journalctl -u nmd-service -f` (remote), `./cosmic-applet --test-mode` (desktop)
-- Configuration reference: See `config.toml` examples in this guide
+- View logs: `journalctl -u nmd-service -f` (remote), `./cosmic-applet --test` (desktop)
+- Configuration reference: See CONFIGURATION.md
