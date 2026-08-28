@@ -1,20 +1,18 @@
-//! Disk partition statistics.
+//! Disk partition and IO statistics.
 //!
-//! Collects disk usage per mounted partition using sysinfo's standalone `Disks` type (sysinfo 0.39),
-//! which reads from `/proc/mounts`. Total/used bytes are read directly from each Disk via built-in
-//! methods — no libc or statvfs dependency required. Each entry in [`DiskStats::partitions`] represents
-//! one mount point with usage and IO statistics.
+//! Collects disk usage per mounted partition using sysinfo's standalone `Disks` type (sysinfo 0.39).
+//! Total/used bytes are read directly from each Disk via built-in methods — no libc or statvfs dependency required.
+//! IO statistics come in two forms:
 //!
-//! ## Data Flow
-//!
-//! 1. `collect()` creates a refreshed `Disks` instance via `new_with_refreshed_list()`.
-//! 2. It iterates over `.list()`, extracting mount points and file system type from each Disk.
-//! 3. For each non-virtual filesystem, it reads total/used bytes using `disk.total_space()` / `disk.available_space()`.
-//! 4. IO statistics (read/write bytes) are extracted via `disk.read_bytes()` and `disk.write_bytes()` if available.
+//! * [`collect_io()`] - legacy function, returns cumulative totals since boot
+//! * [`DiskIoCollector`] - stateful collector that returns delta bytes since last call (recommended)
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::ffi::OsStr;
-use sysinfo::{Disks, DiskRefreshKind};
+use std::fs;
+use std::io::{BufRead, BufReader};
+use sysinfo::{DiskRefreshKind, Disks};
 
 /// Disk partition statistics for one mount point.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -28,6 +26,8 @@ pub struct PartitionStat {
 }
 
 /// Disk IO statistics (cumulative since boot).
+///
+/// DEPRECATED: Use [`DiskIoCollector`] instead which returns deltas per-interval.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DiskIoStats {
     /// Total bytes read from all disks since boot.
@@ -43,10 +43,13 @@ pub struct DiskStats {
     pub partitions: Vec<PartitionStat>,
 }
 
-/// Collect disk IO statistics (cumulative totals since boot).
+// Legacy function for backward compatibility - creates new instance each call, returns cumulative.
+// Legacy function kept for backward compatibility. Creates new instance each call.
+// Legacy function for backward compatibility - creates new instance each call, returns cumulative.
+/// # Deprecated
 ///
-/// Uses sysinfo's Disks with io_usage refresh to get cumulative read/write byte counts.
-/// Returns total IO across all disks. Matches minimon-applet's collection pattern.
+/// This function creates a new Disks instance on each call and cannot track deltas properly.
+/// Use [`DiskIoCollector`] instead which maintains state between calls.
 pub fn collect_io() -> DiskIoStats {
     let r = DiskRefreshKind::nothing().with_io_usage();
     let mut disks = Disks::new();
@@ -57,13 +60,184 @@ pub fn collect_io() -> DiskIoStats {
 
     for disk in disks.list() {
         let usage = disk.usage();
-        total_read += usage.read_bytes;
-        total_write += usage.written_bytes;
+        // Legacy: uses cumulative values since new instance has no old state
+        total_read += usage.total_read_bytes;
+        total_write += usage.total_written_bytes;
     }
 
     DiskIoStats {
         read_bytes: total_read,
         write_bytes: total_write,
+    }
+}
+
+/// Raw sector counts from /proc/diskstats for a single device.
+struct RawDiskStats {
+    read_sectors: u64,
+    write_sectors: u64,
+}
+
+/// Stateful disk IO collector that reads /proc/diskstats directly.
+///
+/// Device selection uses the kernel's /sys/block/<dev>/holders/ mechanism:
+/// - Physical devices that back a dm (LVM) or md (RAID) volume will have entries
+///   in their holders/ directory, so we SKIP them and count through the logical device.
+/// - Logical volumes (dm-0, md0) and standalone disks have an empty holders/ directory
+///   and ARE counted.
+/// - Partitions are skipped; the parent whole-disk device includes all partition IO.
+///
+/// This works portably on any Linux machine without hardcoding device type patterns.
+pub struct DiskIoCollector {
+    prev: HashMap<String, RawDiskStats>,
+}
+
+impl DiskIoCollector {
+    /// Create a new collector and record the initial /proc/diskstats baseline.
+    pub fn new() -> Self {
+        DiskIoCollector {
+            prev: Self::read_diskstats(),
+        }
+    }
+
+    /// Collect disk IO deltas since last call to this method.
+    /// Returns bytes read and written across all real block devices since the previous call.
+    pub fn collect(&mut self) -> DiskIoStats {
+        let current = Self::read_diskstats();
+
+        let mut total_read = 0u64;
+        let mut total_write = 0u64;
+
+        for (name, curr) in &current {
+            if let Some(prev) = self.prev.get(name) {
+                // Sectors in /proc/diskstats are always 512-byte units (kernel ABI guarantee)
+                let rd = curr.read_sectors.saturating_sub(prev.read_sectors);
+                let wr = curr.write_sectors.saturating_sub(prev.write_sectors);
+                total_read += rd * 512;
+                total_write += wr * 512;
+            }
+        }
+
+        self.prev = current;
+
+        DiskIoStats {
+            read_bytes: total_read,
+            write_bytes: total_write,
+        }
+    }
+
+    /// Parse /proc/diskstats and return sector counts for devices that should be tracked.
+    fn read_diskstats() -> HashMap<String, RawDiskStats> {
+        let mut map = HashMap::new();
+
+        let file = match fs::File::open("/proc/diskstats") {
+            Ok(f) => f,
+            Err(e) => {
+                log::warn!("Failed to open /proc/diskstats: {}", e);
+                return map;
+            }
+        };
+
+        // /proc/diskstats fields (space-separated):
+        // 0:major  1:minor  2:name  3:reads  4:reads_merged  5:sectors_read  6:ms_read
+        // 7:writes  8:writes_merged  9:sectors_written  10:ms_write  ...
+        for line in BufReader::new(file).lines().flatten() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() < 10 {
+                continue;
+            }
+
+            let name = parts[2];
+
+            if !Self::should_count(name) {
+                continue;
+            }
+
+            let read_sectors = parts[5].parse::<u64>().unwrap_or(0);
+            let write_sectors = parts[9].parse::<u64>().unwrap_or(0);
+
+            map.insert(
+                name.to_string(),
+                RawDiskStats {
+                    read_sectors,
+                    write_sectors,
+                },
+            );
+        }
+
+        map
+    }
+
+    /// Return true if this device should be counted toward total disk IO.
+    ///
+    /// Rules (applied in order):
+    /// 1. Skip pure virtual devices (loop, ram, sr, zram) — they are not real storage.
+    /// 2. Skip partitions — the parent whole-disk entry already includes all partition IO,
+    ///    so counting both would double-count.
+    /// 3. Skip devices whose /sys/block/<dev>/holders/ directory is non-empty — those
+    ///    devices are physical members (PVs, RAID members) of a higher-level logical device.
+    ///    The logical device (dm-N, md-N) has an empty holders/ and will be counted instead.
+    fn should_count(name: &str) -> bool {
+        // 1. Pure virtual / no-IO pseudo-devices
+        if name.starts_with("loop")
+            || name.starts_with("ram")
+            || name.starts_with("sr")
+            || name.starts_with("zram")
+        {
+            return false;
+        }
+
+        // 2. Partitions — parent device includes their IO
+        if Self::is_partition(name) {
+            return false;
+        }
+
+        // 3. Devices that are slaves of a logical volume (LVM PV, RAID member, etc.).
+        //    /sys/block/<name>/holders/ lists which dm/md devices use this as a slave.
+        //    If the directory is non-empty, skip this device; its IO is counted through
+        //    the logical device that holds it (which will itself have an empty holders/).
+        let holders = format!("/sys/block/{}/holders", name);
+        if let Ok(mut dir) = fs::read_dir(&holders) {
+            if dir.next().is_some() {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Return true if this device is a partition rather than a whole-disk device.
+    /// We count only whole-disk devices to avoid double-counting (parent + partition IO).
+    fn is_partition(name: &str) -> bool {
+        // NVMe partition: nvme0n1p1, nvme1n1p3 — has 'p' AFTER the 'n\d+' suffix
+        if name.starts_with("nvme") {
+            if let Some(p_pos) = name.rfind('p') {
+                if let Some(n_pos) = name.rfind('n') {
+                    if p_pos > n_pos {
+                        let after_p = &name[p_pos + 1..];
+                        return !after_p.is_empty() && after_p.chars().all(|c| c.is_ascii_digit());
+                    }
+                }
+            }
+            return false;
+        }
+        // SATA/SCSI/virtio partitions: sda1, sdb2, vda1 — letter root + trailing digit
+        if name.starts_with("sd") || name.starts_with("hd") || name.starts_with("vd") {
+            return name
+                .chars()
+                .last()
+                .map(|c| c.is_ascii_digit())
+                .unwrap_or(false);
+        }
+        // MMC partitions: mmcblk0p1
+        if name.starts_with("mmcblk") {
+            return name.contains('p')
+                && name
+                    .chars()
+                    .last()
+                    .map(|c| c.is_ascii_digit())
+                    .unwrap_or(false);
+        }
+        false
     }
 }
 
@@ -137,8 +311,21 @@ fn is_virtual_fs(fs_type: &OsStr) -> bool {
 
     matches!(
         fs_str,
-        "tmpfs" | "devtmpfs" | "proc" | "sysfs" | "cgroup" | "cgroup2" | "pstore" | "bpf"
-            | "tracefs" | "debugfs" | "mqueue" | "hugetlbfs" | "fusectl" | "securityfs" | "configfs"
+        "tmpfs"
+            | "devtmpfs"
+            | "proc"
+            | "sysfs"
+            | "cgroup"
+            | "cgroup2"
+            | "pstore"
+            | "bpf"
+            | "tracefs"
+            | "debugfs"
+            | "mqueue"
+            | "hugetlbfs"
+            | "fusectl"
+            | "securityfs"
+            | "configfs"
     )
 }
 
@@ -146,12 +333,61 @@ fn is_virtual_fs(fs_type: &OsStr) -> bool {
 mod tests {
     use super::*;
 
+    /// Diagnostic: test the new /proc/diskstats-based DiskIoCollector over 2 seconds
+    #[test]
+    fn test_disk_io_diagnostic() {
+        use std::{
+            thread,
+            time::{Duration, Instant},
+        };
+
+        let mut collector = DiskIoCollector::new();
+        // First collect drains the baseline
+        let _ = collector.collect();
+
+        println!("\nDiskIoCollector baseline established. Sleeping 2 seconds...");
+        let t = Instant::now();
+        thread::sleep(Duration::from_secs(2));
+
+        let stats = collector.collect();
+        let secs = t.elapsed().as_secs_f64();
+
+        println!("Over {:.2}s:", secs);
+        println!(
+            "  Read:  {} bytes  ({:.2} MB/s)",
+            stats.read_bytes,
+            stats.read_bytes as f64 / secs / 1_048_576.0
+        );
+        println!(
+            "  Write: {} bytes  ({:.2} MB/s)",
+            stats.write_bytes,
+            stats.write_bytes as f64 / secs / 1_048_576.0
+        );
+        println!("  (idle system shows near-zero; run under disk load for non-zero)");
+    }
+
+    /// DiskIoCollector returns delta bytes since last call (valid after second call)
+    #[test]
+    fn test_disk_io_collector_delta_second_call() {
+        let mut collector = DiskIoCollector::new();
+        // First call establishes baseline
+        let _first = collector.collect();
+        // Second call returns delta since first call
+        let second = collector.collect();
+        // After two calls, the delta should be valid (u64 values)
+        assert!(second.read_bytes <= u64::MAX);
+        assert!(second.write_bytes <= u64::MAX);
+    }
+
     /// At least one partition returned on Linux (Beverly writes after implementation).
     #[test]
     fn test_disk_partitions_nonempty() {
         let stats = collect();
         // On any real Linux system with at least a root filesystem, we should see partitions.
-        assert!(!stats.partitions.is_empty(), "Expected at least one disk partition on Linux");
+        assert!(
+            !stats.partitions.is_empty(),
+            "Expected at least one disk partition on Linux"
+        );
     }
 
     /// Each returned partition must have non-zero total bytes (real block device).

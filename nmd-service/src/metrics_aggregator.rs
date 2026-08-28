@@ -28,10 +28,10 @@
 
 use crate::config::ServiceConfig;
 use crate::packet::{
-    MetricPacket, PROTOCOL_VERSION, PartitionInfo,
-    CpuMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics, DiskMetrics
+    CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricPacket, NetworkMetrics,
+    PROTOCOL_VERSION, PartitionInfo,
 };
-use metrics_core::{CpuCollector, GpuCollector, InterfaceStat, NetworkCollector};
+use metrics_core::{CpuCollector, GpuCollector, NetworkCollector};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Aggregator that collects system metrics and packs them into [`MetricPacket`] format.
@@ -52,17 +52,17 @@ pub struct MetricsAggregator {
 
     /// Stateful GPU collector that detects GPU type once and caches NVML instance.
     gpu_collector: GpuCollector,
-    
+
     // Layer 1: Static value caching (never change during runtime)
     /// Total memory in bytes (cached at startup, never changes)
     memory_total_bytes: u64,
     /// Total GPU VRAM in MB (cached at startup, None if no GPU detected)
     gpu_vram_total_mb: Option<u32>,
-    
+
     // Layer 2: Stateful system instance
     /// sysinfo::System instance for memory refresh without full re-initialization
     system: sysinfo::System,
-    
+
     // Layer 3: Slow-refresh disk partition caching (refresh every 20 cycles)
     /// Cached list of disk partitions, refreshed every 20 cycles
     disk_partitions_cache: Vec<PartitionInfo>,
@@ -70,6 +70,10 @@ pub struct MetricsAggregator {
     disk_total_bytes_cache: u64,
     /// Counter tracking when to refresh disk partitions (refresh every 20 cycles)
     partition_refresh_counter: u32,
+
+    // Layer 4: Stateful disk IO collector for delta-based byte tracking
+    /// Persistent DiskIoCollector instance that tracks IO deltas since last call
+    disk_io_collector: metrics_core::disk::DiskIoCollector,
 }
 
 impl MetricsAggregator {
@@ -85,19 +89,19 @@ impl MetricsAggregator {
     pub fn new(config: ServiceConfig) -> Self {
         // Layer 1: Collect static values that never change during runtime
         let memory_total_bytes = sysinfo::System::new_all().total_memory();
-        
+
         // Initialize GPU collector once (detects GPU type, initializes NVML if needed)
         let gpu_collector = GpuCollector::new();
-        
+
         let gpu_vram_total_mb = {
             let gpu_stats = gpu_collector.collect();
             gpu_stats.vram_total.map(|bytes| (bytes / 1_048_576) as u32)
         };
-        
+
         // Layer 2: Initialize stateful system instance with initial memory refresh
         let mut system = sysinfo::System::new();
         system.refresh_memory();
-        
+
         // Layer 3: Collect disk partitions for initial cache
         let disk_stats = metrics_core::disk::collect();
         let disk_partitions_cache: Vec<PartitionInfo> = disk_stats
@@ -110,18 +114,21 @@ impl MetricsAggregator {
             })
             .collect();
         let disk_total_bytes_cache = disk_stats.partitions.iter().map(|p| p.total).sum();
-        
+
+        let disk_io_collector = metrics_core::disk::DiskIoCollector::new();
+
         MetricsAggregator {
             config,
-            cpu_collector: CpuCollector::new(),  // Prime with initial read + discover CPU temp sensor
-            network_collector: NetworkCollector::new(),  // Initialize empty prev maps
-            gpu_collector,  // Stateful GPU collector with cached GPU type and NVML instance
+            cpu_collector: CpuCollector::new(), // Prime with initial read + discover CPU temp sensor
+            network_collector: NetworkCollector::new(), // Initialize empty prev maps
+            gpu_collector, // Stateful GPU collector with cached GPU type and NVML instance
             memory_total_bytes,
             gpu_vram_total_mb,
             system,
             disk_partitions_cache,
             disk_total_bytes_cache,
             partition_refresh_counter: 0,
+            disk_io_collector,
         }
     }
 
@@ -136,25 +143,31 @@ impl MetricsAggregator {
     pub fn aggregate(&mut self) -> MetricPacket {
         use std::time::Instant;
         let aggregate_start = Instant::now();
-        
+
         // --- CPU usage and temperature — collected together via stateful collector ---
         let cpu_start = Instant::now();
         let cpu = self.cpu_collector.collect();
         let cpu_elapsed = cpu_start.elapsed();
         log::debug!("CPU collection: {}ms", cpu_elapsed.as_millis());
         if cpu_elapsed.as_millis() > 50 {
-            log::warn!("CPU collection took {}ms (threshold: 50ms)", cpu_elapsed.as_millis());
+            log::warn!(
+                "CPU collection took {}ms (threshold: 50ms)",
+                cpu_elapsed.as_millis()
+            );
         }
         let cpu_usage_percent = cpu.usage;
         let temperature_celsius = cpu.cpu_temp;
-        
+
         // --- Network RX/TX bytes — cumulative bytes since boot (stateful collector) ---
         let network_start = Instant::now();
         let network_stats = self.network_collector.collect();
         let network_elapsed = network_start.elapsed();
         log::debug!("Network collection: {}ms", network_elapsed.as_millis());
         if network_elapsed.as_millis() > 50 {
-            log::warn!("Network collection took {}ms (threshold: 50ms)", network_elapsed.as_millis());
+            log::warn!(
+                "Network collection took {}ms (threshold: 50ms)",
+                network_elapsed.as_millis()
+            );
         }
 
         // --- GPU VRAM, load, and temp — collect ONCE via stateful collector ---
@@ -163,20 +176,29 @@ impl MetricsAggregator {
         let gpu_elapsed = gpu_start.elapsed();
         log::debug!("GPU collection: {}ms", gpu_elapsed.as_millis());
         if gpu_elapsed.as_millis() > 50 {
-            log::warn!("GPU collection took {}ms (threshold: 50ms)", gpu_elapsed.as_millis());
+            log::warn!(
+                "GPU collection took {}ms (threshold: 50ms)",
+                gpu_elapsed.as_millis()
+            );
         }
         let gpu_temperature_celsius = gpu_stats.gpu_temp;
 
         // --- Memory used and total bytes — send raw values, let applet calculate percentage ---
         // Layer 2: Use stateful system instance instead of System::new_all()
         let mem_start = Instant::now();
-        self.system.refresh_memory();  // Refresh memory only (much faster than full re-initialization)
-        let memory_used_bytes = self.system.total_memory().saturating_sub(self.system.available_memory());
+        self.system.refresh_memory(); // Refresh memory only (much faster than full re-initialization)
+        let memory_used_bytes = self
+            .system
+            .total_memory()
+            .saturating_sub(self.system.available_memory());
         // Layer 1: Use cached value in packet - memory_total_bytes is static, never changes during runtime
         let mem_elapsed = mem_start.elapsed();
         log::debug!("Memory collection: {}ms", mem_elapsed.as_millis());
         if mem_elapsed.as_millis() > 50 {
-            log::warn!("Memory collection took {}ms (threshold: 50ms)", mem_elapsed.as_millis());
+            log::warn!(
+                "Memory collection took {}ms (threshold: 50ms)",
+                mem_elapsed.as_millis()
+            );
         }
 
         // --- Swap usage percentage ---
@@ -193,7 +215,7 @@ impl MetricsAggregator {
 
         // --- Disk used and total bytes — sum across all partitions, send raw values ---
         let disk_start = Instant::now();
-        
+
         // Layer 3: Conditional disk partition refresh (every 20 cycles)
         self.partition_refresh_counter += 1;
         if self.partition_refresh_counter >= 20 {
@@ -211,33 +233,47 @@ impl MetricsAggregator {
             self.disk_total_bytes_cache = disk_stats.partitions.iter().map(|p| p.total).sum();
             self.partition_refresh_counter = 0;
         }
-        
+
         let disk_elapsed = disk_start.elapsed();
         log::debug!("Disk collection: {}ms", disk_elapsed.as_millis());
         if disk_elapsed.as_millis() > 50 {
-            log::warn!("Disk collection took {}ms (threshold: 50ms)", disk_elapsed.as_millis());
+            log::warn!(
+                "Disk collection took {}ms (threshold: 50ms)",
+                disk_elapsed.as_millis()
+            );
         }
-        let disk_used_bytes: u64 = self.disk_partitions_cache.iter().map(|p| p.used).sum();  // Layer 3: use cached partitions
+        let disk_used_bytes: u64 = self.disk_partitions_cache.iter().map(|p| p.used).sum(); // Layer 3: use cached partitions
 
-        // --- Disk IO stats — cumulative read/write bytes since boot ---
+        // --- Disk IO stats — delta read/write bytes since last call ---
         let disk_io_start = Instant::now();
-        let disk_io = metrics_core::disk::collect_io();
+        let disk_io = self.disk_io_collector.collect(); // uses persistent instance, returns deltas
         let disk_read_bytes = Some(disk_io.read_bytes);
         let disk_write_bytes = Some(disk_io.write_bytes);
         let disk_io_elapsed = disk_io_start.elapsed();
         log::debug!("Disk IO collection: {}ms", disk_io_elapsed.as_millis());
 
-        // --- Network RX/TX bytes — cumulative bytes since boot (applet computes rates) ---
-        let network_interfaces: Vec<InterfaceStat> = network_stats.interfaces;
-        let network_rx_bytes = Self::primary_interface_rx(&network_interfaces);
-        let network_tx_bytes = Self::primary_interface_tx(&network_interfaces);
+        // --- Network RX/TX bytes — delta bytes since last call (applet uses directly as bytes/sec) ---
+        // NetworkCollector now returns a single aggregate entry with all-interface totals
+        let network_rx_bytes = network_stats
+            .interfaces
+            .first()
+            .map(|i| i.rx_bytes)
+            .unwrap_or(0);
+        let network_tx_bytes = network_stats
+            .interfaces
+            .first()
+            .map(|i| i.tx_bytes)
+            .unwrap_or(0);
 
         // --- Uptime seconds — use metrics_core collector ---
         let uptime_start = Instant::now();
         let uptime_stats = metrics_core::uptime::collect();
         let uptime_elapsed = uptime_start.elapsed();
         if uptime_elapsed.as_millis() > 50 {
-            log::warn!("Uptime collection took {}ms (threshold: 50ms)", uptime_elapsed.as_millis());
+            log::warn!(
+                "Uptime collection took {}ms (threshold: 50ms)",
+                uptime_elapsed.as_millis()
+            );
         }
         let uptime_seconds = uptime_stats.seconds;
 
@@ -266,7 +302,7 @@ impl MetricsAggregator {
             sender_session_id: [0u8; 16], // Filled by UdpSender from template
             timestamp,
             sequence: 0, // Filled by UdpSender before transmission
-            
+
             // Nested metric groups (Protocol Version 3)
             cpu: CpuMetrics {
                 usage_percent: cpu_usage_percent,
@@ -292,19 +328,25 @@ impl MetricsAggregator {
                 total_bytes: self.disk_total_bytes_cache, // Layer 3: cached
                 read_bytes: disk_read_bytes,
                 write_bytes: disk_write_bytes,
-                partitions: disk_partitions.iter().map(|p| PartitionInfo {
-                    mount: p.mount.clone(),
-                    total: p.total,
-                    used: p.used,
-                }).collect(),
+                partitions: disk_partitions
+                    .iter()
+                    .map(|p| PartitionInfo {
+                        mount: p.mount.clone(),
+                        total: p.total,
+                        used: p.used,
+                    })
+                    .collect(),
             },
             uptime_seconds,
         };
-        
+
         // Log total aggregation time and cache status
         let total_elapsed = aggregate_start.elapsed();
         if total_elapsed.as_millis() > 50 {
-            log::warn!("Total metrics aggregation took {}ms (threshold: 50ms)", total_elapsed.as_millis());
+            log::warn!(
+                "Total metrics aggregation took {}ms (threshold: 50ms)",
+                total_elapsed.as_millis()
+            );
         } else {
             log::debug!(
                 "Metrics aggregation completed in {}ms (cached memory_total={}, vram_total={:?}, partitions={})",
@@ -314,49 +356,12 @@ impl MetricsAggregator {
                 self.disk_partitions_cache.len()
             );
         }
-        
+
         packet
     }
 
-    /// Find the primary non-loopback interface and return its cumulative rx_bytes.
-    /// Falls back to loopback if no non-loopback interface is found.
-    fn primary_interface_rx(interfaces: &[InterfaceStat]) -> u64 {
-        // Prefer the first non-loopback interface with a name that isn't "lo".
-        for iface in interfaces {
-            if !iface.name.is_empty() && iface.name != "lo" {
-                return iface.rx_bytes;
-            }
-        }
-
-        // Fallback: use loopback ("lo") if no other interface is found.
-        for iface in interfaces {
-            if iface.name == "lo" {
-                return iface.rx_bytes;
-            }
-        }
-
-        0
-    }
-
-    /// Find the primary non-loopback interface and return its cumulative tx_bytes.
-    /// Falls back to loopback if no non-loopback interface is found.
-    fn primary_interface_tx(interfaces: &[InterfaceStat]) -> u64 {
-        // Prefer the first non-loopback interface with a name that isn't "lo".
-        for iface in interfaces {
-            if !iface.name.is_empty() && iface.name != "lo" {
-                return iface.tx_bytes;
-            }
-        }
-
-        // Fallback: use loopback ("lo") if no other interface is found.
-        for iface in interfaces {
-            if iface.name == "lo" {
-                return iface.tx_bytes;
-            }
-        }
-
-        0
-    }
+    // Legacy helper methods - kept for backward compatibility but not used in current implementation.
+    // NetworkCollector::collect() now returns a single aggregate entry with all-interface totals.
 
     /// Return the configured machine_id for this service instance.
     pub fn machine_id(&self) -> &str {
@@ -375,11 +380,11 @@ mod tests {
         let mut aggregator = MetricsAggregator::new(config);
 
         let packet = aggregator.aggregate();
-        
+
         // machine_id is [u8; 20] null-padded — convert to string for comparison.
         let len = packet.machine_id.iter().position(|&b| b == 0).unwrap_or(20);
         let packet_machine_id: &str = std::str::from_utf8(&packet.machine_id[..len]).unwrap();
-        
+
         assert_eq!(packet_machine_id, aggregator.machine_id());
     }
 
@@ -390,6 +395,9 @@ mod tests {
         let mut aggregator = MetricsAggregator::new(config);
 
         let packet = aggregator.aggregate();
-        assert!(packet.timestamp > 0, "timestamp should be set to current Unix time");
+        assert!(
+            packet.timestamp > 0,
+            "timestamp should be set to current Unix time"
+        );
     }
 }

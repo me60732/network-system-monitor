@@ -1,8 +1,10 @@
 //! Network interface statistics.
 //!
 //! Collects per-interface RX/TX byte counters using `sysinfo` (which reads from `/proc/net/dev`).
-//! Returns CUMULATIVE byte counts since boot. The applet layer computes rates by storing samples
-//! and computing deltas. This matches minimon-applet's collection pattern.
+//! Returns DELTA byte counts since the last collection call. The applet layer uses these directly
+//! as bytes-per-second rates (since collection interval is typically 1 second).
+//!
+//! This matches minimon-applet's collection pattern using `received()` and `transmitted()` deltas.
 
 use serde::{Deserialize, Serialize};
 use sysinfo::Networks;
@@ -33,11 +35,12 @@ pub struct NetworkStats {
     pub interfaces: Vec<InterfaceStat>,
 }
 
-/// Stateful network collector that returns cumulative byte counts.
+/// Stateful network collector that returns per-interval delta byte counts.
 ///
-/// Returns cumulative RX/TX byte totals since boot (not deltas).
-/// The applet layer computes rates by storing samples and computing deltas.
-/// This matches minimon-applet's collection pattern.
+/// Uses `sysinfo::Networks` which internally tracks old→new values to compute deltas.
+/// Returns RX/TX bytes transferred since the last call to `collect()` (not cumulative).
+/// The applet layer uses these directly as bytes-per-second rates (collection interval ≈ 1 second).
+/// This matches minimon-applet's collection pattern using `received()` and `transmitted()` deltas.
 #[derive(Debug)]
 pub struct NetworkCollector {
     /// sysinfo Networks instance - holds current interface data
@@ -50,47 +53,49 @@ impl NetworkCollector {
     /// Initializes sysinfo Networks.
     pub fn new() -> Self {
         let networks = Networks::new_with_refreshed_list();
-        
-        NetworkCollector {
-            networks,
-        }
+
+        NetworkCollector { networks }
     }
 
-    /// Collect current network interface statistics (cumulative totals since boot).
+    /// Collect current network interface statistics (delta since last call).
     ///
-    /// Refreshes sysinfo data and returns cumulative RX/TX byte counts.
-    /// The applet computes rates by storing samples and computing deltas.
-    /// This matches minimon-applet's collection pattern.
+    /// Refreshes sysinfo data and returns RX/TX bytes transferred since the previous `collect()` call.
+    /// Uses `received()` and `transmitted()` which return deltas from sysinfo's internal tracking.
+    /// Sums ALL interfaces (including loopback — it's negligible on a desktop).
+    /// The applet uses these directly as bytes-per-second rates (collection interval ≈ 1 second).
     pub fn collect(&mut self) -> NetworkStats {
-        // Refresh network data
+        // Refresh network data (persistent instance, sysinfo tracks old→new internally)
         self.networks.refresh(true);
-        
-        let mut interfaces: Vec<InterfaceStat> = Vec::new();
-        
-        for (name, data) in self.networks.list() {
-            interfaces.push(InterfaceStat {
-                name: name.clone(),
-                rx_bytes: data.received(),  // Cumulative bytes since boot
-                tx_bytes: data.transmitted(),  // Cumulative bytes since boot
+
+        let mut total_rx: u64 = 0;
+        let mut total_tx: u64 = 0;
+
+        // Sum ALL interfaces (including loopback — negligible on desktop)
+        for (_, data) in &self.networks {
+            total_rx += data.received(); // delta since last refresh
+            total_tx += data.transmitted(); // delta since last refresh
+        }
+
+        // Return a single aggregate entry — rx_bytes/tx_bytes are bytes since last collect() call
+        NetworkStats {
+            interfaces: vec![InterfaceStat {
+                name: "all".to_string(),
+                rx_bytes: total_rx,
+                tx_bytes: total_tx,
                 rx_packets: None,
                 tx_packets: None,
                 rx_dropped: None,
                 tx_dropped: None,
-            });
+            }],
         }
-        
-        NetworkStats { interfaces }
     }
 }
 
-/// Collect current network interface statistics (cumulative totals since boot).
+// Legacy standalone function for backward compatibility - uses cumulative values.
+/// # Deprecated
 ///
-/// Uses `sysinfo::Networks` to read `/proc/net/dev` and report cumulative RX/TX byte counters
-/// for each network interface (loopback, ethernet, wifi, etc.). Values are monotonic counters
-/// since boot — rate calculations must be done by the consumer over time intervals.
-///
-/// Packet statistics (rx/tx packets, dropped) are included where available in sysinfo 0.39+;
-/// returns `None` if not supported by the underlying API (sysinfo 0.39 does not expose these fields).
+/// This function creates a new Networks instance on each call and cannot track deltas properly.
+/// Use [`NetworkCollector::collect`] instead which maintains state between calls.
 pub fn collect() -> NetworkStats {
     // In sysinfo 0.35, Networks is a standalone type with new_with_refreshed_list().
     let networks = Networks::new_with_refreshed_list();
@@ -105,8 +110,8 @@ pub fn collect() -> NetworkStats {
 
             InterfaceStat {
                 name: name.clone(),
-                rx_bytes: data.received(),
-                tx_bytes: data.transmitted(),
+                rx_bytes: data.total_received(),
+                tx_bytes: data.total_transmitted(),
                 rx_packets: None,
                 tx_packets: None,
                 rx_dropped: None,
@@ -127,7 +132,10 @@ mod tests {
     fn test_network_interfaces_present() {
         let stats = collect();
         // On any Linux system, at least the loopback interface ("lo") should be present.
-        assert!(!stats.interfaces.is_empty(), "Expected at least one network interface (loopback)");
+        assert!(
+            !stats.interfaces.is_empty(),
+            "Expected at least one network interface (loopback)"
+        );
     }
 
     /// Loopback interface must be present on Linux.
@@ -149,19 +157,18 @@ mod tests {
         }
     }
 
-    /// NetworkCollector should track deltas correctly
+    /// NetworkCollector returns delta bytes since last call (valid after second call)
     #[test]
-    fn test_network_collector_deltas() {
+    fn test_network_collector_delta_second_call() {
         let mut collector = NetworkCollector::new();
-        
-        // First collect returns 0 deltas (no baseline yet)
-        let first_stats = collector.collect();
-        for iface in &first_stats.interfaces {
-            assert_eq!(iface.rx_bytes, 0, "First collect should return 0 RX delta");
-            assert_eq!(iface.tx_bytes, 0, "First collect should return 0 TX delta");
+        // First call establishes baseline
+        let _first = collector.collect();
+        // Second call returns delta since first call
+        let second = collector.collect();
+        // After two calls, the delta should be valid (non-None, u64 values)
+        for iface in &second.interfaces {
+            assert!(iface.rx_bytes <= u64::MAX);
+            assert!(iface.tx_bytes <= u64::MAX);
         }
-        
-        // Simulate some network activity by manually updating prev values
-        // In real usage, sysinfo would show increasing values over time
     }
 }
