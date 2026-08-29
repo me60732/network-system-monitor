@@ -453,6 +453,12 @@ print_receiver_done() {
 
 # ── Main ──────────────────────────────────────────────────────────────────
 main() {
+  # When piped through bash (curl ... | sudo bash) stdin is the script itself,
+  # not the terminal. Reopen stdin from /dev/tty so interactive prompts work.
+  if [[ ! -t 0 ]]; then
+    exec < /dev/tty || die "Cannot open /dev/tty for interactive input."
+  fi
+
   print_header
   need_root
 
