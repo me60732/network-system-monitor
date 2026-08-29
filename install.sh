@@ -2,7 +2,10 @@
 # Network System Monitor — Installer
 #
 # Usage (one-line):
-#   curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash
+#
+# Note: use 'curl ... | sudo bash' NOT 'sudo curl ... | bash'
+# The pipe always runs bash as a new process — sudo must be on bash, not curl.
 #
 # Or locally from the project root:
 #   ./install.sh
@@ -40,7 +43,17 @@ blank(){ echo ""; }
 has() { command -v "$1" &>/dev/null; }
 
 need_root() {
-  [[ $EUID -eq 0 ]] || die "This script must be run as root. Try: sudo $0"
+  if [[ $EUID -ne 0 ]]; then
+    err "This script must run as root."
+    blank
+    echo -e "  ${BOLD}Run with:${NC}"
+    echo -e "  ${CYAN}curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash${NC}"
+    blank
+    echo -e "  ${YELLOW}Note:${NC} 'sudo curl ... | bash' only gives sudo to curl, not bash."
+    echo -e "       The pipe runs bash as your normal user — use 'curl ... | sudo bash' instead."
+    blank
+    exit 1
+  fi
 }
 
 download() {

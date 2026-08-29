@@ -157,7 +157,7 @@ jobs:
             ### One-line install
 
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash
             ```
 
             Or download a specific binary below and follow the [manual install docs](https://github.com/me60732/network-system-monitor#installation).
