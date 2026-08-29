@@ -176,8 +176,11 @@ if systemctl is-active --quiet "$SERVICE_NAME"; then
     log "Config file:   $CONFIG_FILE"
     log "Keypair:       /var/lib/nmd/.config/nmd/keypair.key (auto-generated on first start)"
     log ""
-    log "NEXT STEP: Open the applet on the desktop and copy the receiver pubkey from Settings."
-    log "Then add it to $CONFIG_FILE as: receiver_pubkey = \"<hex>\""
+    log "NEXT STEP: nmd-service will automatically TCP-connect to the receiver and"
+    log "request pairing. Accept it in the cosmic-applet UI — done!"
+    log ""
+    log "If TCP pairing fails, manually copy the pubkey from Settings → General"
+    log "in the applet and set: receiver_pubkey = \"<hex>\" in $CONFIG_FILE"
     log "Then restart: systemctl restart $SERVICE_NAME"
 else
     error "Service failed to start. Check logs:"
