@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Network Monitor
+Comment=Monitor system metrics across all machines on your local network
+Exec=com.cosmic.network_system_monitor
+Terminal=false
+Type=Application
+StartupNotify=true
+NoDisplay=true
+Icon=com.cosmic.network_system_monitor
+Categories=COSMIC;
+Keywords=Monitor;Network;System;CPU;Memory;Disk;Remote;
+X-CosmicApplet=true
+X-CosmicHoverPopup=Start

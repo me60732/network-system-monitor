@@ -1,9 +1,9 @@
-//! # crypto — ChaCha20-Poly1305 wire encryption for MetricPacket transport (Pairing V1, Phase 2)
+//! # crypto — ChaCha20-Poly1305 wire encryption for MetricPacket transport (ECDH-only)
 //!
 //! Single owner of the encrypted wire format shared by `nmd-service` (sender) and
 //! `cosmic-applet` (receiver). Both sides call into this module so the format can never drift.
 //!
-//! ## Wire Format (Phase 2, ECDH enabled)
+//! ## Wire Format
 //!
 //! ```text
 //! [32-byte sender X25519 public key][12-byte nonce][ChaCha20-encrypted rkyv packet][16-byte Poly1305 tag]
@@ -21,20 +21,21 @@
 //!
 //! Nonces are `[4-byte random per-sender prefix][8-byte big-endian counter]`. The counter
 //! guarantees uniqueness within one sender session; the random prefix separates the nonce
-//! spaces of multiple senders that share a key (which all Phase 1 senders do — see below).
+//! spaces of multiple senders that share a key.
 //!
-//! ## Phase 1 Key (TEMPORARY)
+//! ## ECDH Key Derivation (REQUIRED)
 //!
-//! All parties use the hardcoded [`TEMP_SHARED_KEY`]. Phase 2 replaces this with a per-machine
-//! key derived via X25519 ECDH during pairing. Until then the wire is confidential only against
-//! passive observers who don't read this source tree — acceptable for the stress-test phase.
+//! All communication uses ChaCha20-Poly1305 with keys derived via X25519 ECDH. The sender
+//! must have the receiver's public key configured; the receiver derives the shared key from
+//! the sender's pubkey in the wire header.
 
 use chacha20poly1305::{
     ChaCha20Poly1305, Nonce,
     aead::{Aead, KeyInit},
 };
 
-/// TEMPORARY Phase 1 pre-shared key — replaced by an ECDH-derived per-machine key in Phase 2.
+/// Test-only bootstrap key — not used in production. ECDH is required for all real senders.
+#[cfg(test)]
 pub const TEMP_SHARED_KEY: [u8; 32] = [0x42; 32];
 
 /// Length of the sender X25519 pubkey in the wire packet header.

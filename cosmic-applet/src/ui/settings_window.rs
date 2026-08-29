@@ -51,6 +51,8 @@ pub enum SettingsMessage {
     ToggleGpuVisible(bool),
     /// No operation — used when a widget needs to return a message but no action is required.
     NoOp,
+    /// Copy the receiver public key to the system clipboard.
+    CopyPubkeyToClipboard,
 }
 
 /// SettingsWindow renders general configuration options for the app.
@@ -114,7 +116,8 @@ pub fn view_with_config(
     minimon_config: &MinimonConfig,
     receiver_pubkey: &str,
 ) -> Element<'static, SettingsMessage> {
-    let receiver_pubkey = receiver_pubkey.to_string();
+    // Use a String directly - cosmic text_input can work with owned string content
+    let receiver_pubkey_str = receiver_pubkey.to_string();
     use cosmic::widget::{divider, icon};
 
     // Back button
@@ -236,6 +239,9 @@ pub fn view_with_config(
     let content_order_list = column(content_items).spacing(4);
 
     // Receiver public key display for encrypted pairing configuration
+    let copy_button = button::icon(cosmic::widget::icon::from_name("edit-copy-symbolic"))
+        .on_press(SettingsMessage::CopyPubkeyToClipboard);
+
     let pubkey_section = column(vec![
         text("Receiver Public Key").size(14).into(),
         text(format!(
@@ -243,13 +249,19 @@ pub fn view_with_config(
         ))
         .size(12)
         .into(),
-        container(
-            text(receiver_pubkey)
-                .font(cosmic::font::mono())
-                .width(cosmic::iced::Length::Fill)
-        )
-        .padding(8)
-        .style(|_theme| cosmic::iced::widget::container::Style::default())
+        row(vec![
+            // Use container with text for pubkey display - works with 'static lifetime
+            container(
+                text(receiver_pubkey_str)
+                    .font(cosmic::font::mono())
+                    .width(cosmic::iced::Length::Fill)
+            )
+            .style(|_theme| cosmic::iced::widget::container::Style::default())
+            .into(),
+            copy_button.into(),
+        ])
+        .spacing(8)
+        .align_y(cosmic::iced::Alignment::Center)
         .into(),
     ])
     .spacing(4);

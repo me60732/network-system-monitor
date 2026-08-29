@@ -6,7 +6,7 @@
 //! `benches/performance_bench.rs`.
 //! Not part of the public applet API (`#[doc(hidden)]` at the module declaration).
 //!
-//! ## Wire Format (Phase 2)
+//! ## Wire Format (ECDH-only)
 //!
 //! ```text
 //! [32-byte sender X25519 public key][12-byte nonce][ChaCha20-encrypted rkyv packet][16-byte Poly1305 tag]
@@ -21,11 +21,36 @@ use std::sync::atomic::{AtomicU64, Ordering};
 /// Process-wide nonce counter — guarantees every test/bench wire packet gets a unique nonce.
 static TEST_NONCE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
-/// Fixed X25519 public key for deterministic test packets (32 bytes, hex-encoded).
-const TEST_SENDER_X25519_PUBKEY: [u8; 32] = [
-    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
-    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
-];
+/// Fixed test sender X25519 private key bytes (arbitrary, clamped internally by x25519-dalek).
+const TEST_SENDER_X25519_PRIVKEY_BYTES: [u8; 32] = [0x77u8; 32];
+
+/// Returns the X25519 public key corresponding to TEST_SENDER_X25519_PRIVKEY_BYTES.
+pub fn test_sender_pubkey() -> [u8; 32] {
+    use x25519_dalek::{PublicKey, StaticSecret};
+    let secret = StaticSecret::from(TEST_SENDER_X25519_PRIVKEY_BYTES);
+    *PublicKey::from(&secret).as_bytes()
+}
+
+/// Derive the ECDH shared key as the test sender would, given the receiver's hex pubkey.
+pub fn test_ecdh_key(receiver_pubkey_hex: &str) -> [u8; 32] {
+    use x25519_dalek::{PublicKey, StaticSecret};
+
+    let receiver_bytes: [u8; 32] = hex::decode(receiver_pubkey_hex)
+        .expect("valid hex receiver pubkey")
+        .try_into()
+        .expect("receiver pubkey must be 32 bytes");
+    let sender_secret = StaticSecret::from(TEST_SENDER_X25519_PRIVKEY_BYTES);
+    let receiver_pub = PublicKey::from(receiver_bytes);
+    *sender_secret.diffie_hellman(&receiver_pub).as_bytes()
+}
+
+/// Encrypt a packet with the ECDH key derived from test sender privkey + given receiver pubkey.
+/// Use this in all tests that send packets to a real UdpReceiver.
+pub fn encrypt_packet_ecdh(packet: MetricPacket, receiver_pubkey_hex: &str) -> Vec<u8> {
+    let ecdh_key = test_ecdh_key(receiver_pubkey_hex);
+    let sender_pub = test_sender_pubkey();
+    encrypt_packet_with_sender_pubkey(packet, &ecdh_key, &sender_pub)
+}
 
 /// Current Unix time in seconds — convenience for freshness-sensitive test packets.
 pub fn unix_now() -> u64 {
@@ -132,18 +157,8 @@ pub fn encrypt_packet(packet: MetricPacket, key: &[u8; 32]) -> Vec<u8> {
         TEST_NONCE_COUNTER.fetch_add(1, Ordering::SeqCst),
     );
     // Use seal_with_sender_pubkey to prepend the sender's X25519 pubkey header
-    crypto::seal_with_sender_pubkey(
-        &cipher,
-        &nonce,
-        plaintext.as_ref(),
-        &TEST_SENDER_X25519_PUBKEY,
-    )
-    .expect("Encryption should succeed")
-}
-
-/// Convenience: encrypt under the Phase 1 temporary shared key the receiver uses.
-pub fn encrypt_packet_default(packet: MetricPacket) -> Vec<u8> {
-    encrypt_packet(packet, &crypto::TEMP_SHARED_KEY)
+    crypto::seal_with_sender_pubkey(&cipher, &nonce, plaintext.as_ref(), &test_sender_pubkey())
+        .expect("Encryption should succeed")
 }
 
 /// Encrypt packet with a specific sender X25519 public key for test scenarios.

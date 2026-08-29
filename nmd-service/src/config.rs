@@ -15,19 +15,18 @@
 //! # Unique machine identifier — auto-detected from hostname if not set
 //! machine_id = "pluto"
 //!
-//! # Optional: receiver's X25519 public key (hex-encoded, 32 bytes)
-//! # When absent, sender operates in bootstrap mode using TEMP_SHARED_KEY.
-//! # After pairing is accepted, this field is populated with the real receiver pubkey.
+//! # Required: receiver's X25519 public key (hex-encoded, 32 bytes) for ECDH-derived cipher.
+//! # Sender refuses to start without this configured.
 //! receiver_pubkey = "hex-encoded-32-byte-x25519-pubkey"
 //! ```
 //!
-//! ## Security (Pairing System V1, Phase 1)
+//! ## Security (ECDH-only encryption)
 //!
 //! ChaCha20-Poly1305 AEAD encryption provides both confidentiality and authenticity.
 //! The Ed25519 identity keypair is auto-generated at `~/.config/nmd/keypair.key` on first start.
-//! Phase 2 will use ECDH to derive per-machine shared keys during pairing.
+//! ECDH derives per-machine shared keys from sender's private key + receiver's public key.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 
 /// Default UDP destination: desktop applet listening address.
@@ -38,10 +37,10 @@ const DEFAULT_REFRESH_INTERVAL_SECS: u64 = 1;
 
 /// Default configuration file path for nmd-service (loaded when no --config is given).
 pub const DEFAULT_CONFIG_PATH: &str = "/etc/nmd/config.toml";
+/// receiver_pubkey must be configured in this file for the sender to start.
 
 /// Runtime configuration for `nmd-service`, loaded from TOML at startup.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ServiceConfig {
     /// Desktop applet IP address to send UDP packets to (default: "127.0.0.1").
     #[serde(default = "default_host")]
@@ -57,7 +56,7 @@ pub struct ServiceConfig {
     #[serde(default = "default_machine_id")]
     pub machine_id: String,
     /// Receiver's X25519 public key (hex-encoded, 32 bytes) for ECDH-derived per-machine cipher.
-    /// When absent (None), sender uses TEMP_SHARED_KEY (bootstrap/unpaired mode).
+    /// Required for operation — sender will refuse to start without this configured.
     #[serde(default)]
     pub receiver_pubkey: Option<String>,
 }
@@ -111,6 +110,7 @@ impl ServiceConfig {
                         config.host = parsed.host;
                         config.port = parsed.port;
                         config.refresh_interval_secs = parsed.refresh_interval_secs;
+                        config.receiver_pubkey = parsed.receiver_pubkey;
                         // Only override machine_id if the TOML actually specified one (non-empty).
                         if !parsed.machine_id.is_empty() && parsed.machine_id != "unknown" {
                             config.machine_id = parsed.machine_id;
@@ -150,6 +150,14 @@ impl ServiceConfig {
         format!("{}:{}", self.host, self.port)
             .parse()
             .expect("Invalid host/port in ServiceConfig")
+    }
+
+    /// Save the current config back to `config_path`.
+    pub fn save(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let content = toml::to_string(self)?;
+        std::fs::write(path, content)?;
+        log::info!("Saved config to {}", path);
+        Ok(())
     }
 }
 

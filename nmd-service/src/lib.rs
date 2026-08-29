@@ -7,6 +7,7 @@ pub mod config;
 pub mod crypto;
 mod metrics_aggregator;
 pub mod packet;
+pub mod tcp_pairing;
 mod udp_sender;
 
 /// Install/uninstall helpers for the systemd unit file (used by install scripts).
@@ -16,7 +17,8 @@ pub mod systemd_unit;
 pub use config::{DEFAULT_CONFIG_PATH, ServiceConfig};
 pub use metrics_aggregator::MetricsAggregator;
 pub use packet::{
-    ArchivedMetricPacket, MetricPacket, PROTOCOL_VERSION,
-    CpuMetrics, GpuMetrics, MemoryMetrics, NetworkMetrics, DiskMetrics, PartitionInfo
+    ArchivedMetricPacket, CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricPacket,
+    NetworkMetrics, PROTOCOL_VERSION, PartitionInfo,
 };
+pub use tcp_pairing::{PairingResult, request_key_rotation, request_pairing};
 pub use udp_sender::UdpSender;

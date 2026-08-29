@@ -28,7 +28,15 @@
 use cosmic::Element;
 use cosmic::cosmic_config::CosmicConfigEntry;
 use cosmic::iced::Subscription;
+use cosmic::iced::window::Id as WindowId;
+use cosmic::widget::Id as WidgetId;
+use cosmic::widget::autosize;
+
+static AUTOSIZE_MAIN_ID: LazyLock<WidgetId> = LazyLock::new(WidgetId::unique);
+
+// PanelAnchor is private in cosmic-applet, use matches pattern directly
 use cosmic::{app::Application, app::Core, app::Task};
+use std::sync::LazyLock;
 
 // Module declarations
 pub mod charts;
@@ -45,7 +53,8 @@ pub mod utils;
 
 // Import types from submodules
 use crate::config::manager::ConfigManager;
-use crate::ui::{PanelWidget, SettingsWindow, machine_detail, machine_list, main_menu};
+use crate::ui::{SettingsWindow, main_menu};
+use cosmic::iced::Limits;
 
 /// UDP message payload types received from remote machines.
 pub enum UdpPayload {
@@ -57,10 +66,6 @@ pub enum UdpPayload {
 pub struct UdpMessage {
     pub payload: UdpPayload,
 }
-
-// Used by the binary target; unused when compiled as the lib target for tests/benches.
-#[allow(dead_code)]
-const DEFAULT_CONFIG_PATH: &str = "config.toml";
 
 /// View states for navigation — determines which UI panel is currently displayed.
 #[derive(Debug, Clone, PartialEq)]
@@ -124,6 +129,13 @@ pub enum AppMessage {
     RemoveMachine(String),
     /// Settings window message (forwards to settings_window::SettingsMessage).
     Settings(crate::ui::settings_window::SettingsMessage),
+    /// Copy text to clipboard.
+    CopyToClipboard(String),
+
+    /// Toggle the popup window open/closed
+    TogglePopup,
+    /// Popup window was closed externally
+    PopupClosed(WindowId),
 
     // Pairing system messages
     /// Received a pairing request from an unpaired machine via UDP
@@ -191,10 +203,11 @@ pub struct PanelApplet {
     core: Core,
     /// Shared state between panel widget and grid window — updated by UDP receiver task.
     pub shared_state: std::sync::Arc<std::sync::RwLock<AppState>>,
+    /// Popup window ID when open
+    popup: Option<WindowId>,
 }
 
 /// Global application state shared across all UI components via `std::sync::Arc<std::sync::RwLock<>>`.
-#[derive(Clone)]
 pub struct AppState {
     /// Loaded configuration including machine list and metric selections (shared via std::sync::Arc<std::sync::RwLock>).
     pub config_manager: std::sync::Arc<std::sync::RwLock<ConfigManager>>,
@@ -204,6 +217,12 @@ pub struct AppState {
     pub settings_window: SettingsWindow,
     /// Remote machines with live metric data (HashMap<machine_name, RemoteMachine>)
     pub machines: std::collections::HashMap<String, crate::remote_machine::RemoteMachine>,
+    /// Local machine always present - collected directly via nmd_service::MetricsAggregator
+    pub local_machine: crate::remote_machine::RemoteMachine,
+    /// Receiver for local metrics packets (from background thread running MetricsAggregator)
+    local_metrics_rx: std::sync::Mutex<std::sync::mpsc::Receiver<nmd_service::MetricPacket>>,
+    /// Local machine config (127.0.0.1, hostname-based name)
+    pub local_machine_config: crate::config::manager::MachineConfig,
     /// PairingManager manages paired machines and their ECDH-derived shared keys
     pub pairing_manager: std::sync::Arc<std::sync::RwLock<crate::pairing_manager::PairingManager>>,
     /// In-memory queue of pending pairing requests waiting for user approval (60-second timeout)
@@ -293,6 +312,14 @@ impl AppState {
         }
         drop(config_read);
 
+        // ── Local machine setup for debug mode ───────────────────────────────
+        let hostname = sysinfo::System::host_name().unwrap_or_else(|| "local".to_string());
+        let local_machine_config =
+            crate::config::manager::MachineConfig::new(hostname.clone(), "127.0.0.1".to_string());
+        let local_machine = RemoteMachine::new_debug(hostname.clone());
+        let (_tx, local_rx) = std::sync::mpsc::channel::<nmd_service::MetricPacket>();
+        let local_metrics_rx = std::sync::Mutex::new(local_rx);
+
         let pairing_manager = Self::create_pairing_manager();
         let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
 
@@ -305,6 +332,9 @@ impl AppState {
             current_view: View::Panel, // Start at panel view
             settings_window,
             machines,
+            local_machine,
+            local_metrics_rx,
+            local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
             receiver_pubkey,
@@ -316,12 +346,17 @@ impl Default for AppState {
     fn default() -> Self {
         use crate::remote_machine::RemoteMachine;
 
-        // Try to load config from file, fall back to defaults if not found
-        let config = if std::path::Path::new("config.toml").exists() {
-            log::info!("📂 Loading config from config.toml");
+        // Production: ~/.config/cosmic-applet/config.toml
+        // Development fallback: ./config.toml (when running from project dir)
+        let canonical = crate::config::manager::default_config_path();
+        let config = if canonical.exists() {
+            log::info!("📂 Loading config from {}", canonical.display());
+            ConfigManager::load(canonical.to_str().unwrap_or("config.toml"))
+        } else if std::path::Path::new("config.toml").exists() {
+            log::info!("📂 Loading config from ./config.toml (development fallback)");
             ConfigManager::load("config.toml")
         } else {
-            log::info!("📂 Using default config (no config.toml found)");
+            log::info!("📂 No config found — starting with empty machine list");
             ConfigManager::default()
         };
 
@@ -332,16 +367,69 @@ impl Default for AppState {
         // Load saved MinimonConfig from COSMIC config system
         let minimon_config = Self::load_minimon_config();
 
-        // Create RemoteMachine instances from config
+        // ── Local machine setup ──────────────────────────────────────────────────
+        // Determine hostname for the local machine
+        use sysinfo::System;
+        let hostname = System::host_name().unwrap_or_else(|| "local".to_string());
+        let local_machine_config =
+            crate::config::manager::MachineConfig::new(hostname.clone(), "127.0.0.1".to_string());
+
+        // Auto-clean old localhost config entries (migrates old configs)
+        {
+            let mut cm = config_manager.write().unwrap();
+            let had_localhost = cm
+                .machines
+                .iter()
+                .any(|m| m.host == "127.0.0.1" || m.host == "localhost");
+            if had_localhost {
+                cm.machines
+                    .retain(|m| m.host != "127.0.0.1" && m.host != "localhost");
+                let _ = cm.save();
+                log::info!(
+                    "Auto-cleaned localhost machine entries from config — local machine now collected directly"
+                );
+            }
+        }
+
+        // Create RemoteMachine instances from config (skip localhost)
         let config_read = config_manager.read().unwrap();
         let mut machines = std::collections::HashMap::new();
         for machine_config in &config_read.machines {
+            // Skip localhost entries — local machine is now always collected directly
+            if machine_config.host == "127.0.0.1" || machine_config.host == "localhost" {
+                continue;
+            }
             machines.insert(
                 machine_config.name.clone(),
                 RemoteMachine::new(machine_config.name.clone()),
             );
         }
         drop(config_read);
+
+        // Spawn background thread that owns MetricsAggregator — collects local metrics every 1s
+        let (local_tx, local_rx) = std::sync::mpsc::channel::<nmd_service::MetricPacket>();
+        let local_metrics_rx = std::sync::Mutex::new(local_rx);
+        let hostname_for_thread = hostname.clone();
+        std::thread::spawn(move || {
+            let config = nmd_service::ServiceConfig {
+                host: "127.0.0.1".to_string(),
+                port: 51057,
+                refresh_interval_secs: 1,
+                machine_id: hostname_for_thread,
+                receiver_pubkey: None,
+            };
+            let mut collector = nmd_service::MetricsAggregator::new(config);
+            loop {
+                let packet = collector.aggregate();
+                if local_tx.send(packet).is_err() {
+                    break; // Receiver dropped — applet shut down
+                }
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        });
+
+        // Initialize local_machine with default zero data — first real data arrives within 1s
+        let local_machine = crate::remote_machine::RemoteMachine::new(hostname.clone());
 
         let pairing_manager = Self::create_pairing_manager();
         let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
@@ -355,6 +443,9 @@ impl Default for AppState {
             current_view: View::Panel, // Default to panel view
             settings_window,
             machines,
+            local_machine,
+            local_metrics_rx,
+            local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
             receiver_pubkey,
@@ -407,7 +498,12 @@ fn main() -> Result<(), cosmic::iced::Error> {
         .skip(1)
         .find(|arg| !arg.starts_with("--"))
         .map(|s| s.to_string())
-        .unwrap_or_else(|| DEFAULT_CONFIG_PATH.to_string());
+        .unwrap_or_else(|| {
+            crate::config::manager::default_config_path()
+                .to_str()
+                .unwrap_or("config.toml")
+                .to_string()
+        });
 
     if test_mode || debug_mode {
         if debug_mode {
@@ -497,8 +593,28 @@ impl Application for PanelApplet {
                     .await;
                 });
             });
+
+            // Spawn TCP pairing listener on same port
+            let state_clone_tcp = std::sync::Arc::clone(&shared_state);
+            let tcp_port = {
+                shared_state
+                    .read()
+                    .unwrap()
+                    .config_manager
+                    .read()
+                    .unwrap()
+                    .udp_port
+            };
+            std::thread::spawn(move || {
+                let rt =
+                    tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime for TCP");
+                rt.block_on(async move {
+                    crate::network::tcp_listener::start_tcp_listener(tcp_port, state_clone_tcp)
+                        .await;
+                });
+            });
         } else {
-            log::info!("🎲 DEBUG MODE: Skipping UDP receiver, using fake data");
+            log::info!("🎲 DEBUG MODE: Skipping UDP/TCP receivers, using fake data");
         }
 
         // Initialize AppState with shared state (settings_window already created in default).
@@ -506,6 +622,7 @@ impl Application for PanelApplet {
             PanelApplet {
                 core,
                 shared_state, // Use the same Arc instance
+                popup: None,
             },
             Task::none(),
         )
@@ -556,6 +673,21 @@ impl Application for PanelApplet {
                 Task::none()
             }
             AppMessage::RefreshMetrics => {
+                // Drain local metrics channel — update local machine with latest data
+                {
+                    // Use a separate block to manage locks properly
+                    let packets: Vec<nmd_service::MetricPacket> = {
+                        let state = self.shared_state.read().unwrap();
+                        let rx = state.local_metrics_rx.lock().unwrap();
+                        rx.try_iter().collect()
+                    };
+                    // Update local machine with collected packets (no lock needed)
+                    for packet in packets {
+                        let mut state = self.shared_state.write().unwrap();
+                        state.local_machine.update_from_packet(&packet);
+                    }
+                }
+
                 // Periodic refresh - just trigger a view update by returning Task::none().
                 // The view() function will read the latest data from shared_state.
                 let state = self.shared_state.read().unwrap();
@@ -582,7 +714,7 @@ impl Application for PanelApplet {
                 // Navigate to main menu or machine list depending on machine count.
                 let mut app_state = self.shared_state.write().unwrap();
                 let machine_count = app_state.machines.len();
-                app_state.current_view = if machine_count >= 2 {
+                app_state.current_view = if machine_count >= 1 {
                     View::MachineList
                 } else {
                     View::MainMenu
@@ -644,14 +776,14 @@ impl Application for PanelApplet {
                 app_state.current_view = match app_state.current_view {
                     View::MachineList => View::Panel,
                     View::MainMenu | View::GeneralSettings => {
-                        if machine_count >= 2 {
+                        if machine_count >= 1 {
                             View::MachineList
                         } else {
                             View::Panel
                         }
                     }
                     View::MachineDetail(_) => {
-                        if machine_count >= 2 {
+                        if machine_count >= 1 {
                             View::MachineList
                         } else {
                             View::Panel
@@ -662,18 +794,34 @@ impl Application for PanelApplet {
                 Task::none()
             }
             AppMessage::RemoveMachine(machine_name) => {
-                // Remove a machine from configuration.
                 let mut app_state = self.shared_state.write().unwrap();
+
+                // Remove from live machines map (stops showing in UI immediately)
+                app_state.machines.remove(&machine_name);
+
+                // Remove from pairing manager so future packets trigger re-pairing
+                {
+                    let mut pm = app_state.pairing_manager.write().unwrap();
+                    if let Err(e) = pm.remove_pairing(&machine_name) {
+                        log::error!("Failed to remove pairing for {}: {}", machine_name, e);
+                    }
+                }
+
+                // Remove from config and save
                 app_state
                     .config_manager
                     .write()
                     .unwrap()
-                    .machines
-                    .retain(|m| m.name != machine_name);
-                let _ = app_state.config_manager.write().unwrap().save();
+                    .remove_machine(&machine_name);
+                let _ = app_state.config_manager.read().unwrap().save();
 
-                // Return to main menu after removal
-                app_state.current_view = View::MainMenu;
+                // Navigate back: machine list if 2+ remain, otherwise panel
+                let machine_count = app_state.machines.len();
+                app_state.current_view = if machine_count >= 2 {
+                    View::MachineList
+                } else {
+                    View::Panel
+                };
                 Task::none()
             }
             AppMessage::PairingRequest(request) => {
@@ -700,23 +848,68 @@ impl Application for PanelApplet {
                     .position(|r| r.machine_id == machine_id)
                 {
                     let req = state.pending_pairings.remove(idx);
-                    // Derive ECDH shared key and persist
-                    let mut pm = state.pairing_manager.write().unwrap();
-                    if let Err(e) =
+                    let machine_id_str = req.machine_id.clone();
+                    let host_str = req.host.clone();
+
+                    // Derive ECDH shared key and persist — drop lock before config write
+                    let pairing_result = {
+                        let mut pm = state.pairing_manager.write().unwrap();
                         pm.add_pairing(req.machine_id.clone(), &req.sender_pubkey, req.host.clone())
-                    {
-                        log::error!("Failed to persist pairing for {}: {}", req.machine_id, e);
-                    } else {
-                        log::info!("✅ Pairing accepted for machine: {}", req.machine_id);
+                    };
+
+                    match pairing_result {
+                        Err(e) => {
+                            log::error!("Failed to persist pairing for {}: {}", machine_id_str, e)
+                        }
+                        Ok(()) => {
+                            log::info!("✅ Pairing accepted for machine: {}", machine_id_str);
+                            // Persist to config so the machine survives a restart
+                            let added = state
+                                .config_manager
+                                .write()
+                                .unwrap()
+                                .add_machine(&machine_id_str, &host_str);
+                            if added {
+                                let _ = state.config_manager.read().unwrap().save();
+                            }
+                            // Add to live machines map so the UI shows it immediately
+                            state
+                                .machines
+                                .entry(machine_id_str.clone())
+                                .or_insert_with(|| {
+                                    crate::remote_machine::RemoteMachine::new(
+                                        machine_id_str.clone(),
+                                    )
+                                });
+                            // Send TCP response if this request came via TCP
+                            if let Some(arc_tx) = req.tcp_response.as_ref() {
+                                if let Some(tx) = arc_tx.lock().unwrap().take() {
+                                    let pubkey = state.receiver_pubkey.clone();
+                                    let _ = tx.send(
+                                        crate::pairing_manager::TcpPairingResponse::Accept(pubkey),
+                                    );
+                                }
+                            }
+                        }
                     }
                 }
                 Task::none()
             }
             AppMessage::DenyPairing(machine_id) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
+                // Extract the request to get tcp_response before dropping
+                if let Some(pos) = state
                     .pending_pairings
-                    .retain(|r| r.machine_id != machine_id);
+                    .iter()
+                    .position(|r| r.machine_id == machine_id)
+                {
+                    let req = state.pending_pairings.remove(pos);
+                    if let Some(arc_tx) = req.tcp_response.as_ref() {
+                        if let Some(tx) = arc_tx.lock().unwrap().take() {
+                            let _ = tx.send(crate::pairing_manager::TcpPairingResponse::Deny);
+                        }
+                    }
+                }
                 log::info!("❌ Pairing denied for machine: {}", machine_id);
                 Task::none()
             }
@@ -840,6 +1033,12 @@ impl Application for PanelApplet {
                     }
                     crate::ui::settings_window::SettingsMessage::NoOp => {
                         // No operation — do nothing.
+                    }
+                    crate::ui::settings_window::SettingsMessage::CopyPubkeyToClipboard => {
+                        let pubkey = app_state.settings_window.receiver_pubkey.clone();
+                        return Task::done(cosmic::Action::App(AppMessage::CopyToClipboard(
+                            pubkey,
+                        )));
                     }
                 }
 
@@ -1201,10 +1400,107 @@ impl Application for PanelApplet {
                 AppState::save_minimon_config(&state.settings_window.minimon_config);
                 Task::none()
             }
+            AppMessage::CopyToClipboard(text) => {
+                return cosmic::iced::clipboard::write(text);
+            }
+            AppMessage::TogglePopup => {
+                if let Some(p) = self.popup.take() {
+                    return cosmic::surface::surface_task(cosmic::surface::action::destroy_popup(
+                        p,
+                    ));
+                } else {
+                    return cosmic::surface::surface_task(cosmic::surface::action::app_popup(
+                        |_| Default::default(),
+                        |app: &mut PanelApplet| {
+                            let new_id = WindowId::unique();
+                            app.popup.replace(new_id);
+                            let mut popup_settings = app.core.applet.get_popup_settings(
+                                app.core.main_window_id().unwrap(),
+                                new_id,
+                                Some((1, 1)),
+                                None,
+                                None,
+                            );
+                            popup_settings.positioner.size_limits = cosmic::iced::Limits::NONE
+                                .min_width(360.0)
+                                .max_width(460.0)
+                                .min_height(100.0)
+                                .max_height(700.0);
+                            popup_settings
+                        },
+                        None,
+                    ));
+                }
+            }
+            AppMessage::PopupClosed(id) => {
+                if self.popup == Some(id) {
+                    self.popup = None;
+                }
+                Task::none()
+            }
         }
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
+        // Determine if panel is horizontal (top/bottom) vs vertical (left/right)
+        let is_horizontal = matches!(
+            self.core.applet.anchor,
+            cosmic::applet::cosmic_panel_config::PanelAnchor::Top
+                | cosmic::applet::cosmic_panel_config::PanelAnchor::Bottom
+        );
+
+        let mut limits = Limits::NONE.min_width(1.0).min_height(1.0);
+        if let Some(b) = self.core.applet.suggested_bounds {
+            if b.width > 0.0 {
+                limits = limits.max_width(b.width);
+            }
+            if b.height > 0.0 {
+                limits = limits.max_height(b.height);
+            }
+        }
+
+        // Always use local_machine — it's always present and always up-to-date
+        let (local_machine, pending_count, minimon_config) = {
+            let state = self.shared_state.read().unwrap();
+            let local_machine = state.local_machine.clone();
+            let pending_count = state.pending_pairings.len();
+            let minimon_config = state.settings_window.minimon_config.clone();
+            (local_machine, pending_count, minimon_config)
+        };
+
+        // Panel always shows local machine sensor readings
+        let inner: Element<'_, Self::Message> =
+            crate::ui::panel_widget::PanelWidget::view_from_machines(
+                &[local_machine],
+                &minimon_config.content_order,
+                &minimon_config,
+            );
+
+        // Add pending pairing badge if needed
+        let panel_content: Element<'_, Self::Message> = if pending_count > 0 {
+            cosmic::widget::row(vec![inner, crate::pairing_ui::pending_badge(pending_count)])
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            inner
+        };
+
+        // Wrap in a button that opens the popup on click
+        let button = cosmic::widget::button::custom(panel_content)
+            .padding(if is_horizontal {
+                [0, self.core.applet.suggested_padding(true).1]
+            } else {
+                [self.core.applet.suggested_padding(true).0, 0]
+            })
+            .class(cosmic::theme::Button::AppletIcon)
+            .on_press(AppMessage::TogglePopup);
+
+        autosize::autosize(cosmic::widget::container(button), AUTOSIZE_MAIN_ID.clone())
+            .limits(limits)
+            .into()
+    }
+
+    fn view_window(&self, _id: WindowId) -> Element<'_, Self::Message> {
         // Copy state before rendering to avoid lifetime issues.
         let (config, current_view, settings_visible, pending_count, pending_pairings_clone) = {
             let state = self.shared_state.read().unwrap();
@@ -1225,9 +1521,20 @@ impl Application for PanelApplet {
             )
         };
 
-        // Pairing UI hijack: when pairings are pending AND user opens the dropdown, show pairing view.
-        if pending_count > 0 && current_view != View::Panel {
-            return crate::pairing_ui::view(&pending_pairings_clone);
+        // Pairing UI hijack: pending pairings always take over the popup view.
+        if pending_count > 0 {
+            return self
+                .core
+                .applet
+                .popup_container(crate::pairing_ui::view(&pending_pairings_clone))
+                .limits(
+                    Limits::NONE
+                        .max_width(460.0)
+                        .min_width(360.0)
+                        .min_height(100.0)
+                        .max_height(700.0),
+                )
+                .into();
         }
 
         // Render based on current UI state — SettingsWindow overlays other views.
@@ -1238,57 +1545,51 @@ impl Application for PanelApplet {
             let receiver_pubkey = state.receiver_pubkey.clone();
             drop(state);
 
-            return crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
-                .map(|msg| AppMessage::Settings(msg));
+            return self
+                .core
+                .applet
+                .popup_container(
+                    crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
+                        .map(|msg| AppMessage::Settings(msg)),
+                )
+                .limits(
+                    Limits::NONE
+                        .max_width(460.0)
+                        .min_width(360.0)
+                        .min_height(100.0)
+                        .max_height(700.0),
+                )
+                .into();
         }
 
         // Render view based on current_view state
-        match current_view {
-            View::Panel => {
-                // Show panel widget with real machine data
+        let content: Element<'_, Self::Message> = match current_view {
+            View::Panel | View::MachineList => {
                 let state = self.shared_state.read().unwrap();
-                let machines_vec: Vec<_> = state.machines.values().cloned().collect();
+                let local_machine = state.local_machine.clone();
+                let local_machine_config = state.local_machine_config.clone();
+                let remote_machines: Vec<_> = state.machines.values().cloned().collect();
                 let content_order = state.settings_window.minimon_config.content_order.clone();
                 let minimon_config = state.settings_window.minimon_config.clone();
-                let pending_count = state.pending_pairings.len();
                 drop(state);
 
-                // Debug: log the data we're about to render
-                if let Some(machine) = machines_vec.first() {
-                    log::debug!(
-                        "🖼️  Rendering Panel: machine '{}' CPU={:.1}%, mem={}/{}",
-                        machine.name,
-                        machine.sensors.cpu.usage_percent,
-                        machine.sensors.memory.used_bytes,
-                        machine.sensors.memory.total_bytes
-                    );
-                }
-
-                let panel =
-                    PanelWidget::view_from_machines(&machines_vec, &content_order, &minimon_config);
-
-                if pending_count > 0 {
-                    // Wrap panel widget with a badge indicator
-                    cosmic::widget::row(vec![
-                        panel,
-                        crate::pairing_ui::pending_badge(pending_count),
-                    ])
-                    .into()
+                if remote_machines.is_empty() {
+                    // Only local machine — show its detail view directly
+                    crate::ui::machine_detail::view(
+                        &local_machine_config,
+                        &local_machine,
+                        &minimon_config,
+                        true,
+                    )
                 } else {
-                    panel
+                    // Show machine list: local first, then remotes
+                    let mut all_machines = vec![local_machine];
+                    all_machines.extend(remote_machines);
+                    crate::ui::machine_list::view(&all_machines, &content_order, &minimon_config)
                 }
-            }
-            View::MachineList => {
-                // Show machine list with all machines
-                let state = self.shared_state.read().unwrap();
-                let machines_vec: Vec<_> = state.machines.values().cloned().collect();
-                let content_order = state.settings_window.minimon_config.content_order.clone();
-                let minimon_config = state.settings_window.minimon_config.clone();
-                drop(state);
-                machine_list::view(&machines_vec, &content_order, &minimon_config)
             }
             View::MainMenu => {
-                // Show main menu with machine data
+                // Show main menu with machine data (remote machines only)
                 let state = self.shared_state.read().unwrap();
                 let machines_vec: Vec<_> = state.machines.values().cloned().collect();
                 let minimon_config = state.settings_window.minimon_config.clone();
@@ -1300,18 +1601,41 @@ impl Application for PanelApplet {
                 )
             }
             View::MachineDetail(ref machine_name) => {
-                // Show machine detail view with live data
                 let state = self.shared_state.read().unwrap();
-                if let Some(remote_machine) = state.machines.get(machine_name) {
-                    if let Some(config) = config.machines.iter().find(|m| m.name == *machine_name) {
-                        let minimon_config = state.settings_window.minimon_config.clone();
-                        machine_detail::view(config, remote_machine, &minimon_config)
+                let local_machine = state.local_machine.clone();
+                let local_machine_config = state.local_machine_config.clone();
+                let minimon_config = state.settings_window.minimon_config.clone();
+
+                if local_machine.name == *machine_name {
+                    // Local machine detail — no Remove button
+                    drop(state);
+                    crate::ui::machine_detail::view(
+                        &local_machine_config,
+                        &local_machine,
+                        &minimon_config,
+                        true,
+                    )
+                } else if let Some(remote_machine) = state.machines.get(machine_name).cloned() {
+                    let config_entry = config
+                        .machines
+                        .iter()
+                        .find(|m| m.name == *machine_name)
+                        .cloned();
+                    drop(state);
+                    if let Some(config_entry) = config_entry {
+                        crate::ui::machine_detail::view(
+                            &config_entry,
+                            &remote_machine,
+                            &minimon_config,
+                            false,
+                        )
                     } else {
                         cosmic::widget::button::text("← Back")
                             .on_press(AppMessage::Back)
                             .into()
                     }
                 } else {
+                    drop(state);
                     cosmic::widget::button::text("← Back")
                         .on_press(AppMessage::Back)
                         .into()
@@ -1363,7 +1687,27 @@ impl Application for PanelApplet {
                 drop(state);
                 crate::ui::sensor_config::view_gpu_config(&minimon_config)
             }
-        }
+        };
+
+        self.core
+            .applet
+            .popup_container(content)
+            .limits(
+                Limits::NONE
+                    .max_width(460.0)
+                    .min_width(360.0)
+                    .min_height(100.0)
+                    .max_height(700.0),
+            )
+            .into()
+    }
+
+    fn style(&self) -> Option<cosmic::iced::theme::Style> {
+        Some(cosmic::applet::style())
+    }
+
+    fn on_close_requested(&self, id: WindowId) -> Option<Self::Message> {
+        Some(AppMessage::PopupClosed(id))
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {

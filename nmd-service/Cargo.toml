@@ -31,8 +31,11 @@ sysinfo = { workspace = true }
 procfs = { workspace = true }
 
 # Configuration parsing (TOML)
-toml = { version = "0.8", default-features = false, features = ["parse"] }
+toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
 serde = { version = "1.0", features = ["derive"] }
+
+# JSON serialization for TCP pairing messages
+serde_json = "1.0"
 
 # Hex encoding/decoding for X25519 public key serialization in config (workspace dep)
 hex = { workspace = true }

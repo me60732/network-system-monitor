@@ -4,15 +4,14 @@
 //! that `AppState.machines` reflects incoming authenticated traffic: concurrent multi-machine
 //! updates, offline→online transitions, and config changes while live data is flowing.
 
+use cosmic_applet::AppState;
 use cosmic_applet::config::manager::{ConfigManager, MachineConfig};
 use cosmic_applet::network::test_support::{
-    create_test_packet_full, encrypt_packet_default, unix_now,
+    create_test_packet_full, encrypt_packet_ecdh, test_sender_pubkey, unix_now,
 };
 use cosmic_applet::network::udp_receiver::UdpReceiver;
 use cosmic_applet::remote_machine::RemoteMachine;
 use cosmic_applet::ui::SettingsWindow;
-use cosmic_applet::{AppState, View};
-use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -27,17 +26,13 @@ fn make_state() -> Arc<RwLock<AppState>> {
             "/tmp/test_integration_pairing.toml",
         )),
     ));
-    let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
-    let settings_window = SettingsWindow::new(config_manager.clone(), receiver_pubkey.clone());
-    Arc::new(RwLock::new(AppState {
-        config_manager,
-        current_view: View::Panel,
-        settings_window,
-        machines: HashMap::new(),
-        pairing_manager,
-        pending_pairings: Vec::new(),
-        receiver_pubkey: receiver_pubkey,
-    }))
+    // Use Default to get a valid AppState with all required fields
+    let mut state: AppState = Default::default();
+    // Replace with our custom config and pairing manager
+    state.config_manager = config_manager;
+    state.pairing_manager = pairing_manager;
+    state.machines.clear(); // Remove any default machines
+    Arc::new(RwLock::new(state))
 }
 
 /// Build a PairingManager with the given machine IDs pre-paired so integration tests
@@ -52,9 +47,8 @@ fn pre_paired_manager(
         std::process::id()
     ));
     let mut pm = cosmic_applet::pairing_manager::PairingManager::new(path);
-    // Pre-pair each test machine with a zero sender pubkey — the ECDH-derived key won't
-    // match TEMP_SHARED_KEY but the receiver falls back gracefully (Phase 1 compat path).
-    let dummy_pubkey = [0u8; 32];
+    // Pre-pair each test machine with the real test sender pubkey.
+    let dummy_pubkey = test_sender_pubkey();
     for &id in machine_ids {
         let _ = pm.add_pairing(id.to_string(), &dummy_pubkey, "127.0.0.1".to_string());
     }
@@ -62,10 +56,13 @@ fn pre_paired_manager(
 }
 
 /// Bind a receiver on an ephemeral port, spawn its listen loop against `state`,
-/// and return (state, bound port, task handle).
-async fn spawn_receiver(state: Arc<RwLock<AppState>>) -> (u16, tokio::task::JoinHandle<()>) {
+/// and return (bound port, receiver pubkey hex, task handle).
+async fn spawn_receiver(
+    state: Arc<RwLock<AppState>>,
+) -> (u16, String, tokio::task::JoinHandle<()>) {
     // Pre-pair all machine IDs used across integration tests so TOFU detection passes.
     let pm = pre_paired_manager(&["spark", "pluto", "saturn", "alpha", "beta", "gamma"]);
+    let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
     let receiver = UdpReceiver::new(0, None, pm)
         .await
         .expect("bind UDP receiver");
@@ -74,11 +71,11 @@ async fn spawn_receiver(state: Arc<RwLock<AppState>>) -> (u16, tokio::task::Join
         let mut receiver = receiver;
         receiver.listen_loop(state).await;
     });
-    (port, handle)
+    (port, receiver_pubkey_hex, handle)
 }
 
 /// Send one encrypted packet for `machine` with the given cpu% and sequence number.
-fn send_packet(port: u16, machine: &str, cpu: f32, seq: u32) {
+fn send_packet(port: u16, machine: &str, cpu: f32, seq: u32, receiver_pubkey_hex: &str) {
     let packet = create_test_packet_full(
         machine,
         cpu,
@@ -87,7 +84,7 @@ fn send_packet(port: u16, machine: &str, cpu: f32, seq: u32) {
         seq,
         unix_now(),
     );
-    let buf = encrypt_packet_default(packet);
+    let buf = encrypt_packet_ecdh(packet, receiver_pubkey_hex);
     let sock = std::net::UdpSocket::bind("127.0.0.1:0").expect("bind sender socket");
     sock.send_to(&buf, ("127.0.0.1", port))
         .expect("send packet");
@@ -111,15 +108,16 @@ async fn wait_for(mut cond: impl FnMut() -> bool, timeout_ms: u64) -> bool {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_multi_machine_simultaneous_packets() {
     let state = make_state();
-    let (port, handle) = spawn_receiver(state.clone()).await;
+    let (port, receiver_pubkey_hex, handle) = spawn_receiver(state.clone()).await;
 
     let names = ["spark", "pluto", "saturn"];
     let mut senders = Vec::new();
     for name in names {
+        let pubkey_hex = receiver_pubkey_hex.clone();
         senders.push(tokio::spawn(async move {
             for seq in 1..=5u32 {
                 // cpu encodes the sequence (seq * 10) so the final accepted packet is provable.
-                send_packet(port, name, seq as f32 * 10.0, seq);
+                send_packet(port, name, seq as f32 * 10.0, seq, &pubkey_hex);
                 tokio::time::sleep(Duration::from_millis(20)).await;
             }
         }));
@@ -168,7 +166,7 @@ async fn test_multi_machine_simultaneous_packets() {
     }
 
     // Replay a stale sequence (3) for one machine — receiver must reject it, state unchanged.
-    send_packet(port, "spark", 99.0, 3);
+    send_packet(port, "spark", 99.0, 3, &receiver_pubkey_hex);
     tokio::time::sleep(Duration::from_millis(300)).await;
     {
         let st = state.read().unwrap();
@@ -187,7 +185,7 @@ async fn test_multi_machine_simultaneous_packets() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_machine_offline_online_transition() {
     let state = make_state();
-    let (port, handle) = spawn_receiver(state.clone()).await;
+    let (port, receiver_pubkey_hex, handle) = spawn_receiver(state.clone()).await;
 
     // Machine "spark" last heard from 35 seconds ago (> 30s offline timeout).
     {
@@ -213,7 +211,7 @@ async fn test_machine_offline_online_transition() {
     }
 
     // A fresh authenticated packet arrives — machine must come back online with updated metrics.
-    send_packet(port, "spark", 77.0, 1);
+    send_packet(port, "spark", 77.0, 1, &receiver_pubkey_hex);
     let ok = wait_for(
         || {
             let st = state.read().unwrap();
@@ -248,12 +246,13 @@ async fn test_machine_offline_online_transition() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_config_changes_with_live_data() {
     let state = make_state();
-    let (port, handle) = spawn_receiver(state.clone()).await;
+    let (port, receiver_pubkey_hex, handle) = spawn_receiver(state.clone()).await;
 
     // Two machines streaming live data.
     for seq in 1..=3u32 {
-        send_packet(port, "alpha", seq as f32, seq);
-        send_packet(port, "beta", seq as f32, seq);
+        let pubkey = receiver_pubkey_hex.clone();
+        send_packet(port, "alpha", seq as f32, seq, &pubkey);
+        send_packet(port, "beta", seq as f32, seq, &pubkey);
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     let ok = wait_for(
@@ -320,7 +319,7 @@ async fn test_config_changes_with_live_data() {
     }
 
     // Live data continues for the surviving machine and the removed one stays absent.
-    send_packet(port, "beta", 44.0, 4);
+    send_packet(port, "beta", 44.0, 4, &receiver_pubkey_hex);
     let ok = wait_for(
         || {
             let st = state.read().unwrap();

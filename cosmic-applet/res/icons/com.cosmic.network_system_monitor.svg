@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monitor outline -->
+  <rect x="64" y="80" width="384" height="256" rx="20" ry="20"
+        stroke="currentColor" stroke-width="28" fill="none"/>
+  <!-- Screen divider line (panel) -->
+  <line x1="64" y1="280" x2="448" y2="280"
+        stroke="currentColor" stroke-width="20"/>
+  <!-- Stand -->
+  <line x1="256" y1="336" x2="256" y2="400"
+        stroke="currentColor" stroke-width="24" stroke-linecap="round"/>
+  <line x1="176" y1="400" x2="336" y2="400"
+        stroke="currentColor" stroke-width="24" stroke-linecap="round"/>
+  <!-- Network activity lines (inside screen) -->
+  <polyline points="96,240 140,180 184,220 228,140 272,200 316,160 360,190 416,150"
+            stroke="currentColor" stroke-width="20" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

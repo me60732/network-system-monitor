@@ -2,13 +2,19 @@
 //!
 //! Loads and saves the applet's machine list + metric selection preferences in a format that extends
 //! minimon-applet's config structure. Manages adding/removing machines, choosing which metrics to display
-//! per machine via checkbox selection, and persists changes back to `config.toml`.
+//! per machine via checkbox selection, and persists changes back to `~/.config/cosmic-applet/config.toml`.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-/// Default configuration file path for cosmic-applet (extends minimon-applet format).
-const DEFAULT_CONFIG_PATH: &str = "config.toml";
+/// Returns the canonical config path: ~/.config/cosmic-applet/config.toml
+pub fn default_config_path() -> PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    PathBuf::from(home)
+        .join(".config")
+        .join("cosmic-applet")
+        .join("config.toml")
+}
 
 /// Default UDP port the applet listens on for incoming MetricPacket traffic.
 pub const DEFAULT_UDP_PORT: u16 = 51057;
@@ -53,7 +59,6 @@ pub struct MachineConfig {
     pub port: u16,
 
     // ── Per-Machine Metric Selection (checkbox selection — Troi completes UI) ───────────
-
     /// Whether to display CPU usage percentage in grid panel.
     #[serde(default = "default_true")]
     pub show_cpu: bool,
@@ -114,16 +119,12 @@ impl MachineConfig {
 
 impl Default for ConfigManager {
     fn default() -> Self {
-        // Default config includes localhost entry — panel shows desktop stats by default.
-        let localhost = MachineConfig::localhost();
-        let mut machines = Vec::new();
-        machines.push(localhost);
-
+        // Default config has empty machine list — machines are added through pairing.
         ConfigManager {
-            machines,
+            machines: Vec::new(),
             udp_port: DEFAULT_UDP_PORT,
             auto_expand_grid: true,
-            config_path: PathBuf::from(DEFAULT_CONFIG_PATH),
+            config_path: default_config_path(),
         }
     }
 }
@@ -132,42 +133,48 @@ impl ConfigManager {
     /// Validate the configuration and return detailed error messages if invalid.
     /// Returns Ok(()) if valid, Err with human-readable error message otherwise.
     pub fn validate(&self) -> Result<(), String> {
-        // Check for empty machine list
-        if self.machines.is_empty() {
-            return Err("Configuration must include at least one machine (typically localhost)".to_string());
-        }
-        
+        // Empty machine list is now valid (machines are added through pairing)
+
         // Check for duplicate machine names
         let mut seen_names = std::collections::HashSet::new();
         for machine in &self.machines {
             if !seen_names.insert(&machine.name) {
-                return Err(format!("Duplicate machine name '{}' found — each machine must have a unique name", machine.name));
+                return Err(format!(
+                    "Duplicate machine name '{}' found — each machine must have a unique name",
+                    machine.name
+                ));
             }
         }
-        
+
         // Validate UDP port range
         if self.udp_port == 0 {
-            return Err("UDP port cannot be 0 — choose a port between 1024-65535 (recommend 51057)".to_string());
+            return Err(
+                "UDP port cannot be 0 — choose a port between 1024-65535 (recommend 51057)"
+                    .to_string(),
+            );
         }
-        
+
         // Validate machine configurations
         for machine in &self.machines {
             if machine.name.trim().is_empty() {
                 return Err("Machine name cannot be empty".to_string());
             }
-            
+
             if machine.host.trim().is_empty() {
-                return Err(format!("Machine '{}' has empty host — specify IP address or hostname", machine.name));
+                return Err(format!(
+                    "Machine '{}' has empty host — specify IP address or hostname",
+                    machine.name
+                ));
             }
-            
+
             if machine.port == 0 {
                 return Err(format!("Machine '{}' has invalid port 0", machine.name));
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Load configuration from a TOML file at the given path.
     /// Falls back to default config (with localhost entry) if file doesn't exist or is malformed.
     pub fn load(path: &str) -> Self {
@@ -179,18 +186,25 @@ impl ConfigManager {
                 match toml::from_str::<ConfigManager>(&content) {
                     Ok(mut config) => {
                         config.config_path = config_path;
-                        
+
                         // Validate loaded config
                         if let Err(validation_error) = config.validate() {
-                            log::error!("Config validation failed: {} — using defaults", validation_error);
+                            log::error!(
+                                "Config validation failed: {} — using defaults",
+                                validation_error
+                            );
                             log::error!("   Using default configuration instead.");
                             log::error!("   Fix {} and restart the applet.", path);
                             let mut default = ConfigManager::default();
                             default.config_path = config.config_path;
                             return default;
                         }
-                        
-                        log::info!("Loaded config from {} — {} machines configured", path, config.machines.len());
+
+                        log::info!(
+                            "Loaded config from {} — {} machines configured",
+                            path,
+                            config.machines.len()
+                        );
                         config
                     }
                     Err(e) => {
@@ -218,10 +232,12 @@ impl ConfigManager {
     pub fn save(&self) -> Result<(), std::io::Error> {
         let content = match toml::to_string(self) {
             Ok(c) => c,
-            Err(e) => return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Failed to serialize config: {}", e),
-            )),
+            Err(e) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Failed to serialize config: {}", e),
+                ));
+            }
         };
 
         // Create parent directory if it doesn't exist.
@@ -275,12 +291,14 @@ impl ConfigManager {
 mod tests {
     use super::*;
 
-    /// Loading default config returns expected machine list with localhost entry (Beverly writes after implementation).
+    /// Loading default config returns expected empty machine list (Beverly writes after implementation).
     #[test]
     fn test_load_config_defaults() {
         let config = ConfigManager::default();
-        assert!(!config.machines.is_empty(), "Default config must include at least one machine");
-        assert_eq!(config.machines[0].name, "localhost", "First entry should be localhost");
+        assert!(
+            config.machines.is_empty(),
+            "Default config should have no machines - they are added through pairing"
+        );
         assert_eq!(config.udp_port, DEFAULT_UDP_PORT);
     }
 
@@ -288,38 +306,42 @@ mod tests {
     #[test]
     fn test_add_remove_machine() {
         let mut config = ConfigManager::default();
-        assert_eq!(config.machines.len(), 1, "Should start with just localhost");
+        assert!(config.machines.is_empty(), "Should start with no machines");
 
         // Add a new machine.
         let added = config.add_machine("pluto", "192.168.1.20");
         assert!(added, "Adding new machine should succeed");
-        assert_eq!(config.machines.len(), 2);
+        assert_eq!(config.machines.len(), 1);
 
         // Adding duplicate should fail.
         let dup_added = config.add_machine("pluto", "192.168.1.99");
         assert!(!dup_added, "Adding duplicate machine name should fail");
-        assert_eq!(config.machines.len(), 2, "Machine count unchanged after failed add");
+        assert_eq!(
+            config.machines.len(),
+            1,
+            "Machine count unchanged after failed add"
+        );
 
-        // Remove the added machine — localhost remains.
+        // Remove the added machine.
         let removed = config.remove_machine("pluto");
         assert!(removed, "Removing existing machine should succeed");
-        assert_eq!(config.machines.len(), 1);
+        assert!(
+            config.machines.is_empty(),
+            "After removal, no machines remain"
+        );
 
         // Removing again should fail (already gone).
         let not_removed = config.remove_machine("pluto");
         assert!(!not_removed, "Removing non-existent machine should fail");
     }
 
-    /// Default config includes localhost entry with all metrics enabled (Beverly writes).
+    /// MachineConfig::localhost() creates a machine for localhost (Beverly writes).
     #[test]
     fn test_localhost_entry() {
-        let config = ConfigManager::default();
-        let localhost = &config.machines[0];
-        assert_eq!(localhost.name, "localhost");
-        assert_eq!(localhost.host, "127.0.0.1");
-        assert!(localhost.enabled);
-        // All metric checkboxes should be enabled by default.
-        assert!(localhost.show_cpu && localhost.show_memory && localhost.show_disk);
+        let m = MachineConfig::localhost();
+        assert_eq!(m.name, "localhost");
+        assert_eq!(m.host, "127.0.0.1");
+        assert!(m.enabled);
     }
 
     /// Save/load roundtrip preserves configuration (Beverly writes).
@@ -327,7 +349,7 @@ mod tests {
     fn test_save_load_roundtrip() {
         let temp_dir = std::env::temp_dir();
         let test_config_path = temp_dir.join(format!("test_config_{}.toml", std::process::id()));
-        
+
         // Create config with custom values
         let mut config = ConfigManager::default();
         config.config_path = test_config_path.clone();
@@ -335,78 +357,114 @@ mod tests {
         config.add_machine("pluto", "192.168.1.99");
         config.udp_port = 51058; // Non-default port
         config.auto_expand_grid = false;
-        
+
         // Disable GPU metric on pluto machine
         if let Some(pluto) = config.machines.iter_mut().find(|m| m.name == "pluto") {
             pluto.show_gpu_vram = false;
         }
-        
+
         // Save to temp file
         config.save().expect("Save should succeed");
-        
+
         // Load back from file
         let loaded = ConfigManager::load(test_config_path.to_str().unwrap());
-        
+
         // Verify all fields preserved
-        assert_eq!(loaded.machines.len(), 3, "Should have localhost + spark + pluto");
+        assert_eq!(
+            loaded.machines.len(),
+            2,
+            "Should have spark + pluto (no automatic localhost)"
+        );
         assert_eq!(loaded.udp_port, 51058, "Custom UDP port preserved");
-        assert_eq!(loaded.auto_expand_grid, false, "Grid expand preference preserved");
-        
+        assert_eq!(
+            loaded.auto_expand_grid, false,
+            "Grid expand preference preserved"
+        );
+
         // Verify machine order and properties
-        assert_eq!(loaded.machines[0].name, "localhost");
-        assert_eq!(loaded.machines[1].name, "spark");
-        assert_eq!(loaded.machines[1].host, "192.168.1.30");
-        assert_eq!(loaded.machines[2].name, "pluto");
-        
+        assert_eq!(loaded.machines[0].name, "spark");
+        assert_eq!(loaded.machines[0].host, "192.168.1.30");
+        assert_eq!(loaded.machines[1].name, "pluto");
+
         // Verify per-machine metric toggles preserved
-        let pluto = &loaded.machines[2];
-        assert!(!pluto.show_gpu_vram, "GPU toggle should be disabled for pluto");
+        let pluto = &loaded.machines[1];
+        assert!(
+            !pluto.show_gpu_vram,
+            "GPU toggle should be disabled for pluto"
+        );
         assert!(pluto.show_cpu, "Other metrics should remain enabled");
-        
+
         // Cleanup
         let _ = std::fs::remove_file(test_config_path);
     }
-    
+
     /// Config validation catches common errors with helpful messages (Beverly writes).
     #[test]
     fn test_config_validation() {
         // Valid config should pass
         let valid_config = ConfigManager::default();
-        assert!(valid_config.validate().is_ok(), "Default config should be valid");
-        
-        // Empty machines list should fail
+        assert!(
+            valid_config.validate().is_ok(),
+            "Default config should be valid"
+        );
+
+        // Empty machines list is valid (no validation error)
         let mut empty_machines = ConfigManager::default();
         empty_machines.machines.clear();
-        assert!(empty_machines.validate().is_err(), "Empty machine list should fail validation");
-        let err = empty_machines.validate().unwrap_err();
-        assert!(err.contains("at least one machine"), "Error should mention empty machine list");
-        
+        assert!(
+            empty_machines.validate().is_ok(),
+            "Empty machine list should be valid"
+        );
+
         // Duplicate machine names should fail
         let mut duplicate_names = ConfigManager::default();
         duplicate_names.add_machine("spark", "192.168.1.30");
-        duplicate_names.machines.push(MachineConfig::new("spark".to_string(), "192.168.1.99".to_string()));
-        assert!(duplicate_names.validate().is_err(), "Duplicate names should fail validation");
+        duplicate_names.machines.push(MachineConfig::new(
+            "spark".to_string(),
+            "192.168.1.99".to_string(),
+        ));
+        assert!(
+            duplicate_names.validate().is_err(),
+            "Duplicate names should fail validation"
+        );
         let err = duplicate_names.validate().unwrap_err();
-        assert!(err.contains("Duplicate") && err.contains("spark"), "Error should mention duplicate name");
-        
+        assert!(
+            err.contains("Duplicate") && err.contains("spark"),
+            "Error should mention duplicate name"
+        );
+
         // Zero UDP port should fail
         let mut zero_port = ConfigManager::default();
         zero_port.udp_port = 0;
-        assert!(zero_port.validate().is_err(), "Zero UDP port should fail validation");
-        
-        // Empty machine list should fail
+        assert!(
+            zero_port.validate().is_err(),
+            "Zero UDP port should fail validation"
+        );
+
+        // Empty machine list is valid (no validation error)
         let mut empty_machines = ConfigManager::default();
         empty_machines.machines.clear();
-        assert!(empty_machines.validate().is_err(), "Empty machine list should fail validation");
-        
+        assert!(
+            empty_machines.validate().is_ok(),
+            "Empty machine list should be valid"
+        );
+
         // Machine with empty name should fail
         let mut empty_name = ConfigManager::default();
+        empty_name.add_machine("test", "127.0.0.1");
         empty_name.machines[0].name = "".to_string();
-        assert!(empty_name.validate().is_err(), "Empty machine name should fail validation");
-        
+        assert!(
+            empty_name.validate().is_err(),
+            "Empty machine name should fail validation"
+        );
+
         // Machine with empty host should fail
         let mut empty_host = ConfigManager::default();
+        empty_host.add_machine("test", "127.0.0.1");
         empty_host.machines[0].host = "".to_string();
-        assert!(empty_host.validate().is_err(), "Empty machine host should fail validation");
+        assert!(
+            empty_host.validate().is_err(),
+            "Empty machine host should fail validation"
+        );
     }
 }

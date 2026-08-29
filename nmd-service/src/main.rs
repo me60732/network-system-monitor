@@ -57,8 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("nmd-service starting up");
     log::info!("Config file: {}", cli.config);
 
-    // 3. Load service configuration from TOML.
-    let config = ServiceConfig::load(&cli.config);
+    let mut config = ServiceConfig::load(&cli.config);
     log::info!(
         "Loaded config — host={}, port={}, refresh_interval={}s, machine_id={}",
         config.host,
@@ -67,23 +66,75 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.machine_id
     );
 
-    // 4. Initialize UDP sender with ECDH key derivation.
-    //    If receiver_pubkey is configured in TOML, derives per-machine ECDH key;
-    //    otherwise uses TEMP_SHARED_KEY for bootstrap/unpaired mode.
+    // ── Step 1: TCP pairing if no receiver_pubkey ─────────────────────────
+    if config.receiver_pubkey.is_none() {
+        log::info!(
+            "No receiver_pubkey configured — attempting TCP pairing with {}:{}",
+            config.host,
+            config.port
+        );
+
+        let sender_x25519_pubkey = get_sender_x25519_pubkey()?;
+
+        match nmd_service::request_pairing(
+            &config.host,
+            config.port,
+            &config.machine_id,
+            &sender_x25519_pubkey,
+        ) {
+            nmd_service::PairingResult::Accepted(receiver_pubkey) => {
+                log::info!(
+                    "✅ TCP pairing complete — saving receiver_pubkey to {}",
+                    cli.config
+                );
+                config.receiver_pubkey = Some(receiver_pubkey);
+                if let Err(e) = config.save(&cli.config) {
+                    log::error!("Failed to save config after pairing: {}", e);
+                    // Continue anyway — we have the key in memory for this run
+                }
+            }
+            nmd_service::PairingResult::Denied => {
+                log::error!("Pairing denied by receiver — exiting. Try again after acceptance.");
+                std::process::exit(1);
+            }
+            nmd_service::PairingResult::Failed(e) => {
+                log::error!(
+                    "TCP pairing failed: {}. Configure receiver_pubkey manually or retry.",
+                    e
+                );
+                std::process::exit(1);
+            }
+        }
+    }
+
+    // ── Step 2: Key rotation if keypair is > 24h old ──────────────────────
+    const KEY_ROTATION_SECS: u64 = 86400; // 24 hours
+    if UdpSender::keypair_age_secs() > KEY_ROTATION_SECS {
+        log::info!("🔄 Keypair is older than 24h — initiating key rotation");
+        let receiver_pubkey = config.receiver_pubkey.as_deref().unwrap_or("");
+
+        match rotate_sender_key(&config, receiver_pubkey) {
+            Ok(()) => log::info!("🔄 Key rotation complete"),
+            Err(e) => log::warn!(
+                "🔄 Key rotation failed (non-fatal, continuing with old key): {}",
+                e
+            ),
+        }
+    }
+
+    // ── Step 3: Initialize UDP sender ───────────────────────────────────────
     let dest = config.dest_addr();
+    let receiver_pubkey_hex = config.receiver_pubkey.clone().ok_or_else(|| {
+        std::io::Error::other("receiver_pubkey still not configured after pairing attempt")
+    })?;
+
     let mut sender =
-        UdpSender::new_with_config(dest, &config.machine_id, config.receiver_pubkey.clone())?;
+        UdpSender::new_with_config(dest, &config.machine_id, Some(receiver_pubkey_hex))?;
     log::info!(
         "UDP sender initialized — sending to {} (machine_id={})",
         dest,
         config.machine_id
     );
-
-    if let Some(ref pubkey) = config.receiver_pubkey {
-        log::info!("🔐 ECDH mode: receiver_pubkey configured ({:.8}…)", pubkey);
-    } else {
-        log::info!("🔐 Bootstrap mode: no receiver_pubkey configured (using TEMP_SHARED_KEY)");
-    }
 
     // 5. Initialize metrics aggregator.
     let mut aggregator = MetricsAggregator::new(config.clone());
@@ -134,6 +185,78 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("Shutdown requested — exiting gracefully");
     Ok(())
+}
+
+/// Load (or generate) the sender's Ed25519 keypair and return the X25519 public key.
+fn get_sender_x25519_pubkey() -> Result<[u8; 32], std::io::Error> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let path = std::path::PathBuf::from(home)
+        .join(".config")
+        .join("nmd")
+        .join("keypair.key");
+
+    let key = if path.exists() {
+        let bytes = std::fs::read(&path)?;
+        let arr: [u8; 64] = bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_| std::io::Error::other("keypair file wrong size"))?;
+        ed25519_dalek::SigningKey::from_keypair_bytes(&arr)
+            .map_err(|e| std::io::Error::other(e.to_string()))?
+    } else {
+        let k = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        std::fs::write(&path, k.to_keypair_bytes())?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
+        }
+        k
+    };
+
+    Ok(nmd_service::crypto::derive_x25519_pubkey_from_ed25519_secret(&key.to_bytes()))
+}
+
+/// Perform key rotation: generate new keypair, authenticate with old key, send to receiver.
+fn rotate_sender_key(
+    config: &ServiceConfig,
+    receiver_pubkey_hex: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Load the OLD keypair before generating new one
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let path = std::path::PathBuf::from(home)
+        .join(".config")
+        .join("nmd")
+        .join("keypair.key");
+
+    let old_bytes = std::fs::read(&path)?;
+    let old_arr: [u8; 64] = old_bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| "keypair file wrong size")?;
+    let old_key =
+        ed25519_dalek::SigningKey::from_keypair_bytes(&old_arr).map_err(|e| e.to_string())?;
+    let old_ed25519_secret = old_key.to_bytes();
+
+    // Generate new keypair
+    let (_new_ed25519_secret, new_x25519_pubkey) = UdpSender::generate_new_keypair()?;
+
+    // Send rotation request
+    match nmd_service::request_key_rotation(
+        &config.host,
+        config.port,
+        &config.machine_id,
+        &old_ed25519_secret,
+        receiver_pubkey_hex,
+        &new_x25519_pubkey,
+    ) {
+        nmd_service::PairingResult::Accepted(_) => Ok(()),
+        nmd_service::PairingResult::Denied => Err("Rotation denied by receiver".into()),
+        nmd_service::PairingResult::Failed(e) => Err(e.into()),
+    }
 }
 
 /// Install signal handlers for SIGTERM (systemd stop/restart) and SIGINT (Ctrl-C).

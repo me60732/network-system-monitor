@@ -135,7 +135,32 @@ sudo chmod +x /usr/share/cosmic/applets/network-monitor
 
 **Note:** COSMIC applet registry integration is still evolving. If the applet doesn't appear in the "Add Applet" menu, use test mode (`--test`) until the COSMIC Desktop applet discovery mechanism is finalized in your COSMIC version.
 
-### 2. Remote Machine Setup (Per Machine)
+### 2. Local Machine Setup (Testing on Same Machine)
+
+The applet and nmd-service can both run on the same machine for testing:
+
+```bash
+# Build both binaries
+cargo build --release -p nmd-service -p cosmic-applet
+
+# Create sender config at ~/.config/nmd/config.toml
+cat > ~/.config/nmd/config.toml <<EOF
+host = "127.0.0.1"
+port = 51057
+refresh_interval_secs = 1
+machine_id = "localhost-test"
+EOF
+
+# Run sender (in background)
+./target/release/nmd-service --config ~/.config/nmd/config.toml &
+
+# Run receiver in test mode
+./target/release/cosmic-applet --test
+```
+
+The sender's `host` should be `127.0.0.1` for local testing.
+
+### 3. Remote Machine Setup (Per Machine)
 
 #### Option A: Automated install script (recommended)
 
@@ -218,7 +243,7 @@ sudo systemctl enable nmd-service
 sudo systemctl start nmd-service
 ```
 
-### 3. Pairing Flow (First Connection)
+### 4. Pairing Flow (First Connection)
 
 When the first UDP packet arrives from a remote machine:
 
@@ -229,11 +254,19 @@ When the first UDP packet arrives from a remote machine:
    - Sender IP address
    - Accept/Deny buttons
 
-**Accept:** The receiver generates a ChaCha20 shared key via ECDH and stores it in `~/.config/cosmic-applet/pairing.toml`
+**Bootstrap mode:** The sender starts without `receiver_pubkey`, using TEMP_SHARED_KEY initially.
+
+**Accept:** The receiver generates an ECDH-derived shared key and stores it in `~/.config/cosmic-applet/pairing.toml`
 
 **Deny:** The packet is dropped, no pairing entry created
 
-**Pre-production note:** Currently all machines use the same `TEMP_SHARED_KEY = [0x42; 32]` placeholder. Per-machine ECDH keys are wired in but not yet fully enabled (sender pubkey field is `[0u8; 32]` placeholder).
+**Configure sender:** After accepting the pairing:
+   - Copy the receiver's X25519 pubkey from the applet's Settings panel
+   - Add it to the sender's config as `receiver_pubkey = "<hex>"`
+   - Restart the service: `systemctl restart nmd-service`
+   - Subsequent packets use ECDH-derived keys (fully encrypted end-to-end)
+
+
 
 ## Verification
 

@@ -7,10 +7,9 @@
 //! packets are then checked for replay protection: timestamp freshness (< 10s old) + monotonic
 //! sequence number tracking per (machine_id, session_id).
 //!
-//! Phase 1 uses the temporary hardcoded [`nmd_service::crypto::TEMP_SHARED_KEY`]; Phase 2
-//! replaces it with per-machine ECDH-derived keys from the pairing flow.
+//! Uses ECDH-derived keys for all communication. The receiver derives the shared key from
+//! the sender's X25519 public key in the wire header.
 
-use chacha20poly1305::ChaCha20Poly1305;
 use nmd_service::crypto;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -66,10 +65,6 @@ pub struct UdpReceiver {
     /// Bound UDP socket listening for incoming MetricPacket traffic from remote nmd-service instances.
     pub socket: tokio::net::UdpSocket,
 
-    /// ChaCha20-Poly1305 cipher for decrypting incoming wire packets.
-    /// Phase 1: keyed with the temporary hardcoded `crypto::TEMP_SHARED_KEY` shared by all senders.
-    cipher: ChaCha20Poly1305,
-
     /// Port the receiver is listening on (default: 51057).
     pub port: u16,
 
@@ -113,7 +108,6 @@ impl UdpReceiver {
 
         Ok(UdpReceiver {
             socket,
-            cipher: crypto::cipher_from_key(&crypto::TEMP_SHARED_KEY),
             sequence_map: Arc::new(std::sync::Mutex::new(HashMap::new())),
             port,
             tx,
@@ -199,21 +193,72 @@ impl UdpReceiver {
             tokio::sync::mpsc::channel::<(Vec<u8>, std::net::SocketAddr)>(64);
 
         // Clone what the processing task needs
-        let cipher = self.cipher.clone();
         let pairing_manager = Arc::clone(&self.pairing_manager);
         let state_for_proc = Arc::clone(&shared_state);
         let ui_tx = self.tx.clone();
 
         // Spawn dedicated processing task — handles all CPU work + state writes
         tokio::spawn(async move {
-            // Processing task owns its sequence map
+            // Processing task owns its sequence map and rate limiter
             let mut sequence_map = HashMap::<(String, String), u32>::new();
 
+            // Token-bucket rate limiter: max 200 packets/s per IP (well above normal 1Hz)
+            struct IpRateLimiter {
+                buckets: HashMap<std::net::IpAddr, (u32, std::time::Instant)>,
+                max_per_second: u32,
+            }
+
+            impl IpRateLimiter {
+                fn new(max_per_second: u32) -> Self {
+                    Self {
+                        buckets: HashMap::new(),
+                        max_per_second,
+                    }
+                }
+
+                /// Returns true if packet should be processed, false if it should be dropped.
+                fn check(&mut self, ip: std::net::IpAddr) -> bool {
+                    let now = std::time::Instant::now();
+                    let entry = self.buckets.entry(ip).or_insert((0, now));
+                    if now.duration_since(entry.1).as_secs() >= 1 {
+                        *entry = (1, now);
+                        return true;
+                    }
+                    entry.0 += 1;
+                    if entry.0 > self.max_per_second {
+                        log::debug!("Rate limit exceeded for {}", ip);
+                        return false;
+                    }
+                    true
+                }
+
+                /// Call every ~60s to evict stale entries and prevent unbounded memory growth.
+                fn cleanup(&mut self) {
+                    let cutoff = std::time::Instant::now() - std::time::Duration::from_secs(10);
+                    self.buckets.retain(|_, (_, t)| *t > cutoff);
+                    // Hard cap: if still >1000 tracked IPs, clear everything (under attack scenario)
+                    if self.buckets.len() > 1000 {
+                        self.buckets.clear();
+                    }
+                }
+            }
+
+            let mut rate_limiter = IpRateLimiter::new(200);
+            let mut cleanup_counter = 0u32;
+
             while let Some((data, src)) = proc_rx.recv().await {
+                // Rate limit check at top of loop — drop packet if over limit
+                if !rate_limiter.check(src.ip()) {
+                    continue; // drop packet — rate limited
+                }
+                cleanup_counter += 1;
+                if cleanup_counter % 10_000 == 0 {
+                    rate_limiter.cleanup();
+                }
+
                 Self::process_packet(
                     &data,
                     src,
-                    &cipher,
                     &mut sequence_map,
                     &pairing_manager,
                     &state_for_proc,
@@ -251,7 +296,6 @@ impl UdpReceiver {
     async fn process_packet(
         data: &[u8],
         src: std::net::SocketAddr,
-        cipher: &ChaCha20Poly1305,
         sequence_map: &mut HashMap<(String, String), u32>,
         pairing_manager: &Arc<std::sync::RwLock<crate::pairing_manager::PairingManager>>,
         shared_state: &Arc<std::sync::RwLock<AppState>>,
@@ -270,13 +314,20 @@ impl UdpReceiver {
         let (sender_x25519_pubkey_bytes, remainder) = data.split_at(crypto::SENDER_PUBKEY_LEN);
         let sender_x25519_pubkey: [u8; 32] = sender_x25519_pubkey_bytes.try_into().unwrap();
 
-        // Decrypt + verify the AEAD tag (critical security step — tag verification
-        // is intrinsic to decrypt; tampered/forged/wrong-key packets fail here).
-        // Use TEMP_SHARED_KEY for bootstrap/unpaired mode.
-        let plaintext = match crypto::open(cipher, remainder) {
+        // Derive ECDH key on the fly from sender's pubkey in the wire header.
+        let ecdh_key = pairing_manager
+            .read()
+            .unwrap()
+            .derive_ecdh_key_for_sender(&sender_x25519_pubkey);
+        let ecdh_cipher = crypto::cipher_from_key(&ecdh_key);
+
+        let plaintext = match crypto::open(&ecdh_cipher, remainder) {
             Ok(pt) => pt,
-            Err(e) => {
-                log::warn!("Decryption failed for packet from {}: {}", src, e);
+            Err(_) => {
+                log::warn!(
+                    "Decryption failed for packet from {} — sender may not have receiver_pubkey configured",
+                    src
+                );
                 return;
             }
         };
@@ -336,13 +387,30 @@ impl UdpReceiver {
                 sender_pubkey: sender_x25519_pubkey, // REAL X25519 pubkey from packet header
                 host: src.ip().to_string(),
                 received_at: std::time::Instant::now(),
+                tcp_response: None,
             };
 
             // Write directly to shared_state so the UI sees it regardless of whether
             // the tx channel is wired up (it is None in the background thread path).
             {
                 let mut state = shared_state.write().unwrap();
-                if !state
+                let src_ip = src.ip().to_string();
+                let already_pending_from_ip =
+                    state.pending_pairings.iter().any(|r| r.host == src_ip);
+                let total_pending = state.pending_pairings.len();
+
+                if total_pending >= 20 {
+                    log::warn!(
+                        "Pending pairings queue full (20) — dropping request from {}",
+                        src_ip
+                    );
+                } else if already_pending_from_ip {
+                    // deduplicate by IP too (not just machine_id)
+                    log::debug!(
+                        "Dropping duplicate pairing request from same IP: {}",
+                        src_ip
+                    );
+                } else if !state
                     .pending_pairings
                     .iter()
                     .any(|r| r.machine_id == pairing_request.machine_id)
@@ -364,26 +432,22 @@ impl UdpReceiver {
             return;
         }
 
-        // Sender is paired — try re-decrypt with per-machine key if available
-        if let Some(per_machine_key) = pairing_manager.read().unwrap().get_key(&machine_id_str) {
-            match crypto::open(&crypto::cipher_from_key(per_machine_key), data) {
-                Ok(_) => {
-                    // Per-machine key decryption succeeded — continue processing
-                    log::debug!(
-                        "✅ Decrypted packet from paired machine: {} using per-machine key",
-                        machine_id_str
-                    );
-                }
-                Err(e) => {
-                    log::warn!(
-                        "Per-machine key decryption failed for {}: {}, falling back to TEMP_SHARED_KEY",
-                        machine_id_str,
-                        e
-                    );
-                    // Continue with existing TEMP_SHARED_KEY processing path
-                }
-            }
+        // Verify sender pubkey matches what we stored at pairing time
+        let is_sender_valid = pairing_manager
+            .read()
+            .unwrap()
+            .verify_sender_pubkey(&machine_id_str, &sender_x25519_pubkey);
+
+        if !is_sender_valid {
+            log::warn!(
+                "⚠️  Sender pubkey mismatch for machine '{}' — dropping packet (attack or unauthorized key change)",
+                machine_id_str
+            );
+            return;
         }
+
+        // Log which key succeeded and warn if a paired machine is still using bootstrap mode.
+        log::debug!("✅ Decrypted with ECDH key for machine: {}", machine_id_str);
 
         // Convert archived packet to owned MetricPacket with nested structs
         let metric_packet = MetricPacket {
@@ -475,13 +539,19 @@ impl UdpReceiver {
                     metric_packet.memory.used_bytes,
                     metric_packet.memory.total_bytes
                 );
+            } else if state.local_machine.name == machine_name {
+                // This is the local machine — metrics collected directly, ignore UDP packets for it
+                log::debug!(
+                    "Ignoring UDP packet for local machine '{}' (collected directly)",
+                    machine_name
+                );
             } else {
-                // Machine not in config, create it dynamically
+                // New remote machine — create it dynamically
                 let mut new_machine =
                     crate::remote_machine::RemoteMachine::new(machine_name.clone());
                 new_machine.update_from_packet(&metric_packet);
                 state.machines.insert(machine_name.clone(), new_machine);
-                log::info!("📍 Added new machine from UDP: {}", machine_name);
+                log::info!("📍 Added new remote machine from UDP: {}", machine_name);
             }
         }
 
@@ -498,7 +568,7 @@ impl UdpReceiver {
     /// with, truncated, or encrypted under a different key.
     /// Public so integration tests and criterion benchmarks can exercise the decryption path directly.
     pub fn decrypt_packet(&self, wire: &[u8]) -> Result<rkyv::util::AlignedVec, String> {
-        // Wire format (Phase 2): [32-byte sender_x25519_pubkey][12-byte nonce][ciphertext+tag]
+        // Wire format (ECDH-only): [32-byte sender_x25519_pubkey][12-byte nonce][ciphertext+tag]
         if wire.len() < crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN {
             return Err(format!(
                 "wire packet too short: {} bytes (min={})",
@@ -506,9 +576,15 @@ impl UdpReceiver {
                 crypto::SENDER_PUBKEY_LEN + crypto::NONCE_LEN + crypto::TAG_LEN
             ));
         }
-        // Extract remainder after sender pubkey header for decryption
-        let (_, remainder) = wire.split_at(crypto::SENDER_PUBKEY_LEN);
-        crypto::open(&self.cipher, remainder)
+        let sender_pubkey: [u8; 32] = wire[..crypto::SENDER_PUBKEY_LEN].try_into().unwrap();
+        let remainder = &wire[crypto::SENDER_PUBKEY_LEN..];
+        let ecdh_key = self
+            .pairing_manager
+            .read()
+            .unwrap()
+            .derive_ecdh_key_for_sender(&sender_pubkey);
+        let ecdh_cipher = crypto::cipher_from_key(&ecdh_key);
+        crypto::open(&ecdh_cipher, remainder)
     }
 
     /// Convert a fixed-length [u8; 20] machine_id field from an ArchivedMetricPacket to a displayable string.
@@ -601,12 +677,9 @@ mod tests {
     use super::*;
     // Shared helpers — single source of truth for packet construction + wire encryption.
     use crate::network::test_support::{
-        create_test_packet, create_test_packet_full, encrypt_packet, encrypt_packet_default,
-        unix_now,
+        create_test_packet, create_test_packet_full, encrypt_packet, encrypt_packet_ecdh,
+        test_sender_pubkey, unix_now,
     };
-
-    #[cfg(test)]
-    use x25519_dalek::PublicKey as X25519PublicKey;
 
     /// Helper function to create a test PairingManager for unit tests
     fn test_pairing_manager()
@@ -628,13 +701,16 @@ mod tests {
         );
 
         // Create valid packet with nested struct groups, encrypted into the wire format
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let packet = create_test_packet("pluto", 45.5, 8_589_934_592, 17_179_869_184);
-        let wire = encrypt_packet_default(packet.clone());
+        let wire = encrypt_packet_ecdh(packet.clone(), &receiver_pubkey_hex);
 
         // Decrypt (verifies AEAD tag) then zero-copy access the plaintext
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
         let buffer = receiver
             .decrypt_packet(&wire)
@@ -727,13 +803,16 @@ mod tests {
     /// must fail tag verification inside decrypt_packet.
     #[test]
     fn test_decryption_key_verification() {
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let packet = create_test_packet("spark", 30.0, 4_000_000_000, 8_000_000_000);
 
-        // Encrypted under the Phase 1 shared key — receiver must decrypt it.
-        let wire = encrypt_packet_default(packet.clone());
+        // Encrypted under the ECDH key derived from receiver's pubkey — receiver must decrypt it.
+        let wire = encrypt_packet_ecdh(packet.clone(), &receiver_pubkey_hex);
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
         let plaintext = receiver
             .decrypt_packet(&wire)
@@ -765,10 +844,13 @@ mod tests {
             .as_secs()
             - 20;
 
-        let wire = encrypt_packet_default(packet);
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
+        let wire = encrypt_packet_ecdh(packet, &receiver_pubkey_hex);
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
         let buffer = receiver
             .decrypt_packet(&wire)
@@ -795,14 +877,17 @@ mod tests {
     /// must always track the highest sequence seen per machine.
     #[test]
     fn test_replay_attack_detection() {
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
 
         // Valid packet with sequence #42 — passes decryption and freshness, mirroring listen_loop order.
         let packet = create_test_packet("replay-victim", 25.0, 1_000_000_000, 2_000_000_000);
-        let wire = encrypt_packet_default(packet);
+        let wire = encrypt_packet_ecdh(packet, &receiver_pubkey_hex);
         let buffer = receiver
             .decrypt_packet(&wire)
             .expect("Decryption should succeed");
@@ -904,11 +989,14 @@ mod tests {
         );
 
         // End-to-end: an encrypted packet backdated 5s still passes the full freshness check.
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let packet = create_test_packet_full("skewed", 10.0, 1_000, 2_000, 1, now - 5);
-        let wire = encrypt_packet_default(packet);
+        let wire = encrypt_packet_ecdh(packet, &receiver_pubkey_hex);
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
         let buffer = receiver
             .decrypt_packet(&wire)
@@ -925,14 +1013,17 @@ mod tests {
     #[test]
     fn test_unknown_sender_emits_pairing_request() {
         // Create a receiver with an empty PairingManager (no paired machines)
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
 
         // Packet from a machine NOT in the pairing manager
         let packet = create_test_packet("unknown-machine", 25.0, 1_000_000_000, 2_000_000_000);
-        let wire = encrypt_packet_default(packet.clone());
+        let wire = encrypt_packet_ecdh(packet.clone(), &receiver_pubkey_hex);
 
         // Decrypt to get the archived packet
         let buffer = receiver
@@ -970,33 +1061,33 @@ mod tests {
     #[test]
     fn test_paired_sender_passes_through() {
         // Create a receiver and add a machine to the PairingManager
-        let pairing_mgr = test_pairing_manager();
-        let mut manager = pairing_mgr.write().unwrap();
+        let pm = test_pairing_manager();
+        let mut manager = pm.write().unwrap();
 
-        // Generate sender keypair for test
-        let mut sender_secret_bytes = [0u8; 32];
-        getrandom::getrandom(&mut sender_secret_bytes).expect("Failed to generate random bytes");
-        let sender_pubkey = X25519PublicKey::from(sender_secret_bytes);
+        // Use fixed test sender pubkey for consistency
+        let sender_pubkey_bytes = test_sender_pubkey();
 
-        // Add the machine as paired
+        // Add the machine as paired with the test sender's pubkey
         manager
             .add_pairing(
                 "paired-machine".to_string(),
-                &sender_pubkey.to_bytes(),
+                &sender_pubkey_bytes,
                 "127.0.0.1".to_string(),
             )
             .expect("Failed to add pairing");
 
         drop(manager); // Release write lock
 
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, pairing_mgr))
+            .block_on(UdpReceiver::new(0, None, pm.clone()))
             .expect("Receiver creation should succeed");
 
         // Packet from a machine that IS in the pairing manager
         let packet = create_test_packet("paired-machine", 30.0, 1_500_000_000, 3_000_000_000);
-        let wire = encrypt_packet_default(packet.clone());
+        let wire = encrypt_packet_ecdh(packet.clone(), &receiver_pubkey_hex);
 
         // Decrypt to get the archived packet
         let buffer = receiver
@@ -1057,13 +1148,16 @@ mod tests {
     /// (nonce, ciphertext body, or Poly1305 tag) must cause decrypt_packet() to fail.
     #[test]
     fn test_wire_tamper_detection() {
+        let pm = test_pairing_manager();
+        let receiver_pubkey_hex = pm.read().unwrap().get_receiver_x25519_pubkey();
+
         let receiver = tokio::runtime::Runtime::new()
             .unwrap()
-            .block_on(UdpReceiver::new(0, None, test_pairing_manager()))
+            .block_on(UdpReceiver::new(0, None, pm))
             .expect("Receiver creation should succeed");
 
         let packet = create_test_packet("tamper-test", 33.3, 4_000_000_000, 8_000_000_000);
-        let wire = encrypt_packet_default(packet);
+        let wire = encrypt_packet_ecdh(packet, &receiver_pubkey_hex);
 
         // Sanity: untampered packet decrypts.
         assert!(

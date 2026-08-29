@@ -12,7 +12,6 @@ set -euo pipefail
 # Configuration
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/nmd"
-SECRET_KEY_FILE="$CONFIG_DIR/secret.key"
 CONFIG_FILE="$CONFIG_DIR/config.toml"
 SYSTEMD_UNIT="/etc/systemd/system/nmd-service.service"
 SERVICE_NAME="nmd-service"
@@ -69,10 +68,10 @@ else
     BINARY_PATH="$WORKSPACE_ROOT/target/release/$BINARY_NAME"
 fi
 
-# Create dedicated system user for nmd service (SEC-02 fix)
+# Create dedicated system user for nmd service with home directory
 if ! id -u nmd >/dev/null 2>&1; then
     log "Creating system user 'nmd' for service isolation"
-    useradd --system --no-create-home --shell /usr/sbin/nologin nmd
+    useradd --system --create-home --home-dir /var/lib/nmd --shell /usr/sbin/nologin nmd
 fi
 
 # Create config directory
@@ -81,48 +80,33 @@ mkdir -p "$CONFIG_DIR"
 chown root:nmd "$CONFIG_DIR"
 chmod 750 "$CONFIG_DIR"
 
-# Generate HMAC secret key (32 bytes raw — SEC-01 fix)
-if [[ -f "$SECRET_KEY_FILE" ]]; then
-    warn "Secret key already exists: $SECRET_KEY_FILE (keeping existing)"
-    # Fix permissions on existing key
-    chown root:nmd "$SECRET_KEY_FILE"
-    chmod 640 "$SECRET_KEY_FILE"
-else
-    log "Generating HMAC secret key: $SECRET_KEY_FILE"
-    # SEC-01: Generate 32 raw bytes (not hex-encoded)
-    umask 077
-    head -c 32 /dev/urandom > "$SECRET_KEY_FILE"
-    chown root:nmd "$SECRET_KEY_FILE"
-    chmod 640 "$SECRET_KEY_FILE"
-    log "Secret key generated (32 raw bytes, root:nmd 640)"
-    
-    warn "IMPORTANT: Copy this key to the desktop machine:"
-    warn "  Desktop path: $CONFIG_DIR/secret.key"
-    warn "  Use: scp $SECRET_KEY_FILE user@desktop:~/.config/cosmic/network-monitor/secret.key"
-    warn "  (Key is binary data — must use scp or similar for transfer)"
-    echo ""
-    read -p "Press Enter after copying the key to continue..."
-fi
+# Create keypair directory for the nmd user
+log "Creating keypair directory: /var/lib/nmd/.config/nmd"
+mkdir -p /var/lib/nmd/.config/nmd
+chown nmd:nmd /var/lib/nmd
+chown nmd:nmd /var/lib/nmd/.config
+chown nmd:nmd /var/lib/nmd/.config/nmd
 
-# Create config file (SEC-04: Fixed schema to match ServiceConfig)
+# Create config file (per ServiceConfig with #[serde(deny_unknown_fields)])
 log "Creating config file: $CONFIG_FILE"
 cat > "$CONFIG_FILE" <<EOF
 # Network Monitor Daemon Configuration
 # Machine: $MACHINE_NAME
 # Generated: $(date)
 
-# Desktop UDP receiver address (top-level fields per ServiceConfig)
+# Desktop UDP receiver address
 host = "$DESKTOP_IP"
 port = $DESKTOP_PORT
 
-# Metrics push interval in seconds (default: 1)
-refresh_interval_secs = 2
+# Metrics push interval in seconds
+refresh_interval_secs = 1
 
-# This machine's identifier (must be unique across your network)
+# Unique machine identifier (must be unique across your network)
 machine_id = "$MACHINE_NAME"
 
-# HMAC secret key path (must match desktop)
-hmac_secret_path = "$SECRET_KEY_FILE"
+# receiver_pubkey is set here after pairing is accepted in the applet UI.
+# Leave absent for initial bootstrap — a pairing request will appear in the applet.
+# receiver_pubkey = "paste-hex-pubkey-from-applet-settings-here"
 EOF
 
 chown root:nmd "$CONFIG_FILE"
@@ -134,7 +118,7 @@ log "Installing binary: $BINARY_PATH → $INSTALL_DIR/$BINARY_NAME"
 cp "$BINARY_PATH" "$INSTALL_DIR/$BINARY_NAME"
 chmod 755 "$INSTALL_DIR/$BINARY_NAME"
 
-# Create systemd unit file
+# Create systemd unit file with HOME environment and keypair directory access
 log "Creating systemd unit: $SYSTEMD_UNIT"
 cat > "$SYSTEMD_UNIT" <<EOF
 [Unit]
@@ -149,12 +133,13 @@ ExecStart=$INSTALL_DIR/$BINARY_NAME --config $CONFIG_FILE
 Restart=always
 RestartSec=5
 
-# Security hardening (SEC-02: Run as dedicated nmd user)
+# Security hardening (run as dedicated nmd user with home directory)
 User=nmd
 Group=nmd
+Environment="HOME=/var/lib/nmd"
 NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=read-only
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
@@ -163,6 +148,7 @@ RestrictSUIDSGID=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
 RestrictNamespaces=true
+ReadWritePaths=/var/lib/nmd
 
 [Install]
 WantedBy=multi-user.target
@@ -188,7 +174,11 @@ if systemctl is-active --quiet "$SERVICE_NAME"; then
     log "Check status:  systemctl status $SERVICE_NAME"
     log "View logs:     journalctl -u $SERVICE_NAME -f"
     log "Config file:   $CONFIG_FILE"
-    log "Secret key:    $SECRET_KEY_FILE"
+    log "Keypair:       /var/lib/nmd/.config/nmd/keypair.key (auto-generated on first start)"
+    log ""
+    log "NEXT STEP: Open the applet on the desktop and copy the receiver pubkey from Settings."
+    log "Then add it to $CONFIG_FILE as: receiver_pubkey = \"<hex>\""
+    log "Then restart: systemctl restart $SERVICE_NAME"
 else
     error "Service failed to start. Check logs:"
     error "  journalctl -u $SERVICE_NAME -n 50"

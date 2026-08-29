@@ -26,16 +26,17 @@ pub struct PairingManager {
 pub struct PairingInfo {
     /// Unique identifier of the machine.
     pub machine_id: String,
-    /// The 32-byte ChaCha20 key derived via ECDH exchange (hex-encoded in TOML).
+    /// The sender's 32-byte X25519 public key (hex-encoded in TOML).
+    /// ECDH shared key is derived on-the-fly for decryption, not stored.
     #[serde(with = "hex_serde")]
-    pub shared_key: [u8; 32],
+    pub sender_pubkey: [u8; 32],
     /// Timestamp when the pairing was established.
     pub paired_at: DateTime<Utc>,
     /// Hostname or IP address of the machine.
     pub host: String,
 }
 
-/// Request to pair a new machine, received via UDP.
+/// Request to pair a new machine, received via UDP or TCP.
 #[derive(Debug, Clone)]
 pub struct PairingRequest {
     /// Unique identifier of the requesting machine.
@@ -46,6 +47,10 @@ pub struct PairingRequest {
     pub host: String,
     /// Timestamp when the request was received (for 60-second timeout).
     pub received_at: std::time::Instant,
+    /// Present when request arrived via TCP — send response here to unblock the TCP handler.
+    pub tcp_response: Option<
+        std::sync::Arc<std::sync::Mutex<Option<std::sync::mpsc::Sender<TcpPairingResponse>>>>,
+    >,
 }
 
 /// TOML storage format for paired machines.
@@ -53,6 +58,13 @@ pub struct PairingRequest {
 struct PairingStorage {
     #[serde(rename = "paired_machines")]
     paired_machines: Vec<PairingInfo>,
+}
+
+/// TCP pairing response types.
+#[derive(Debug)]
+pub enum TcpPairingResponse {
+    Accept(String), // receiver_pubkey hex
+    Deny,
 }
 
 impl PairingManager {
@@ -89,23 +101,62 @@ impl PairingManager {
         self.paired_machines.contains_key(machine_id)
     }
 
-    /// Retrieves the shared key for a paired machine, if it exists.
+    /// Retrieves the sender's X25519 public key for a paired machine, if it exists.
     ///
     /// # Arguments
     /// * `machine_id` - The unique identifier of the machine.
     ///
     /// # Returns
-    /// Some reference to the 32-byte ChaCha20 key if the machine is paired, None otherwise.
-    pub fn get_key(&self, machine_id: &str) -> Option<&[u8; 32]> {
+    /// Some reference to the 32-byte X25519 pubkey if the machine is paired, None otherwise.
+    pub fn get_sender_pubkey(&self, machine_id: &str) -> Option<&[u8; 32]> {
         self.paired_machines
             .get(machine_id)
-            .map(|info| &info.shared_key)
+            .map(|info| &info.sender_pubkey)
+    }
+
+    /// Verify that an incoming packet's sender pubkey matches the stored pubkey for machine_id.
+    /// Returns false if the machine is unknown or pubkey doesn't match.
+    pub fn verify_sender_pubkey(&self, machine_id: &str, pubkey: &[u8; 32]) -> bool {
+        self.paired_machines
+            .get(machine_id)
+            .map(|info| &info.sender_pubkey == pubkey)
+            .unwrap_or(false)
+    }
+
+    /// Derives the ECDH shared key on the fly for a given sender's X25519 public key.
+    ///
+    /// The receiver can call this before knowing the machine_id (i.e., before decryption)
+    /// because the sender's pubkey is in the unencrypted packet header. If the sender has
+    /// `receiver_pubkey` configured, this produces the same key as the sender uses —
+    /// so ECDH decryption will succeed. If the sender is in bootstrap mode (TEMP_SHARED_KEY),
+    /// ECDH will produce a different key and decryption will fail the AEAD tag check.
+    pub fn derive_ecdh_key_for_sender(&self, sender_x25519_pubkey: &[u8; 32]) -> [u8; 32] {
+        let receiver_secret = X25519Secret::from(self.receiver_key.to_bytes());
+        let sender_pubkey = X25519PublicKey::from(*sender_x25519_pubkey);
+        let shared_secret = receiver_secret.diffie_hellman(&sender_pubkey);
+        *shared_secret.as_bytes()
+    }
+
+    /// Update the stored sender pubkey for a machine (called on successful key rotation).
+    pub fn update_sender_pubkey(
+        &mut self,
+        machine_id: &str,
+        new_pubkey: &[u8; 32],
+    ) -> Result<(), String> {
+        if let Some(info) = self.paired_machines.get_mut(machine_id) {
+            info.sender_pubkey = *new_pubkey;
+            Self::save_to_disk(&self.config_path, &self.paired_machines)
+                .map_err(|e| format!("Failed to save: {}", e))?;
+            Ok(())
+        } else {
+            Err(format!("Machine '{}' not found in pairings", machine_id))
+        }
     }
 
     /// Adds a new pairing or updates an existing one.
     ///
-    /// Derives the shared key using ECDH between the receiver's Ed25519 secret
-    /// and the sender's X25519 public key.
+    /// Stores the sender's X25519 public key. The ECDH shared key is derived on-the-fly
+    /// when decrypting packets, not stored in memory.
     ///
     /// # Arguments
     /// * `machine_id` - The unique identifier of the machine.
@@ -113,22 +164,16 @@ impl PairingManager {
     /// * `host` - The hostname or IP address of the machine.
     ///
     /// # Returns
-    /// Ok(()) on success, or an error if key derivation fails.
+    /// Ok(()) on success, or an error if saving fails.
     pub fn add_pairing(
         &mut self,
         machine_id: String,
         sender_pubkey_bytes: &[u8; 32],
         host: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Derive shared secret using ECDH
-        let receiver_secret = X25519Secret::from(self.receiver_key.to_bytes());
-        let sender_pubkey = X25519PublicKey::from(*sender_pubkey_bytes);
-        let shared_secret = receiver_secret.diffie_hellman(&sender_pubkey);
-        let chacha_key: [u8; 32] = *shared_secret.as_bytes();
-
         let info = PairingInfo {
             machine_id: machine_id.clone(),
-            shared_key: chacha_key,
+            sender_pubkey: *sender_pubkey_bytes,
             paired_at: Utc::now(),
             host,
         };
@@ -282,16 +327,18 @@ mod tests {
 
         // Verify in-memory state
         assert!(manager.is_paired("test-machine"));
-        let key = manager.get_key("test-machine").expect("Key should exist");
-        assert_eq!(key.len(), 32);
+        let pubkey = manager
+            .get_sender_pubkey("test-machine")
+            .expect("Pubkey should exist");
+        assert_eq!(pubkey.len(), 32);
 
         // Reload from disk and verify
         let reload_manager = PairingManager::new(config_path);
         assert!(reload_manager.is_paired("test-machine"));
-        let reloaded_key = reload_manager
-            .get_key("test-machine")
-            .expect("Key should exist after reload");
-        assert_eq!(reloaded_key, key);
+        let reloaded_pubkey = reload_manager
+            .get_sender_pubkey("test-machine")
+            .expect("Pubkey should exist after reload");
+        assert_eq!(reloaded_pubkey, pubkey);
     }
 
     #[test]
@@ -324,7 +371,7 @@ mod tests {
         let manager = PairingManager::new(config_path);
 
         assert!(!manager.is_paired("unknown-machine"));
-        assert!(manager.get_key("unknown-machine").is_none());
+        assert!(manager.get_sender_pubkey("unknown-machine").is_none());
     }
 
     #[test]
@@ -354,7 +401,7 @@ mod tests {
             .expect("Failed to remove pairing");
 
         assert!(!manager.is_paired("test-machine"));
-        assert!(manager.get_key("test-machine").is_none());
+        assert!(manager.get_sender_pubkey("test-machine").is_none());
 
         // Verify removal persisted
         let reload_manager = PairingManager::new(config_path);

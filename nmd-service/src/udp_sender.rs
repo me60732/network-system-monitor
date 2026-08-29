@@ -61,22 +61,36 @@ impl UdpSender {
     /// Create a new `UdpSender` bound to an ephemeral local port, targeting the given destination.
     ///
     /// Loads (or generates on first run) the Ed25519 identity keypair, derives X25519 pubkey,
-    /// initializes the ChaCha20-Poly1305 cipher (bootstrap mode with TEMP_SHARED_KEY), and
+    /// initializes the ChaCha20-Poly1305 cipher via ECDH using receiver_pubkey, and
     /// generates the random sender_session_id (SEC-03) + nonce prefix.
-    pub fn new(dest: SocketAddr, _machine_id: &str) -> Result<Self, std::io::Error> {
-        Self::new_with_config(dest, _machine_id, None)
+    pub fn new(
+        dest: SocketAddr,
+        _machine_id: &str,
+        receiver_pubkey_hex: String,
+    ) -> Result<Self, std::io::Error> {
+        Self::new_with_config(dest, _machine_id, Some(receiver_pubkey_hex))
     }
 
     /// Create a new `UdpSender` with ECDH key derivation enabled via receiver_pubkey.
     ///
-    /// When `receiver_pubkey_opt` is `Some(hex_string)`, parses and converts to X25519 pubkey,
-    /// then derives the per-machine ECDH shared secret as the cipher key.
-    /// When `None`, uses TEMP_SHARED_KEY (bootstrap/unpaired mode).
+    /// Receiver public key is required — sender refuses to start without it.
     pub fn new_with_config(
         dest: SocketAddr,
         _machine_id: &str,
         receiver_pubkey_opt: Option<String>,
     ) -> Result<Self, std::io::Error> {
+        let receiver_pubkey_hex = receiver_pubkey_opt.ok_or_else(|| {
+            std::io::Error::other(
+                "receiver_pubkey is not configured.\n\
+                 To enable encrypted communication:\n\
+                 1. Open the cosmic-applet on the desktop machine\n\
+                 2. Go to Settings → General\n\
+                 3. Copy the Receiver Public Key\n\
+                 4. Add it to the sender config as: receiver_pubkey = \"<hex>\"\n\
+                 5. Restart nmd-service",
+            )
+        })?;
+
         // Bind to an ephemeral local port for sending only (no inbound traffic expected).
         let socket = UdpSocket::bind("0.0.0.0:0")?;
 
@@ -107,49 +121,30 @@ impl UdpSender {
         let x25519_pubkey =
             crypto::derive_x25519_pubkey_from_ed25519_secret(&identity_key.to_bytes());
 
-        // Parse receiver pubkey (if provided) and derive ECDH shared key, or use TEMP_SHARED_KEY for bootstrap.
-        let (cipher, _receiver_x25519_pubkey_opt): (ChaCha20Poly1305, Option<[u8; 32]>) =
-            match receiver_pubkey_opt {
-                Some(hex_string) => {
-                    // Parse hex-encoded 32-byte X25519 public key
-                    let receiver_x25519_bytes = hex::decode(&hex_string).map_err(|e| {
-                        std::io::Error::other(format!(
-                            "Failed to decode receiver_pubkey hex: {}",
-                            e
-                        ))
-                    })?;
-                    if receiver_x25519_bytes.len() != 32 {
-                        return Err(std::io::Error::other(format!(
-                            "receiver_pubkey must be exactly 32 bytes ({} bytes provided)",
-                            receiver_x25519_bytes.len()
-                        )));
-                    }
-                    let receiver_x25519_pubkey: [u8; 32] =
-                        receiver_x25519_bytes.try_into().unwrap();
+        // Parse hex-encoded 32-byte X25519 public key and derive ECDH shared secret as the cipher key.
+        let receiver_x25519_bytes = hex::decode(&receiver_pubkey_hex).map_err(|e| {
+            std::io::Error::other(format!("Failed to decode receiver_pubkey hex: {}", e))
+        })?;
+        if receiver_x25519_bytes.len() != 32 {
+            return Err(std::io::Error::other(format!(
+                "receiver_pubkey must be exactly 32 bytes ({} provided)",
+                receiver_x25519_bytes.len()
+            )));
+        }
+        let receiver_x25519_pubkey: [u8; 32] = receiver_x25519_bytes.try_into().unwrap();
 
-                    // Derive ECDH shared secret as the cipher key
-                    let sender_secret = identity_key.to_bytes();
-                    let ecdh_key = crypto::derive_ecdh_key(&sender_secret, &receiver_x25519_pubkey);
-                    log::info!(
-                        "🔐 ECDH-derived per-machine ChaCha20 key (machine_id={})",
-                        _machine_id
-                    );
-
-                    (crypto::cipher_from_key(&ecdh_key), None)
-                }
-                None => {
-                    // Bootstrap mode: use TEMP_SHARED_KEY
-                    log::info!(
-                        "🔐 Using bootstrap mode with TEMP_SHARED_KEY (no receiver_pubkey configured)"
-                    );
-                    (crypto::cipher_from_key(&crypto::TEMP_SHARED_KEY), None)
-                }
-            };
+        // Derive ECDH shared secret as the cipher key
+        let sender_secret = identity_key.to_bytes();
+        let ecdh_key = crypto::derive_ecdh_key(&sender_secret, &receiver_x25519_pubkey);
+        log::info!(
+            "🔐 ECDH key derived from receiver_pubkey (machine_id={})",
+            _machine_id
+        );
 
         Ok(UdpSender {
             socket,
             dest,
-            cipher,
+            cipher: crypto::cipher_from_key(&ecdh_key),
             identity_key,
             x25519_pubkey,
             sequence_counter: AtomicU32::new(0),
@@ -166,6 +161,43 @@ impl UdpSender {
             .join(".config")
             .join("nmd")
             .join(KEYPAIR_FILENAME)
+    }
+
+    /// Returns the path to the on-disk keypair file.
+    pub fn keypair_path() -> std::path::PathBuf {
+        Self::default_keypair_path()
+    }
+
+    /// Generate a new Ed25519 keypair, save it to disk, return the new X25519 pubkey.
+    /// Call this before reconnecting as the "new sender" after key rotation is confirmed.
+    pub fn generate_new_keypair() -> Result<([u8; 32], [u8; 32]), std::io::Error> {
+        let path = Self::default_keypair_path();
+        let new_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
+        let ed25519_secret = new_key.to_bytes();
+        // Save new keypair
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        std::fs::write(&path, new_key.to_keypair_bytes())?;
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
+        }
+        let x25519_pubkey =
+            crate::crypto::derive_x25519_pubkey_from_ed25519_secret(&ed25519_secret);
+        log::info!("🔑 Generated new Ed25519 keypair for key rotation");
+        Ok((ed25519_secret, x25519_pubkey))
+    }
+
+    /// Returns age of the on-disk keypair in seconds (0 if file not found or error).
+    pub fn keypair_age_secs() -> u64 {
+        let path = Self::default_keypair_path();
+        std::fs::metadata(&path)
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|t| t.elapsed().ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
     }
 
     /// Load the Ed25519 keypair from `path`, generating and persisting a new one if absent.
@@ -278,7 +310,9 @@ mod tests {
     #[test]
     fn test_send_to_invalid_addr_fails_gracefully() {
         let dest: SocketAddr = "127.0.0.1:51057".parse().unwrap();
-        let mut sender = UdpSender::new(dest, "test").expect("Failed to create UdpSender");
+        let dummy_receiver_pubkey = hex::encode([0xAA; 32]);
+        let mut sender = UdpSender::new(dest, "test", dummy_receiver_pubkey)
+            .expect("Failed to create UdpSender");
 
         let packet = MetricPacket {
             version: crate::packet::PROTOCOL_VERSION,
@@ -326,7 +360,9 @@ mod tests {
     #[test]
     fn test_sequence_counter_increments() {
         let dest: SocketAddr = "127.0.0.1:51058".parse().unwrap();
-        let mut sender = UdpSender::new(dest, "seqtest").expect("Failed to create UdpSender");
+        let dummy_receiver_pubkey = hex::encode([0xAA; 32]);
+        let mut sender = UdpSender::new(dest, "seqtest", dummy_receiver_pubkey)
+            .expect("Failed to create UdpSender");
 
         let packet = MetricPacket {
             version: crate::packet::PROTOCOL_VERSION,
