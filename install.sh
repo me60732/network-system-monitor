@@ -8,7 +8,7 @@
 # The pipe always runs bash as a new process — sudo must be on bash, not curl.
 #
 # Or locally from the project root:
-#   ./install.sh
+#   sudo ./install.sh
 
 set -euo pipefail
 
@@ -23,7 +23,7 @@ NMD_SYSTEMD_UNIT="/etc/systemd/system/nmd-service.service"
 NMD_HOME="/var/lib/nmd"
 NMD_USER="nmd"
 
-# ── Colors ────────────────────────────────────────────────────────────────
+# ── Colors (only when stdout is a real terminal) ──────────────────────────
 if [ -t 1 ]; then
   RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
   BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
@@ -47,10 +47,10 @@ need_root() {
     err "This script must run as root."
     blank
     echo -e "  ${BOLD}Run with:${NC}"
-    echo -e "  ${CYAN}curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash${NC}"
+    echo -e "  ${CYAN}curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sudo bash${NC}"
     blank
     echo -e "  ${YELLOW}Note:${NC} 'sudo curl ... | bash' only gives sudo to curl, not bash."
-    echo -e "       The pipe runs bash as your normal user — use 'curl ... | sudo bash' instead."
+    echo -e "       Use 'curl ... | sudo bash' so the script itself runs as root."
     blank
     exit 1
   fi
@@ -69,22 +69,10 @@ download() {
 
 detect_arch() {
   case "$(uname -m)" in
-    x86_64|amd64)   echo "x86_64"  ;;
-    aarch64|arm64)  echo "aarch64" ;;
-    *)              echo "unsupported" ;;
+    x86_64|amd64)  echo "x86_64"  ;;
+    aarch64|arm64) echo "aarch64" ;;
+    *)             echo "unsupported" ;;
   esac
-}
-
-get_latest_tag() {
-  local tag=""
-  if has curl; then
-    tag=$(curl -fsSL "${GITHUB_API}" 2>/dev/null | grep '"tag_name"' | head -1 \
-          | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-  elif has wget; then
-    tag=$(wget -qO- "${GITHUB_API}" 2>/dev/null | grep '"tag_name"' | head -1 \
-          | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-  fi
-  echo "${tag:-unknown}"
 }
 
 # ── Header ────────────────────────────────────────────────────────────────
@@ -98,54 +86,60 @@ print_header() {
   blank
 }
 
-# ── Component menu ────────────────────────────────────────────────────────
+# ── Component selection ───────────────────────────────────────────────────
+# NOTE: called directly (not via $()) so echo output goes to the terminal.
+# Result stored in global SELECTED_COMPONENT.
+SELECTED_COMPONENT=""
 prompt_component() {
   blank
   echo -e "${BOLD}  What would you like to install?${NC}"
   blank
-  echo -e "  ${GREEN}1)${NC} ${BOLD}Sender${NC}   ${YELLOW}nmd-service${NC}"
+  echo -e "  ${GREEN}1)${NC} ${BOLD}Sender${NC}   ${YELLOW}(nmd-service)${NC}"
   echo -e "     Runs on remote Linux machines — collects and sends metrics"
   blank
-  echo -e "  ${GREEN}2)${NC} ${BOLD}Receiver${NC} ${YELLOW}cosmic-applet${NC}"
-  echo -e "     COSMIC desktop panel applet — displays local + remote metrics"
+  echo -e "  ${GREEN}2)${NC} ${BOLD}Receiver${NC} ${YELLOW}(cosmic-applet)${NC}"
+  echo -e "     COSMIC desktop panel applet — displays local + remote machine metrics"
   echo -e "     ${CYAN}Requires: COSMIC desktop environment${NC}"
   blank
-  echo -e "  ${GREEN}3)${NC} ${BOLD}Both${NC} (sender + receiver on this machine)"
+  echo -e "  ${GREEN}3)${NC} ${BOLD}Both${NC} — sender and receiver on this machine"
   blank
   while true; do
-    read -rp "  Choice [1-3]: " choice
+    read -rp "  Choice [1-3]: " choice </dev/tty
     case "$choice" in
-      1) echo "sender";   return ;;
-      2) echo "receiver"; return ;;
-      3) echo "both";     return ;;
+      1) SELECTED_COMPONENT="sender";   return ;;
+      2) SELECTED_COMPONENT="receiver"; return ;;
+      3) SELECTED_COMPONENT="both";     return ;;
       *) warn "Please enter 1, 2, or 3." ;;
     esac
   done
 }
 
-# ── Method menu ───────────────────────────────────────────────────────────
+# ── Install method selection ──────────────────────────────────────────────
+# NOTE: called directly (not via $()).
+# Result stored in global SELECTED_METHOD.
+SELECTED_METHOD=""
 prompt_method() {
   local arch="$1"
   blank
   echo -e "${BOLD}  Install method?${NC}"
   blank
   echo -e "  ${GREEN}1)${NC} ${BOLD}Pre-built binary${NC} ${YELLOW}(${arch})${NC}"
-  echo -e "     Downloads from GitHub releases — fastest option"
+  echo -e "     Downloads from GitHub releases — fastest"
   blank
   echo -e "  ${GREEN}2)${NC} ${BOLD}Compile from source${NC}"
-  echo -e "     Builds with cargo — installs Rust if needed (~10–20 min)"
+  echo -e "     Builds with cargo — installs Rust if needed (~10–20 min first build)"
   blank
   while true; do
-    read -rp "  Choice [1-2]: " choice
+    read -rp "  Choice [1-2]: " choice </dev/tty
     case "$choice" in
-      1) echo "binary"; return ;;
-      2) echo "source"; return ;;
+      1) SELECTED_METHOD="binary"; return ;;
+      2) SELECTED_METHOD="source"; return ;;
       *) warn "Please enter 1 or 2." ;;
     esac
   done
 }
 
-# ── Rust installer ────────────────────────────────────────────────────────
+# ── Rust ──────────────────────────────────────────────────────────────────
 ensure_rust() {
   if has cargo; then
     log "Rust/cargo already installed ($(cargo --version 2>/dev/null))"
@@ -162,7 +156,7 @@ ensure_rust() {
   log "Rust installed ($(cargo --version 2>/dev/null))"
 }
 
-# ── System build deps ─────────────────────────────────────────────────────
+# ── Build dependencies ────────────────────────────────────────────────────
 install_build_deps() {
   local component="$1"
   if ! has apt-get; then
@@ -170,48 +164,40 @@ install_build_deps() {
     warn "See: https://github.com/${REPO}#building-from-source"
     return
   fi
-
   info "Installing build dependencies..."
   local pkgs="pkg-config libudev-dev"
-
   if [[ "$component" == "receiver" || "$component" == "both" ]]; then
     pkgs="$pkgs clang cmake libxkbcommon-dev libwayland-dev libdbus-1-dev \
           libinput-dev libgbm-dev libseat-dev libssl-dev libegl-dev \
           libpipewire-0.3-dev libfontconfig-dev"
   fi
-
   # shellcheck disable=SC2086
   apt-get update -qq && apt-get install -y --no-install-recommends $pkgs
   log "Build dependencies installed."
 }
 
 # ── Binary downloads ──────────────────────────────────────────────────────
-download_and_extract() {
+_extract() {
   local asset="$1" tmpdir="$2"
-  local url="${GITHUB_RELEASES}/${asset}"
   info "Downloading ${asset}..."
-  download "$url" "${tmpdir}/${asset}"
+  download "${GITHUB_RELEASES}/${asset}" "${tmpdir}/${asset}"
   tar -xzf "${tmpdir}/${asset}" -C "${tmpdir}"
 }
 
 install_sender_binary() {
   local arch="$1"
-  local tmpdir
-  tmpdir=$(mktemp -d)
+  local tmpdir; tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
-
-  download_and_extract "nmd-service-${arch}-linux.tar.gz" "$tmpdir"
-  install -m 755 "${tmpdir}/nmd-service" "/usr/local/bin/nmd-service"
+  _extract "nmd-service-${arch}-linux.tar.gz" "$tmpdir"
+  install -m 755 "${tmpdir}/nmd-service" /usr/local/bin/nmd-service
   log "nmd-service installed to /usr/local/bin/nmd-service"
 }
 
 install_receiver_binary() {
   local arch="$1"
-  local tmpdir
-  tmpdir=$(mktemp -d)
+  local tmpdir; tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
-
-  download_and_extract "cosmic-applet-${arch}-linux.tar.gz" "$tmpdir"
+  _extract "cosmic-applet-${arch}-linux.tar.gz" "$tmpdir"
   _install_receiver_files "${tmpdir}/cosmic-applet" "${tmpdir}/res"
 }
 
@@ -219,12 +205,10 @@ install_receiver_binary() {
 install_from_source() {
   local component="$1"
   has git || die "git is required for source installation. Install it and retry."
-
   ensure_rust
   install_build_deps "$component"
 
-  local tmpdir
-  tmpdir=$(mktemp -d)
+  local tmpdir; tmpdir=$(mktemp -d)
   trap 'cd / && rm -rf "$tmpdir"' RETURN
 
   info "Cloning repository..."
@@ -239,7 +223,7 @@ install_from_source() {
       log "nmd-service built and installed."
       ;;
     receiver)
-      info "Building cosmic-applet (this takes a while)..."
+      info "Building cosmic-applet (this takes a while on first build)..."
       cargo build --release -p cosmic-applet
       _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res"
       ;;
@@ -253,7 +237,7 @@ install_from_source() {
   esac
 }
 
-# ── Shared receiver file install ──────────────────────────────────────────
+# ── Shared receiver file installation ────────────────────────────────────
 _install_receiver_files() {
   local binary="$1" res_dir="$2"
   local INSTALL_BIN="/usr/local/bin"
@@ -288,8 +272,6 @@ ensure_nmd_user() {
   else
     log "System user '${NMD_USER}' already exists."
   fi
-
-  # Ensure keypair dir is accessible to the service user
   mkdir -p "${NMD_HOME}/.config/nmd"
   chown -R "${NMD_USER}:${NMD_USER}" "$NMD_HOME"
 }
@@ -307,13 +289,14 @@ setup_sender_config() {
 
   local default_id
   default_id=$(hostname -s 2>/dev/null || echo "my-machine")
-  read -rp "  Machine name [${default_id}]: " machine_id
+
+  read -rp "  Machine name [${default_id}]: " machine_id </dev/tty
   machine_id="${machine_id:-$default_id}"
 
-  read -rp "  Receiver IP address (desktop machine) [127.0.0.1]: " receiver_host
+  read -rp "  Receiver IP address (desktop running the applet) [127.0.0.1]: " receiver_host </dev/tty
   receiver_host="${receiver_host:-127.0.0.1}"
 
-  read -rp "  Receiver port [51057]: " receiver_port
+  read -rp "  Receiver port [51057]: " receiver_port </dev/tty
   receiver_port="${receiver_port:-51057}"
 
   mkdir -p "$NMD_CONFIG_DIR"
@@ -334,10 +317,9 @@ refresh_interval_secs = 1
 # Unique name for this machine (shown in the applet UI)
 machine_id = "${machine_id}"
 
-# receiver_pubkey is configured automatically via TCP pairing when
-# nmd-service first connects to the receiver. You can also set it
-# manually if you prefer:
-# receiver_pubkey = "<64-char hex X25519 public key from applet Settings>"
+# receiver_pubkey is set automatically via TCP pairing on first start.
+# You can also set it manually if TCP pairing is unavailable:
+# receiver_pubkey = "<64-char hex X25519 public key from applet Settings → General>"
 EOF
 
   chown root:"$NMD_USER" "$NMD_CONFIG_FILE"
@@ -397,13 +379,13 @@ EOF
   log "Systemd unit installed: ${NMD_SYSTEMD_UNIT}"
 
   blank
-  read -rp "  Enable nmd-service to start on boot? [Y/n]: " enable_svc
+  read -rp "  Enable nmd-service to start on boot? [Y/n]: " enable_svc </dev/tty
   if [[ "${enable_svc:-Y}" =~ ^[Yy] ]]; then
     systemctl enable nmd-service
     log "Service enabled."
   fi
 
-  read -rp "  Start nmd-service now? [Y/n]: " start_svc
+  read -rp "  Start nmd-service now? [Y/n]: " start_svc </dev/tty
   if [[ "${start_svc:-Y}" =~ ^[Yy] ]]; then
     systemctl start nmd-service
     sleep 2
@@ -429,10 +411,6 @@ print_sender_done() {
   echo -e "  request. ${BOLD}Accept it in the COSMIC applet UI${NC} — metrics start"
   echo -e "  flowing within seconds of acceptance."
   blank
-  echo -e "  If the receiver isn't running TCP pairing, copy the pubkey from"
-  echo -e "  ${CYAN}Settings → General${NC} in the applet and set it in the config:"
-  echo -e "  ${CYAN}receiver_pubkey = \"<hex>\"${NC}"
-  blank
 }
 
 print_receiver_done() {
@@ -446,44 +424,43 @@ print_receiver_done() {
   echo -e "  Local machine stats appear immediately."
   echo -e "  Remote machines appear after pairing (run installer on each)."
   blank
-  echo -e "  ${BOLD}To restart the COSMIC panel:${NC}"
+  echo -e "  ${BOLD}To restart the COSMIC panel after install:${NC}"
   echo -e "  ${CYAN}kill \$(pgrep -o cosmic-panel)${NC}"
   blank
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────
 main() {
-  # When piped through bash (curl ... | sudo bash) stdin is the script itself,
-  # not the terminal. Reopen stdin from /dev/tty so interactive prompts work.
-  if [[ ! -t 0 ]]; then
-    exec < /dev/tty || die "Cannot open /dev/tty for interactive input."
-  fi
-
   print_header
   need_root
 
   local arch
   arch=$(detect_arch)
   if [[ "$arch" == "unsupported" ]]; then
-    die "Unsupported architecture: $(uname -m). Use method 2 (compile from source) on this platform."
+    die "Unsupported architecture: $(uname -m). Use method 2 (compile from source)."
   fi
-
   info "Detected architecture: ${BOLD}${arch}${NC}"
 
-  local component method
-  component=$(prompt_component)
-  method=$(prompt_method "$arch")
+  # Prompt for component — called directly so echo output reaches the terminal.
+  # Result is stored in global SELECTED_COMPONENT (not captured via $()).
+  prompt_component
+  local component="$SELECTED_COMPONENT"
+
+  # Prompt for install method — same pattern.
+  prompt_method "$arch"
+  local method="$SELECTED_METHOD"
 
   blank
   info "Installing ${BOLD}${component}${NC} via ${BOLD}${method}${NC}..."
   blank
 
-  # Warn about COSMIC requirement for receiver
+  # Warn if COSMIC isn't detected but receiver was requested
   if [[ "$component" == "receiver" || "$component" == "both" ]]; then
     if ! has cosmic-panel && ! has cosmic-comp; then
-      warn "COSMIC desktop environment not detected."
+      blank
+      warn "COSMIC desktop environment not detected on this machine."
       warn "The applet requires COSMIC. See: https://system76.com/cosmic"
-      read -rp "  Continue anyway? [y/N]: " cont
+      read -rp "  Continue anyway? [y/N]: " cont </dev/tty
       [[ "${cont:-N}" =~ ^[Yy] ]] || { info "Cancelled."; exit 0; }
     fi
   fi
@@ -491,16 +468,10 @@ main() {
   # Install binaries
   if [[ "$method" == "binary" ]]; then
     case "$component" in
-      sender)
-        install_sender_binary "$arch"
-        ;;
-      receiver)
-        install_receiver_binary "$arch"
-        ;;
-      both)
-        install_sender_binary "$arch"
-        install_receiver_binary "$arch"
-        ;;
+      sender)   install_sender_binary   "$arch" ;;
+      receiver) install_receiver_binary "$arch" ;;
+      both)     install_sender_binary   "$arch"
+                install_receiver_binary "$arch" ;;
     esac
   else
     install_from_source "$component"
@@ -515,12 +486,8 @@ main() {
   fi
 
   # Done messages
-  if [[ "$component" == "sender" || "$component" == "both" ]]; then
-    print_sender_done
-  fi
-  if [[ "$component" == "receiver" || "$component" == "both" ]]; then
-    print_receiver_done
-  fi
+  if [[ "$component" == "sender"   || "$component" == "both" ]]; then print_sender_done;   fi
+  if [[ "$component" == "receiver" || "$component" == "both" ]]; then print_receiver_done; fi
 
   echo -e "${BOLD}${GREEN}  Installation complete.${NC}"
   blank
