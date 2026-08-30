@@ -18,22 +18,39 @@ pub fn view(
     let mut items: Vec<Element<'static, AppMessage>> = Vec::new();
 
     // Back button (left) and Settings button (right) on the same row
+    let system_monitor_button = button::custom(
+        row(vec![
+            text("COSMIC System Monitor").size(14).into(),
+            icon::from_name("send-to-symbolic").size(14).into(),
+        ])
+        .spacing(8)
+        .align_y(Alignment::Center),
+    )
+    .on_press(AppMessage::LaunchSystemMonitor)
+    .width(Length::Fill);
+
     let settings_button_only = button::custom(
         row(vec![
             icon::from_name("preferences-system-symbolic")
                 .size(14)
                 .into(),
-            text("Settings").size(13).into(),
+            text("General Settings").size(13).into(),
         ])
         .spacing(6)
         .align_y(Alignment::Center),
     )
-    .on_press(AppMessage::OpenSettings);
+    .on_press(AppMessage::OpenGeneralSettings);
 
-    let header_row = container(settings_button_only)
-        .padding([8, 16])
-        .width(Length::Fill)
-        .align_x(cosmic::iced::alignment::Horizontal::Right);
+    let header_row = container(
+        row(vec![
+            system_monitor_button.into(),
+            settings_button_only.into(),
+        ])
+        .spacing(8)
+        .align_y(Alignment::Center),
+    )
+    .padding([8, 16])
+    .width(Length::Fill);
 
     items.push(header_row.into());
     items.push(divider::horizontal::default().into());

@@ -110,8 +110,8 @@ machine_id = "$MACHINE_NAME"
 EOF
 
 chown root:nmd "$CONFIG_FILE"
-chmod 640 "$CONFIG_FILE"
-log "Config created: $CONFIG_FILE (root:nmd 640)"
+chmod 660 "$CONFIG_FILE"
+log "Config created: $CONFIG_FILE (root:nmd 660)"
 
 # Install binary
 log "Installing binary: $BINARY_PATH → $INSTALL_DIR/$BINARY_NAME"
@@ -148,7 +148,7 @@ RestrictSUIDSGID=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
 RestrictNamespaces=true
-ReadWritePaths=/var/lib/nmd
+ReadWritePaths=/var/lib/nmd /etc/nmd
 
 [Install]
 WantedBy=multi-user.target

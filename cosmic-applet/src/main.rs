@@ -876,9 +876,14 @@ impl Application for PanelApplet {
                             // Send TCP response if this request came via TCP
                             if let Some(arc_tx) = req.tcp_response.as_ref() {
                                 if let Some(tx) = arc_tx.lock().unwrap().take() {
+                                    let receiver_pubkey = state
+                                        .pairing_manager
+                                        .read()
+                                        .unwrap()
+                                        .get_receiver_x25519_pubkey();
                                     let _ = tx.send(
                                         crate::pairing_manager::TcpPairingResponse::Accept(
-                                            String::new(),
+                                            receiver_pubkey,
                                         ),
                                     );
                                 }

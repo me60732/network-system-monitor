@@ -53,7 +53,7 @@ pub struct CpuStats {
 ///
 /// Each field represents accumulated CPU time in clock ticks since boot:
 /// - `user`: normal processes executing in user mode
-/// - `nice`: niced processes executing in user mode  
+/// - `nice`: niced processes executing in user mode
 /// - `system`: processes executing in kernel mode
 /// - `idle`: waiting for I/O or no work to do
 /// - `iowait`: waiting for I/O (but idle otherwise)
@@ -82,16 +82,16 @@ pub struct CpuStat {
 ///
 /// ```no_run
 /// use metrics_core::CpuCollector;
-/// 
+///
 /// let mut collector = CpuCollector::new();
-/// 
+///
 /// // Prime state with initial read (done in new())
-/// 
+///
 /// // Collect metrics repeatedly - each call calculates current - previous
 /// loop {
 ///     let stats = collector.collect();
 ///     println!("CPU usage: {:.1}%", stats.usage);
-///     
+///
 ///     // Sleep between collections (recommended: 500ms-2s for service)
 ///     std::thread::sleep(std::time::Duration::from_secs(1));
 /// }
@@ -118,31 +118,31 @@ impl CpuCollector {
     /// Performs one initial read of `/proc/stat` to populate `current_stats`,
     /// then clones it into `prev_stats`. The first call to `collect()` will
     /// compare this initial state against the next read, yielding accurate deltas.
-    /// 
+    ///
     /// Also discovers CPU temperature sensor path once at initialization.
     pub fn new() -> Self {
         let cpu_sensor_path = find_cpu_sensor_path();
-        
+
         if let Some(ref path) = cpu_sensor_path {
             log::info!("CpuCollector: Found CPU sensor at {:?}", path);
         } else {
             log::warn!("CpuCollector: No CPU temperature sensor found");
         }
-        
+
         let mut collector = Self {
             prev_stats: HashMap::new(),
             current_stats: HashMap::new(),
-            cores: Vec::new(),  // Initialize empty per-core stats storage
+            cores: Vec::new(), // Initialize empty per-core stats storage
             cpu_sensor_path,
         };
-        
+
         // Prime with initial read - both maps get the same data initially
         CpuCollector::read_cpu_stats(&mut collector.current_stats);
         collector.prev_stats = collector.current_stats.clone();
-        
+
         collector
     }
-    
+
     /// Read /proc/stat and parse all CPU entries into the provided HashMap.
     ///
     /// Format: "cpu0 123456 789 456 78901 123 45 67 8"
@@ -150,28 +150,28 @@ impl CpuCollector {
     fn read_cpu_stats(cpu_stats: &mut HashMap<usize, CpuStat>) {
         let content = match std::fs::read_to_string("/proc/stat") {
             Ok(c) => c,
-            Err(_) => return,  // Silently fail if /proc/stat is unreadable
+            Err(_) => return, // Silently fail if /proc/stat is unreadable
         };
-        
+
         for line in content.lines() {
             // Skip non-CPU lines
             if !line.starts_with("cpu") || line == "cpu" {
                 continue;
             }
-            
+
             let parts: Vec<&str> = line.split_whitespace().collect();
-            
+
             // Need at least 9 fields: cpuN + 8 time values
             if parts.len() < 9 {
                 continue;
             }
-            
+
             // Extract core number from "cpu0", "cpu1", etc.
             let core_num = match parts[0].trim_start_matches("cpu").parse::<usize>() {
                 Ok(n) => n,
                 Err(_) => continue,
             };
-            
+
             // Parse all time values (default to 0 if parse fails)
             let user = parts[1].parse::<u64>().unwrap_or(0);
             let nice = parts[2].parse::<u64>().unwrap_or(0);
@@ -181,13 +181,23 @@ impl CpuCollector {
             let irq = parts[6].parse::<u64>().unwrap_or(0);
             let softirq = parts[7].parse::<u64>().unwrap_or(0);
             let steal = parts[8].parse::<u64>().unwrap_or(0);
-            
-            cpu_stats.insert(core_num, CpuStat {
-                user, nice, system, idle, iowait, irq, softirq, steal,
-            });
+
+            cpu_stats.insert(
+                core_num,
+                CpuStat {
+                    user,
+                    nice,
+                    system,
+                    idle,
+                    iowait,
+                    irq,
+                    softirq,
+                    steal,
+                },
+            );
         }
     }
-    
+
     /// Collect current CPU statistics by computing delta from previous state.
     ///
     /// 1. Read current /proc/stat into a temporary HashMap
@@ -201,14 +211,14 @@ impl CpuCollector {
         // Read fresh current stats into a temporary HashMap first
         let mut temp_stats = HashMap::new();
         Self::read_cpu_stats(&mut temp_stats);
-        
+
         // Running totals for average computation across all cores
         let mut total_user_pct = 0.0;
         let mut total_system_pct = 0.0;
         let mut counted_cores = 0;
-        
+
         self.cores.clear();
-        
+
         for (&core_num, current) in &temp_stats {
             if let Some(prev) = self.prev_stats.get(&core_num) {
                 // Compute time deltas (saturating_sub prevents underflow on counter wrap)
@@ -220,35 +230,35 @@ impl CpuCollector {
                 let irq = current.irq.saturating_sub(prev.irq);
                 let softirq = current.softirq.saturating_sub(prev.softirq);
                 let steal = current.steal.saturating_sub(prev.steal);
-                
+
                 // Total delta time across all states
                 let total = user + nice + system + idle + iowait + irq + softirq + steal;
-                
+
                 if total == 0 {
                     continue; // No activity recorded, skip this core
                 }
-                
+
                 // Calculate percentages from deltas
                 let total_f64 = total as f64;
                 let user_pct = (user + nice) as f64 / total_f64 * 100.0;
                 let system_pct = system as f64 / total_f64 * 100.0;
-                
+
                 // Store per-core stats
                 self.cores.push(CoreStat {
                     index: core_num as u32,
                     usage: (user_pct + system_pct) as f32,
                 });
-                
+
                 // Accumulate for aggregate calculation
                 total_user_pct += user_pct;
                 total_system_pct += system_pct;
                 counted_cores += 1;
-                
+
                 // Update prev for next cycle (current becomes new baseline)
                 self.prev_stats.insert(core_num, *current);
             }
         }
-        
+
         // Compute aggregate across all cores that contributed data
         let usage = if counted_cores > 0 {
             let core_count_f64 = counted_cores as f64;
@@ -256,16 +266,18 @@ impl CpuCollector {
         } else {
             0.0 // No cores found or all had zero delta
         };
-        
+
         // Swap temp_stats into current_stats for next iteration baseline
         std::mem::swap(&mut self.current_stats, &mut temp_stats);
-        
+
         // Read CPU temperature from cached sensor path
-        let cpu_temp = self.cpu_sensor_path.as_ref()
+        let cpu_temp = self
+            .cpu_sensor_path
+            .as_ref()
             .and_then(|path| read_temperature_from_path(path));
-        
-        CpuStats { 
-            usage, 
+
+        CpuStats {
+            usage,
             cores: std::mem::take(&mut self.cores),
             cpu_temp,
         }
@@ -278,14 +290,9 @@ impl Default for CpuCollector {
     }
 }
 
-/// Find CPU temperature sensor path by scanning /sys/class/hwmon/*.
-///
-/// Returns the path to the highest-priority temperature sensor input file:
-/// - **AMD**: Tdie > Tctl > Core* > Package*
-/// - **Intel**: Core* > Package*
-///
-/// This function performs expensive hwmon directory scanning but only needs to be called once
-/// at initialization. The resulting path is cached by CpuCollector for fast reads.
+/// x86_64: scan /sys/class/hwmon/ for coretemp / k10temp / zenpower sensors.
+/// Prioritises Tdie > Tctl > Core* > Package* labels.
+#[cfg(target_arch = "x86_64")]
 fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
     use std::fs;
     use std::path::Path;
@@ -295,40 +302,36 @@ fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
     for entry in fs::read_dir(hwmon_base).ok()? {
         let hwmon_path = entry.ok()?.path();
         let name_path = hwmon_path.join("name");
-        
-        // Read the hwmon device name (coretemp, k10temp, etc.)
+
         let name = match fs::read_to_string(&name_path) {
             Ok(n) => n.trim().to_lowercase(),
             Err(_) => continue,
         };
-        
-        // Only process if it's a CPU temperature sensor
-        if !name.contains("coretemp") && 
-           !name.contains("k10temp") && 
-           !name.contains("zenpower") &&
-           !name.contains("cpu") {
+
+        if !name.contains("coretemp")
+            && !name.contains("k10temp")
+            && !name.contains("zenpower")
+            && !name.contains("cpu")
+        {
             continue;
         }
-        
+
         log::info!("Found CPU hwmon: {}", name);
-        
-        // Look for temperature labels and inputs
+
         let mut tdie_path: Option<std::path::PathBuf> = None;
         let mut tctl_path: Option<std::path::PathBuf> = None;
         let mut core_paths: Vec<std::path::PathBuf> = Vec::new();
-        
+
         for i in 0..100 {
             let label_path = hwmon_path.join(format!("temp{}_label", i));
             let input_path = hwmon_path.join(format!("temp{}_input", i));
-            
+
             if !input_path.exists() {
                 continue;
             }
-            
+
             if let Ok(label) = fs::read_to_string(&label_path) {
                 let label = label.trim();
-                
-                // Prioritize Tdie > Tctl
                 if label.eq_ignore_ascii_case("Tdie") {
                     tdie_path = Some(input_path.clone());
                     log::info!("  Found Tdie sensor");
@@ -341,18 +344,36 @@ fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
                 }
             }
         }
-        
-        // Use prioritized path: Tdie > Tctl > Core* > Package*
+
         if let Some(path) = tdie_path.or(tctl_path) {
             return Some(path);
         }
-        
-        // Fallback to first core/Package sensor
         if let Some(path) = core_paths.first() {
             return Some(path.clone());
         }
     }
 
+    None
+}
+
+/// aarch64: CPU temperature is at thermal_zone0 on NVIDIA Grace (DGX Spark) and
+/// most other ARM SoCs. The value is in millidegrees — divided by 1000 by the
+/// shared `read_temperature_from_path` helper.
+#[cfg(target_arch = "aarch64")]
+fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
+    let path = std::path::PathBuf::from("/sys/class/thermal/thermal_zone0/temp");
+    if path.exists() {
+        log::info!("aarch64: CPU temp -> /sys/class/thermal/thermal_zone0/temp");
+        Some(path)
+    } else {
+        log::warn!("aarch64: /sys/class/thermal/thermal_zone0/temp not found");
+        None
+    }
+}
+
+/// All other architectures: temperature sensing not implemented.
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+fn find_cpu_sensor_path() -> Option<std::path::PathBuf> {
     None
 }
 
@@ -379,23 +400,23 @@ mod tests {
         // cores should be empty initially
         assert!(collector.cores.is_empty());
     }
-    
+
     /// CpuCollector can collect CPU stats multiple times with state persistence.
     #[test]
     fn test_collector_collect_multiple_times() {
         let mut collector = CpuCollector::new();
-        
+
         // Sleep briefly to ensure CPU activity registers between priming and first collect
         std::thread::sleep(std::time::Duration::from_millis(100));
-        
+
         // First collect should compute deltas from the initial baseline
         let stats1 = collector.collect();
         assert!(stats1.usage >= 0.0 && stats1.usage <= 100.0);
         assert!(!stats1.cores.is_empty());
-        
+
         // Sleep before second collect
         std::thread::sleep(std::time::Duration::from_millis(100));
-        
+
         // Second collect should use the previous result as baseline
         let stats2 = collector.collect();
         assert!(stats2.usage >= 0.0 && stats2.usage <= 100.0);

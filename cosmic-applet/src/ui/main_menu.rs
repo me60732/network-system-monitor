@@ -37,10 +37,6 @@ pub fn view(
     .on_press(AppMessage::LaunchSystemMonitor)
     .width(Length::Fill);
 
-    // General settings option
-    let general_settings_button =
-        create_menu_item("General settings", "", AppMessage::OpenGeneralSettings);
-
     // Individual sensor configuration options with live values
     let cpu_button = create_menu_item(
         "CPU",
@@ -67,8 +63,6 @@ pub fn view(
             .padding([8, 16])
             .width(Length::Fill)
             .into(),
-        divider::horizontal::default().into(),
-        general_settings_button,
         divider::horizontal::default().into(),
         cpu_button,
         memory_button,

@@ -4,7 +4,6 @@
 /// Detects GPU vendor by scanning `/sys/class/drm/card*/device/vendor`:
 /// - **0x10de (NVIDIA)**: Uses NVML library for accurate VRAM/load stats
 /// - **0x1002 (AMD)** or **0x8086 (Intel)**: Reads from card0 sysfs (mem_info_vram_*, gpu_busy_percent)
-
 use nvml_wrapper::Nvml;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -63,14 +62,14 @@ impl GpuCollector {
     pub fn new() -> Self {
         // Detect GPU type
         let (gpu_type, nvml, sysfs_card) = Self::detect_gpu();
-        
+
         Self {
             gpu_type,
             nvml,
             sysfs_card,
         }
     }
-    
+
     /// Detect GPU type and initialize appropriate backend.
     fn detect_gpu() -> (GpuType, Option<Nvml>, Option<String>) {
         // Try NVIDIA first
@@ -83,15 +82,15 @@ impl GpuCollector {
                 }
             }
         }
-        
+
         // Try sysfs for AMD/Intel
         if let Some(card) = find_sysfs_card() {
             return (GpuType::Sysfs, None, Some(card));
         }
-        
+
         (GpuType::None, None, None)
     }
-    
+
     /// Collect current GPU statistics using the cached GPU type.
     pub fn collect(&self) -> GpuStats {
         match self.gpu_type {
@@ -100,43 +99,58 @@ impl GpuCollector {
             GpuType::None => GpuStats::default(),
         }
     }
-    
+
     /// Collect NVIDIA GPU stats using cached NVML instance.
     fn collect_nvidia(&self) -> GpuStats {
         let nvml = match &self.nvml {
             Some(n) => n,
             None => return GpuStats::default(),
         };
-        
+
         let mut vram_total: Option<u64> = None;
         let mut vram_used: Option<u64> = None;
         let mut gpu_load_percent: Option<f32> = None;
         let mut gpu_temp: Option<f32> = None;
-        
+
         if let Ok(device) = nvml.device_by_index(0) {
             // Get VRAM in bytes
             if let Ok(mem) = device.memory_info() {
                 vram_total = Some(mem.total);
                 vram_used = Some(mem.used);
             }
-            
+
             // Get GPU load percentage (0-100)
             if let Ok(rates) = device.utilization_rates() {
                 gpu_load_percent = Some(rates.gpu as f32);
             }
-            
-            // Get GPU temperature in Celsius
-            if let Ok(temp) = device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu) {
+
+            // Get GPU temperature in Celsius.
+            // TemperatureSensor::Gpu is the only variant in nvml-wrapper 0.10.
+            // On Grace-Blackwell (GB10) this may return NotSupported; the
+            // aarch64 thermal-zone fallback below handles that case.
+            use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
+            if let Ok(temp) = device.temperature(TemperatureSensor::Gpu) {
                 gpu_temp = Some(temp as f32);
+                log::debug!("NVML GPU temp: {}°C", temp);
             }
-            
-            log::debug!("NVIDIA GPU stats: vram_used={:?}, vram_total={:?}, load={:?}%, temp={:?}°C", 
-                vram_used.map(|v| v / 1_048_576), 
+
+            log::debug!(
+                "NVIDIA GPU stats: vram_used={:?}, vram_total={:?}, load={:?}%, temp={:?}°C",
+                vram_used.map(|v| v / 1_048_576),
                 vram_total.map(|v| v / 1_048_576),
                 gpu_load_percent,
-                gpu_temp);
+                gpu_temp
+            );
         }
-        
+
+        // If NVML didn't return a temperature (e.g. GB10 Grace-Blackwell where
+        // TemperatureSensor::Gpu returns NotSupported, or any card where the
+        // driver withholds it), fall back to parsing `nvidia-smi` directly.
+        // This works on all architectures — x86_64 RTX cards, ARM DGX Spark, etc.
+        if gpu_temp.is_none() {
+            gpu_temp = read_gpu_temp_nvidia_smi();
+        }
+
         GpuStats {
             vram_total,
             vram_used,
@@ -144,24 +158,31 @@ impl GpuCollector {
             gpu_temp,
         }
     }
-    
+
     /// Collect sysfs GPU stats using cached card name.
     fn collect_sysfs(&self) -> GpuStats {
         let card = match &self.sysfs_card {
             Some(c) => c,
             None => return GpuStats::default(),
         };
-        
-        let vram_total = read_sysfs_file(&format!("/sys/class/drm/{}/device/mem_info_vram_total", card));
-        let vram_used = read_sysfs_file(&format!("/sys/class/drm/{}/device/mem_info_vram_used", card));
-        let gpu_load_percent = read_sysfs_file(&format!("/sys/class/drm/{}/device/gpu_busy_percent", card))
-            .map(|percent| percent as f32);
-        
+
+        let vram_total = read_sysfs_file(&format!(
+            "/sys/class/drm/{}/device/mem_info_vram_total",
+            card
+        ));
+        let vram_used = read_sysfs_file(&format!(
+            "/sys/class/drm/{}/device/mem_info_vram_used",
+            card
+        ));
+        let gpu_load_percent =
+            read_sysfs_file(&format!("/sys/class/drm/{}/device/gpu_busy_percent", card))
+                .map(|percent| percent as f32);
+
         GpuStats {
             vram_total,
             vram_used,
             gpu_load_percent,
-            gpu_temp: None,  // AMD/Intel sysfs doesn't reliably expose GPU temp
+            gpu_temp: None, // AMD/Intel sysfs doesn't reliably expose GPU temp
         }
     }
 }
@@ -180,13 +201,13 @@ pub fn collect() -> GpuStats {
 /// Detect if NVIDIA GPU is present by scanning /sys/class/drm/card*/device/vendor
 fn has_nvidia_gpu() -> bool {
     let base = "/sys/class/drm";
-    
+
     match fs::read_dir(base) {
         Ok(entries) => {
             for entry in entries.flatten() {
                 let path = entry.path();
                 let vendor_path = path.join("device/vendor");
-                
+
                 if vendor_path.exists() {
                     if let Ok(vendor_id) = fs::read_to_string(&vendor_path) {
                         if vendor_id.trim() == "0x10de" {
@@ -198,21 +219,21 @@ fn has_nvidia_gpu() -> bool {
         }
         Err(_) => return false,
     }
-    
+
     false
 }
 
 /// Find the first valid sysfs card with VRAM info (AMD/Intel).
 fn find_sysfs_card() -> Option<String> {
     let base = "/sys/class/drm";
-    
+
     if let Ok(entries) = fs::read_dir(base) {
         for entry in entries.flatten() {
             let path = entry.path();
-            
+
             // Check for VRAM total file (indicates valid GPU)
             let vram_total_path = path.join("device/mem_info_vram_total");
-            
+
             if vram_total_path.exists() {
                 if let Some(card_name) = path.file_name().and_then(|n| n.to_str()) {
                     return Some(card_name.to_string());
@@ -220,8 +241,30 @@ fn find_sysfs_card() -> Option<String> {
             }
         }
     }
-    
+
     None
+}
+
+/// Parse GPU temperature from `nvidia-smi`.
+///
+/// Used as a fallback when NVML's TemperatureSensor::Gpu returns NotSupported
+/// (e.g. GB10 Grace-Blackwell on aarch64) or is otherwise unavailable.
+/// Works on all NVIDIA-supported architectures — x86_64, aarch64, etc.
+fn read_gpu_temp_nvidia_smi() -> Option<f32> {
+    let output = std::process::Command::new("nvidia-smi")
+        .args(["--query-gpu=temperature.gpu", "--format=csv,noheader"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        log::warn!("nvidia-smi exited with error — GPU temp unavailable");
+        return None;
+    }
+
+    let text = String::from_utf8(output.stdout).ok()?;
+    let temp: f32 = text.trim().parse().ok()?;
+    log::debug!("nvidia-smi GPU temp: {}°C", temp);
+    Some(temp)
 }
 
 /// Read a sysfs file and parse its contents as u64. Returns None if the file doesn't exist or can't be parsed.

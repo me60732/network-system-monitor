@@ -27,6 +27,41 @@ use nmd_service::{MetricsAggregator, ServiceConfig, UdpSender};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+/// Path to the persisted receiver pubkey state file.
+/// Stored under HOME (= /var/lib/nmd in systemd) which is writable by the nmd user.
+fn receiver_pubkey_state_path() -> std::path::PathBuf {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    std::path::PathBuf::from(home)
+        .join(".config")
+        .join("nmd")
+        .join("receiver.pubkey")
+}
+
+/// Save the receiver pubkey to the writable state file (0600).
+fn save_receiver_pubkey_state(pubkey: &str) -> Result<(), std::io::Error> {
+    let path = receiver_pubkey_state_path();
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    std::fs::write(&path, pubkey)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
+    }
+    log::info!("Saved receiver_pubkey to state file: {}", path.display());
+    Ok(())
+}
+
+/// Load the receiver pubkey from the state file, if it exists and is valid (64 hex chars).
+fn load_receiver_pubkey_state() -> Option<String> {
+    let path = receiver_pubkey_state_path();
+    std::fs::read_to_string(&path)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| s.len() == 64)
+}
+
 /// Command-line arguments parsed via clap derive macro.
 #[derive(Parser, Debug)]
 #[command(
@@ -66,6 +101,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.machine_id
     );
 
+    // Load persisted receiver_pubkey from state file if not already in config.
+    // The state file lives in HOME (.config/nmd/receiver.pubkey) which is writable
+    // by the nmd service user, unlike /etc/nmd/config.toml which is read-only for nmd.
+    if config.receiver_pubkey.is_none() {
+        if let Some(pubkey) = load_receiver_pubkey_state() {
+            log::info!("Loaded receiver_pubkey from state file — skipping TCP pairing");
+            config.receiver_pubkey = Some(pubkey);
+        }
+    }
+
     // ── Step 1: TCP pairing if no receiver_pubkey ─────────────────────────
     if config.receiver_pubkey.is_none() {
         log::info!(
@@ -87,10 +132,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "✅ TCP pairing complete — saving receiver_pubkey to {}",
                     cli.config
                 );
-                config.receiver_pubkey = Some(receiver_pubkey);
+                config.receiver_pubkey = Some(receiver_pubkey.clone());
+                // Persist to writable state file (works on all installs without permission changes)
+                if let Err(e) = save_receiver_pubkey_state(&receiver_pubkey) {
+                    log::error!("Failed to save receiver_pubkey to state file: {}", e);
+                }
+                // Also attempt config.toml save (may fail if file is read-only for nmd user — non-fatal)
                 if let Err(e) = config.save(&cli.config) {
-                    log::error!("Failed to save config after pairing: {}", e);
-                    // Continue anyway — we have the key in memory for this run
+                    log::warn!(
+                        "Could not update config.toml with receiver_pubkey (non-fatal): {}",
+                        e
+                    );
                 }
             }
             nmd_service::PairingResult::Denied => {
