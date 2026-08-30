@@ -18,9 +18,7 @@ pub fn view(
     let mut items: Vec<Element<'static, AppMessage>> = Vec::new();
 
     // Back button (left) and Settings button (right) on the same row
-    let back_button = button::text("← Close").on_press(AppMessage::Back);
-
-    let settings_button = button::custom(
+    let settings_button_only = button::custom(
         row(vec![
             icon::from_name("preferences-system-symbolic")
                 .size(14)
@@ -32,18 +30,12 @@ pub fn view(
     )
     .on_press(AppMessage::OpenSettings);
 
-    let header_row = row(vec![
-        container(back_button).width(Length::Fill).into(),
-        container(settings_button).into(),
-    ])
-    .align_y(Alignment::Center);
+    let header_row = container(settings_button_only)
+        .padding([8, 16])
+        .width(Length::Fill)
+        .align_x(cosmic::iced::alignment::Horizontal::Right);
 
-    items.push(
-        container(header_row)
-            .padding([8, 16])
-            .width(Length::Fill)
-            .into(),
-    );
+    items.push(header_row.into());
     items.push(divider::horizontal::default().into());
 
     // Add a row for each machine

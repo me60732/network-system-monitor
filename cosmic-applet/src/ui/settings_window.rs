@@ -51,14 +51,11 @@ pub enum SettingsMessage {
     ToggleGpuVisible(bool),
     /// No operation — used when a widget needs to return a message but no action is required.
     NoOp,
-    /// Copy the receiver public key to the system clipboard.
-    CopyPubkeyToClipboard,
 }
 
 /// SettingsWindow renders general configuration options for the app.
 ///
-/// Layout: refresh rate, value size, font toggle, spacing slider, content order reordering,
-/// and receiver public key display for encrypted pairing configuration.
+/// Layout: refresh rate, value size, font toggle, spacing slider, content order reordering.
 #[derive(Clone)]
 pub struct SettingsWindow {
     /// Shared configuration manager (std::sync::Arc<RwLock>) for reading/writing machine configs.
@@ -67,21 +64,17 @@ pub struct SettingsWindow {
     pub minimon_config: MinimonConfig,
     /// Whether this window is currently visible (toggled from panel view).
     pub visible: bool,
-    /// Receiver's X25519 public key (hex-encoded) for encrypted pairing configuration
-    pub receiver_pubkey: String,
 }
 
 impl SettingsWindow {
-    /// Create a new SettingsWindow with the given shared configuration manager and receiver public key.
+    /// Create a new SettingsWindow with the given shared configuration manager.
     pub fn new(
         config_manager: std::sync::Arc<std::sync::RwLock<crate::config::manager::ConfigManager>>,
-        receiver_pubkey: String,
     ) -> Self {
         SettingsWindow {
             config_manager,
             minimon_config: MinimonConfig::default(),
             visible: false,
-            receiver_pubkey,
         }
     }
 
@@ -100,24 +93,14 @@ impl SettingsWindow {
         &self.minimon_config
     }
 
-    /// Update the receiver public key (if the keypair was regenerated)
-    pub fn update_receiver_pubkey(&mut self, pubkey: String) {
-        self.receiver_pubkey = pubkey;
-    }
-
     /// Render the general settings view.
     pub fn view(&self) -> Element<'_, SettingsMessage> {
-        view_with_config(&self.minimon_config, &self.receiver_pubkey)
+        view_with_config(&self.minimon_config)
     }
 }
 
-/// Standalone view function that takes owned config data and receiver public key.
-pub fn view_with_config(
-    minimon_config: &MinimonConfig,
-    receiver_pubkey: &str,
-) -> Element<'static, SettingsMessage> {
-    // Use a String directly - cosmic text_input can work with owned string content
-    let receiver_pubkey_str = receiver_pubkey.to_string();
+/// Standalone view function that takes owned config data.
+pub fn view_with_config(minimon_config: &MinimonConfig) -> Element<'static, SettingsMessage> {
     use cosmic::widget::{divider, icon};
 
     // Back button
@@ -238,34 +221,6 @@ pub fn view_with_config(
 
     let content_order_list = column(content_items).spacing(4);
 
-    // Receiver public key display for encrypted pairing configuration
-    let copy_button = button::icon(cosmic::widget::icon::from_name("edit-copy-symbolic"))
-        .on_press(SettingsMessage::CopyPubkeyToClipboard);
-
-    let pubkey_section = column(vec![
-        text("Receiver Public Key").size(14).into(),
-        text(format!(
-            "To enable encrypted pairing with a remote machine, add this key\nto its /etc/nmd/config.toml as: receiver_pubkey = \"<key>\""
-        ))
-        .size(12)
-        .into(),
-        row(vec![
-            // Use container with text for pubkey display - works with 'static lifetime
-            container(
-                text(receiver_pubkey_str)
-                    .font(cosmic::font::mono())
-                    .width(cosmic::iced::Length::Fill)
-            )
-            .style(|_theme| cosmic::iced::widget::container::Style::default())
-            .into(),
-            copy_button.into(),
-        ])
-        .spacing(8)
-        .align_y(cosmic::iced::Alignment::Center)
-        .into(),
-    ])
-    .spacing(4);
-
     // Build content column
     let content_col = column(vec![
         back_button.into(),
@@ -279,8 +234,6 @@ pub fn view_with_config(
         divider::horizontal::default().into(),
         content_order_label.into(),
         content_order_list.into(),
-        divider::horizontal::default().into(),
-        pubkey_section.into(),
     ])
     .spacing(16)
     .padding([20, 16]);

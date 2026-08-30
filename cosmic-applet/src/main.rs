@@ -227,8 +227,6 @@ pub struct AppState {
     pub pairing_manager: std::sync::Arc<std::sync::RwLock<crate::pairing_manager::PairingManager>>,
     /// In-memory queue of pending pairing requests waiting for user approval (60-second timeout)
     pub pending_pairings: Vec<crate::pairing_manager::PairingRequest>,
-    /// Receiver's X25519 public key (hex-encoded) for encrypted pairing configuration
-    pub receiver_pubkey: String,
 }
 
 impl AppState {
@@ -321,10 +319,8 @@ impl AppState {
         let local_metrics_rx = std::sync::Mutex::new(local_rx);
 
         let pairing_manager = Self::create_pairing_manager();
-        let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
 
-        let mut settings_window =
-            SettingsWindow::new(settings_window_config, receiver_pubkey.clone());
+        let mut settings_window = SettingsWindow::new(settings_window_config);
         settings_window.update_config(minimon_config);
 
         AppState {
@@ -337,7 +333,6 @@ impl AppState {
             local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
-            receiver_pubkey,
         }
     }
 }
@@ -432,10 +427,8 @@ impl Default for AppState {
         let local_machine = crate::remote_machine::RemoteMachine::new(hostname.clone());
 
         let pairing_manager = Self::create_pairing_manager();
-        let receiver_pubkey = pairing_manager.read().unwrap().get_receiver_x25519_pubkey();
 
-        let mut settings_window =
-            SettingsWindow::new(settings_window_config, receiver_pubkey.clone());
+        let mut settings_window = SettingsWindow::new(settings_window_config);
         settings_window.update_config(minimon_config);
 
         AppState {
@@ -448,7 +441,6 @@ impl Default for AppState {
             local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
-            receiver_pubkey,
         }
     }
 }
@@ -884,9 +876,10 @@ impl Application for PanelApplet {
                             // Send TCP response if this request came via TCP
                             if let Some(arc_tx) = req.tcp_response.as_ref() {
                                 if let Some(tx) = arc_tx.lock().unwrap().take() {
-                                    let pubkey = state.receiver_pubkey.clone();
                                     let _ = tx.send(
-                                        crate::pairing_manager::TcpPairingResponse::Accept(pubkey),
+                                        crate::pairing_manager::TcpPairingResponse::Accept(
+                                            String::new(),
+                                        ),
                                     );
                                 }
                             }
@@ -1033,12 +1026,6 @@ impl Application for PanelApplet {
                     }
                     crate::ui::settings_window::SettingsMessage::NoOp => {
                         // No operation — do nothing.
-                    }
-                    crate::ui::settings_window::SettingsMessage::CopyPubkeyToClipboard => {
-                        let pubkey = app_state.settings_window.receiver_pubkey.clone();
-                        return Task::done(cosmic::Action::App(AppMessage::CopyToClipboard(
-                            pubkey,
-                        )));
                     }
                 }
 
@@ -1542,14 +1529,13 @@ impl Application for PanelApplet {
             // Show SettingsWindow when visible (overlay mode).
             let state = self.shared_state.read().unwrap();
             let minimon_config = state.settings_window.minimon_config.clone();
-            let receiver_pubkey = state.receiver_pubkey.clone();
             drop(state);
 
             return self
                 .core
                 .applet
                 .popup_container(
-                    crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
+                    crate::ui::settings_window::view_with_config(&minimon_config)
                         .map(|msg| AppMessage::Settings(msg)),
                 )
                 .limits(
@@ -1645,10 +1631,9 @@ impl Application for PanelApplet {
                 // Show general settings
                 let state = self.shared_state.read().unwrap();
                 let minimon_config = state.settings_window.minimon_config.clone();
-                let receiver_pubkey = state.receiver_pubkey.clone();
                 drop(state);
 
-                crate::ui::settings_window::view_with_config(&minimon_config, &receiver_pubkey)
+                crate::ui::settings_window::view_with_config(&minimon_config)
                     .map(|msg| AppMessage::Settings(msg))
             }
             View::CpuConfig => {
