@@ -8,8 +8,8 @@ rust-version.workspace = true
 description = "Shared library for collecting system metrics (CPU, memory, disk, network, uptime, GPU, temperature) on Linux."
 
 [dependencies]
-sysinfo = { workspace = true }
 procfs = { workspace = true }
+rustix = { version = "1.0", features = ["fs"] }
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 nvml-wrapper = "0.10"

@@ -34,10 +34,10 @@
 //! The struct derives [`rkyv::Archive`] so it can be zero-copy deserialized on the desktop side
 //! (from the decrypted plaintext buffer).
 
-use rkyv::{Archive, Deserialize, Serialize};
+use rkyv::{Archive, Serialize};
 
 /// Disk partition information for one mount point
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct PartitionInfo {
     /// Mount point path (e.g., "/", "/home", "/boot")
     pub mount: String,
@@ -48,7 +48,7 @@ pub struct PartitionInfo {
 }
 
 /// CPU metrics group — all CPU-related metrics bundled together for type safety.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct CpuMetrics {
     /// CPU usage percentage (0.0–100.0), aggregate across all cores.
     pub usage_percent: f32,
@@ -57,7 +57,7 @@ pub struct CpuMetrics {
 }
 
 /// GPU metrics group — all GPU-related metrics bundled together for type safety.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct GpuMetrics {
     /// GPU utilization load percentage (0.0–100.0) — `None` if GPU monitoring unavailable.
     pub load_percent: Option<f32>,
@@ -70,7 +70,7 @@ pub struct GpuMetrics {
 }
 
 /// Memory metrics group — all memory-related metrics bundled together for type safety.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct MemoryMetrics {
     /// Used memory in bytes.
     pub used_bytes: u64,
@@ -81,7 +81,7 @@ pub struct MemoryMetrics {
 }
 
 /// Network metrics group — all network-related metrics bundled together for type safety.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct NetworkMetrics {
     /// Total bytes received on the primary network interface since boot.
     pub rx_bytes: u64,
@@ -90,7 +90,7 @@ pub struct NetworkMetrics {
 }
 
 /// Disk metrics group — all disk-related metrics bundled together for type safety.
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct DiskMetrics {
     /// Used disk space in bytes (sum across all partitions).
     pub used_bytes: u64,
@@ -114,10 +114,9 @@ pub struct DiskMetrics {
 /// AEAD tag on the encrypted wire packet (Pairing System V1, Phase 1).
 pub const PROTOCOL_VERSION: u32 = 4;
 
-#[derive(Debug, Clone, Archive, Serialize, Deserialize)]
+#[derive(Debug, Clone, Archive, Serialize)]
 pub struct MetricPacket {
     // ── Protocol Version & Security (Worf Phase 1A) ───────────────────────
-
     /// Protocol version for detecting incompatible sender/receiver versions.
     /// Bump [`PROTOCOL_VERSION`] whenever a breaking change is made to the packet structure.
     pub version: u32,
@@ -143,7 +142,6 @@ pub struct MetricPacket {
     pub sequence: u32,
 
     // ── Nested Metric Groups (Phase 3 Refactoring) ───────────────────────
-
     /// CPU metrics group — usage, temperature
     pub cpu: CpuMetrics,
 
@@ -161,7 +159,6 @@ pub struct MetricPacket {
 
     /// System uptime in seconds since last boot.
     pub uptime_seconds: u64,
-
 }
 
 #[cfg(test)]
@@ -174,7 +171,7 @@ mod tests {
         // Test nested metric group initialization for protocol version 3
         let packet = MetricPacket {
             version: PROTOCOL_VERSION,
-            machine_id: [0u8; 20], // Null-padded empty machine ID.
+            machine_id: [0u8; 20],        // Null-padded empty machine ID.
             sender_session_id: [0u8; 16], // Empty session ID for test
             timestamp: 0,
             sequence: 0,
@@ -206,31 +203,34 @@ mod tests {
             },
             uptime_seconds: 0,
         };
-        
+
         // Verify nested struct initialization
         assert!(packet.machine_id.iter().all(|&b| b == 0)); // All zeros = empty/null-padded.
         assert_eq!(packet.sequence, 0);
         assert_eq!(packet.cpu.usage_percent, 0.0);
         assert_eq!(packet.memory.swap_used_pct, 0.0);
-        
+
         // Test GPU VRAM calculation (convert MB to bytes for applet display)
         let gpu_vram_bytes = packet.gpu.vram_used_mb.map(|v| v as u64 * 1_048_576);
         assert_eq!(gpu_vram_bytes, None); // No VRAM data in test
-        
+
         // Test with sample GPU data
         let packet_with_gpu = MetricPacket {
             gpu: GpuMetrics {
                 load_percent: Some(75.5),
-                vram_used_mb: Some(4096), // 4GB
+                vram_used_mb: Some(4096),  // 4GB
                 vram_total_mb: Some(8192), // 8GB
                 temperature_celsius: Some(85.0),
             },
             ..packet.clone()
         };
-        
+
         assert_eq!(packet_with_gpu.gpu.load_percent, Some(75.5));
         assert_eq!(packet_with_gpu.gpu.vram_used_mb, Some(4096));
-        let vram_bytes = packet_with_gpu.gpu.vram_used_mb.map(|v| v as u64 * 1_048_576);
+        let vram_bytes = packet_with_gpu
+            .gpu
+            .vram_used_mb
+            .map(|v| v as u64 * 1_048_576);
         assert_eq!(vram_bytes, Some(4_294_967_296)); // 4GB in bytes
     }
 }

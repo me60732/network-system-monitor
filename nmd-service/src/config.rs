@@ -161,24 +161,10 @@ impl ServiceConfig {
     }
 }
 
-/// Lightweight hostname detection without pulling in the `hostname` crate.
+/// Lightweight hostname detection via /proc/sys/kernel/hostname.
 mod hostname {
-    use std::process::Command;
-
     pub fn get() -> Result<std::ffi::OsString, std::io::Error> {
-        let output = Command::new("hostname").output()?;
-        if output.status.success() {
-            Ok(std::str::from_utf8(&output.stdout)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
-                .trim()
-                .to_string()
-                .into())
-        } else {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "hostname command failed",
-            ))
-        }
+        std::fs::read_to_string("/proc/sys/kernel/hostname").map(|s| s.trim().to_string().into())
     }
 }
 

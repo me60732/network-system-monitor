@@ -69,6 +69,7 @@ impl PanelWidget {
         let avg_memory_data = crate::simple_sensors::MemoryData {
             used_bytes: total_memory_used / machines.len().max(1) as u64,
             total_bytes: total_memory_total / machines.len().max(1) as u64,
+            swap_used_pct: 0.0, // panel bar shows ring only, no swap display
         };
 
         let avg_gpu = total_gpu / count;
@@ -162,8 +163,8 @@ impl PanelWidget {
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
         let cpu_temp = machine.sensors.temperature.celsius;
-        let memory = machine.sensors.memory.usage_percent();
-        let gpu_temp = machine.sensors.temperature.celsius;
+        let memory_data = &machine.sensors.memory;
+        let gpu_temp = machine.sensors.gpu.gpu_temp.unwrap_or(0.0);
         let rx_kbps = machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
         let tx_kbps = machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
 
@@ -190,9 +191,13 @@ impl PanelWidget {
             }
 
             let element = match content_type {
-                ContentType::CpuUsage => Self::render_cpu_metric(cpu, &config.cpu),
-                ContentType::CpuTemp => Self::render_temperature_metric(cpu_temp, &config.cputemp),
-                ContentType::MemoryUsage => Self::render_memory_metric(memory, &config.memory),
+                ContentType::CpuUsage => {
+                    Self::render_cpu_with_temp(cpu, cpu_temp, &config.cpu, &config.cputemp)
+                }
+                ContentType::CpuTemp => continue, // handled inside render_cpu_with_temp
+                ContentType::MemoryUsage => {
+                    Self::render_memory_metric_with_data(memory_data, &config.memory)
+                }
                 ContentType::GpuInfo => {
                     Self::render_gpu_group_with_data(gpu_temp, &machine.sensors.gpu, config)
                 }
@@ -227,8 +232,8 @@ impl PanelWidget {
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
         let cpu_temp = machine.sensors.temperature.celsius;
-        let memory = machine.sensors.memory.usage_percent();
-        let gpu_temp = machine.sensors.temperature.celsius;
+        let memory_data = &machine.sensors.memory;
+        let gpu_temp = machine.sensors.gpu.gpu_temp.unwrap_or(0.0);
         let rx_kbps = machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
         let tx_kbps = machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
 
@@ -259,7 +264,9 @@ impl PanelWidget {
                     Self::render_cpu_with_temp(cpu, cpu_temp, &config.cpu, &config.cputemp)
                 }
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
-                ContentType::MemoryUsage => Self::render_memory_metric(memory, &config.memory),
+                ContentType::MemoryUsage => {
+                    Self::render_memory_metric_with_data(memory_data, &config.memory)
+                }
                 ContentType::GpuInfo => {
                     Self::render_gpu_group_with_data(gpu_temp, &machine.sensors.gpu, config)
                 }
@@ -304,8 +311,11 @@ impl PanelWidget {
         let cpu_ring = RingChart::new(cpu_percent, &cpu_colors);
         items.push(canvas(cpu_ring).width(36).height(36).into());
 
-        // Render temp chart if enabled in temp config
+        // Render temp chart + icon if enabled in temp config
         if temp_config.chart_visible() {
+            if temp_config.icon_visible() {
+                items.push(icon::from_name(TEMP_ICON).symbolic(true).size(20).into());
+            }
             let temp_percent = (temp / 100.0).clamp(0.0, 1.0) * 100.0;
             let temp_colors = ChartColors::new(DeviceKind::CpuTemp, ChartKind::Ring);
             let temp_ring =
@@ -319,57 +329,16 @@ impl PanelWidget {
             .into()
     }
 
-    /// Render CPU metric with icon + ring (value centered inside)
-    fn render_cpu_metric(
-        value: f32,
-        config: &crate::minimon_config::CpuConfig,
-    ) -> cosmic::Element<'static, AppMessage> {
-        let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
-
-        if config.icon_visible() {
-            items.push(icon::from_name(CPU_ICON).symbolic(true).size(20).into());
+    /// Format a float value for display inside a ring chart.
+    /// Keeps text to ≤ 4 characters (3 significant + optional decimal point).
+    fn fmt_ring(value: f64) -> String {
+        if value < 10.0 {
+            format!("{:.2}", value) // "9.99" (4 chars)
+        } else if value < 100.0 {
+            format!("{:.1}", value) // "24.5" (4 chars)
+        } else {
+            format!("{:.0}", value) // "100"  (3 chars)
         }
-
-        if config.label_visible() {
-            items.push(text("CPU").size(11).into());
-        }
-
-        // Always render chart when sensor is shown
-        let colors = ChartColors::new(DeviceKind::Cpu, ChartKind::Ring);
-        let ring = RingChart::new(value, &colors);
-        items.push(canvas(ring).width(36).height(36).into());
-
-        row(items)
-            .spacing(4)
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
-    }
-
-    /// Render temperature metric with icon + ring (text centered inside ring)
-    fn render_temperature_metric(
-        temp: f32,
-        config: &crate::minimon_config::CpuTempConfig,
-    ) -> cosmic::Element<'static, AppMessage> {
-        let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
-
-        if config.icon_visible() {
-            items.push(icon::from_name(TEMP_ICON).symbolic(true).size(20).into());
-        }
-
-        if config.label_visible() {
-            items.push(text("TEMP").size(11).into());
-        }
-
-        // Always render chart when sensor is shown
-        let percent = (temp / 100.0).clamp(0.0, 1.0) * 100.0;
-        let colors = ChartColors::new(DeviceKind::CpuTemp, ChartKind::Ring);
-        let ring = RingChart::new_with_text(percent, &format!("{}°", temp as i32), &colors);
-        items.push(canvas(ring).width(36).height(36).into());
-
-        row(items)
-            .spacing(4)
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
     }
 
     /// Render memory metric with icon + ring (value centered inside) or bytes as text
@@ -398,7 +367,7 @@ impl PanelWidget {
             let used_gb = data.used_bytes as f64 / 1_073_741_824.0;
             let colors = ChartColors::new(DeviceKind::Memory, ChartKind::Ring);
             let ring =
-                RingChart::new_with_text(data.usage_percent(), &format!("{:.1}", used_gb), &colors);
+                RingChart::new_with_text(data.usage_percent(), &Self::fmt_ring(used_gb), &colors);
             items.push(canvas(ring).width(36).height(36).into());
         }
 
@@ -493,11 +462,8 @@ impl PanelWidget {
             } else {
                 // Display GB used as text inside ring (not percentage)
                 let vram_gb = gpu_data.vram_used_bytes as f64 / 1_073_741_824.0;
-                let vram_ring = RingChart::new_with_text(
-                    vram_percent,
-                    &format!("{:.1}", vram_gb),
-                    &vram_colors,
-                );
+                let vram_ring =
+                    RingChart::new_with_text(vram_percent, &Self::fmt_ring(vram_gb), &vram_colors);
                 items.push(canvas(vram_ring).width(36).height(36).into());
             }
         }

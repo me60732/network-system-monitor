@@ -26,7 +26,6 @@
 //! handles all presentation logic including percentage calculations. This separation allows users to
 //! configure display preferences (percentages vs. absolute values) without changing the service.
 
-use crate::config::ServiceConfig;
 use crate::packet::{
     CpuMetrics, DiskMetrics, GpuMetrics, MemoryMetrics, MetricPacket, NetworkMetrics,
     PROTOCOL_VERSION, PartitionInfo,
@@ -43,8 +42,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 ///
 /// Expected performance improvement: 250ms → ~20ms (10x faster)
 pub struct MetricsAggregator {
-    /// Service configuration providing machine_id for packet identity.
-    config: ServiceConfig,
+    /// Machine ID string for packet identity.
+    machine_id: String,
     /// Stateful CPU collector for accurate delta-based utilization percentages.
     cpu_collector: CpuCollector,
     /// Stateful network collector for accurate delta-based RX/TX byte tracking.
@@ -58,10 +57,6 @@ pub struct MetricsAggregator {
     memory_total_bytes: u64,
     /// Total GPU VRAM in MB (cached at startup, None if no GPU detected)
     gpu_vram_total_mb: Option<u32>,
-
-    // Layer 2: Stateful system instance
-    /// sysinfo::System instance for memory refresh without full re-initialization
-    system: sysinfo::System,
 
     // Layer 3: Slow-refresh disk partition caching (refresh every 20 cycles)
     /// Cached list of disk partitions, refreshed every 20 cycles
@@ -81,14 +76,13 @@ impl MetricsAggregator {
     ///
     /// Initializes all optimization layers plus stateful collectors:
     /// * Layer 1: Collects static memory_total_bytes and gpu_vram_total_mb once (never change during runtime)
-    /// * Layer 2: Creates sysinfo::System instance and performs initial memory refresh
     /// * Stateful Collectors: CPU (with temp), Network, and GPU (with temp) collectors initialized with cached state
     /// * Layer 3: Collects disk partitions list and total bytes for caching (refresh every 20 cycles)
     ///
     /// The first call to `aggregate()` will compute deltas from CPU/network baselines.
-    pub fn new(config: ServiceConfig) -> Self {
+    pub fn new(machine_id: &str) -> Self {
         // Layer 1: Collect static values that never change during runtime
-        let memory_total_bytes = sysinfo::System::new_all().total_memory();
+        let memory_total_bytes = metrics_core::memory::collect().total;
 
         // Initialize GPU collector once (detects GPU type, initializes NVML if needed)
         let gpu_collector = GpuCollector::new();
@@ -97,10 +91,6 @@ impl MetricsAggregator {
             let gpu_stats = gpu_collector.collect();
             gpu_stats.vram_total.map(|bytes| (bytes / 1_048_576) as u32)
         };
-
-        // Layer 2: Initialize stateful system instance with initial memory refresh
-        let mut system = sysinfo::System::new();
-        system.refresh_memory();
 
         // Layer 3: Collect disk partitions for initial cache
         let disk_stats = metrics_core::disk::collect();
@@ -118,13 +108,12 @@ impl MetricsAggregator {
         let disk_io_collector = metrics_core::disk::DiskIoCollector::new();
 
         MetricsAggregator {
-            config,
+            machine_id: machine_id.to_string(),
             cpu_collector: CpuCollector::new(), // Prime with initial read + discover CPU temp sensor
             network_collector: NetworkCollector::new(), // Initialize empty prev maps
             gpu_collector, // Stateful GPU collector with cached GPU type and NVML instance
             memory_total_bytes,
             gpu_vram_total_mb,
-            system,
             disk_partitions_cache,
             disk_total_bytes_cache,
             partition_refresh_counter: 0,
@@ -184,14 +173,14 @@ impl MetricsAggregator {
         let gpu_temperature_celsius = gpu_stats.gpu_temp;
 
         // --- Memory used and total bytes — send raw values, let applet calculate percentage ---
-        // Layer 2: Use stateful system instance instead of System::new_all()
+        // Use procfs for memory stats
         let mem_start = Instant::now();
-        self.system.refresh_memory(); // Refresh memory only (much faster than full re-initialization)
-        let memory_used_bytes = self
-            .system
-            .total_memory()
-            .saturating_sub(self.system.available_memory());
-        // Layer 1: Use cached value in packet - memory_total_bytes is static, never changes during runtime
+        let mem_stats = metrics_core::memory::collect();
+        let memory_used_bytes = mem_stats.used;
+        // Swap stats from MemoryStats - included for completeness even though not used directly
+        let _swap_total_bytes = mem_stats.swap_total;
+        let _swap_free_bytes = mem_stats.swap_free;
+        let memory_swap_used_pct = mem_stats.swap_used_percent;
         let mem_elapsed = mem_start.elapsed();
         log::debug!("Memory collection: {}ms", mem_elapsed.as_millis());
         if mem_elapsed.as_millis() > 50 {
@@ -200,18 +189,7 @@ impl MetricsAggregator {
                 mem_elapsed.as_millis()
             );
         }
-
-        // --- Swap usage percentage ---
-        let swap_start = Instant::now();
-        let swap_total = self.system.total_swap();
-        let swap_used_bytes = self.system.used_swap();
-        let memory_swap_used_pct = if swap_total > 0 {
-            ((swap_used_bytes as f64 / swap_total as f64) * 100.0) as f32
-        } else {
-            0.0
-        };
-        let swap_elapsed = swap_start.elapsed();
-        log::debug!("Swap collection: {}ms", swap_elapsed.as_millis());
+        // Swap stats are included in MemoryStats; no separate timing needed
 
         // --- Disk used and total bytes — sum across all partitions, send raw values ---
         let disk_start = Instant::now();
@@ -292,7 +270,7 @@ impl MetricsAggregator {
 
         // Encode machine_id as fixed-length [u8; 20] — null-padded if shorter.
         let mut machine_id_bytes = [0u8; 20];
-        let src = self.config.machine_id.as_bytes();
+        let src = self.machine_id.as_bytes();
         let len = src.len().min(20);
         machine_id_bytes[..len].copy_from_slice(&src[..len]);
 
@@ -365,7 +343,7 @@ impl MetricsAggregator {
 
     /// Return the configured machine_id for this service instance.
     pub fn machine_id(&self) -> &str {
-        &self.config.machine_id
+        &self.machine_id
     }
 }
 

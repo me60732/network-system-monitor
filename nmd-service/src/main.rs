@@ -189,7 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // 5. Initialize metrics aggregator.
-    let mut aggregator = MetricsAggregator::new(config.clone());
+    let mut aggregator = MetricsAggregator::new(&config.machine_id);
 
     // 6. Install signal handlers for graceful shutdown (SIGTERM from systemd + SIGINT/Ctrl-C).
     install_signal_handlers();

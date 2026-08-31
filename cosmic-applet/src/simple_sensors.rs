@@ -60,6 +60,8 @@ impl CpuData {
 pub struct MemoryData {
     pub used_bytes: u64,
     pub total_bytes: u64,
+    /// Swap usage as a percentage (0.0–100.0), or 0.0 if no swap exists.
+    pub swap_used_pct: f32,
 }
 
 impl Default for MemoryData {
@@ -67,20 +69,22 @@ impl Default for MemoryData {
         Self {
             used_bytes: 0,
             total_bytes: 1, // Avoid division by zero
+            swap_used_pct: 0.0,
         }
     }
 }
 
 impl MemoryData {
     pub fn update_from_packet(&mut self, packet: &MetricPacket) {
-        // Phase 3: Extract memory metrics from nested group
         self.used_bytes = packet.memory.used_bytes;
         self.total_bytes = packet.memory.total_bytes;
+        self.swap_used_pct = packet.memory.swap_used_pct;
 
         log::debug!(
-            "📊 Memory packet data - used: {} bytes, total: {} bytes",
+            "📊 Memory packet data - used: {} bytes, total: {} bytes, swap: {:.1}%",
             self.used_bytes,
-            self.total_bytes
+            self.total_bytes,
+            self.swap_used_pct
         );
     }
 

@@ -1,17 +1,17 @@
 //! Disk partition and IO statistics.
 //!
-//! Collects disk usage per mounted partition using sysinfo's standalone `Disks` type (sysinfo 0.39).
-//! Total/used bytes are read directly from each Disk via built-in methods — no libc or statvfs dependency required.
+//! Collects disk usage per mounted partition using `procfs::mounts()` + `rustix::fs::statvfs`.
+//! Total/used bytes are computed via statvfs syscalls on each mount point.
 //! IO statistics come in two forms:
 //!
 //! * [`DiskIoCollector`] - stateful collector that returns delta bytes since last call (recommended)
 
+use procfs::mounts;
+use rustix::fs::statvfs;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ffi::OsStr;
-use std::fs;
-use std::io::{BufRead, BufReader};
-use sysinfo::Disks;
+use std::ffi::CString;
+use std::io::BufRead;
 
 /// Disk partition statistics for one mount point.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ impl DiskIoCollector {
     fn read_diskstats() -> HashMap<String, RawDiskStats> {
         let mut map = HashMap::new();
 
-        let file = match fs::File::open("/proc/diskstats") {
+        let file = match std::fs::File::open("/proc/diskstats") {
             Ok(f) => f,
             Err(e) => {
                 log::warn!("Failed to open /proc/diskstats: {}", e);
@@ -111,7 +111,7 @@ impl DiskIoCollector {
         // /proc/diskstats fields (space-separated):
         // 0:major  1:minor  2:name  3:reads  4:reads_merged  5:sectors_read  6:ms_read
         // 7:writes  8:writes_merged  9:sectors_written  10:ms_write  ...
-        for line in BufReader::new(file).lines().flatten() {
+        for line in std::io::BufReader::new(file).lines().flatten() {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() < 10 {
                 continue;
@@ -167,7 +167,7 @@ impl DiskIoCollector {
         //    If the directory is non-empty, skip this device; its IO is counted through
         //    the logical device that holds it (which will itself have an empty holders/).
         let holders = format!("/sys/block/{}/holders", name);
-        if let Ok(mut dir) = fs::read_dir(&holders) {
+        if let Ok(mut dir) = std::fs::read_dir(&holders) {
             if dir.next().is_some() {
                 return false;
             }
@@ -214,46 +214,64 @@ impl DiskIoCollector {
 
 /// Collect current disk partition statistics.
 ///
-/// Uses sysinfo's standalone `Disks` type (sysinfo 0.39) to enumerate disks and their mount points,
-/// then reads total/used byte counts directly from each Disk via built-in methods — no statvfs or libc dependency.
-/// IO statistics (read/write bytes) are included where available in sysinfo 0.39+; returns `None` if unsupported.
+/// Uses `procfs::mounts()` to enumerate mount points and `rustix::fs::statvfs` to read total/used bytes.
+/// Skips virtual filesystems (tmpfs, sysfs, proc, devtmpfs, etc.).
 /// Returns an empty vector if no disks are detected.
 pub fn collect() -> DiskStats {
-    // In sysinfo 0.39, Disks is a standalone type with new_with_refreshed_list().
-    let disks = Disks::new_with_refreshed_list();
+    let mount_list = mounts().unwrap_or_default();
+    let mut partitions = Vec::new();
 
-    let mut partitions: Vec<PartitionStat> = Vec::new();
-
-    for disk in disks.list() {
-        // Skip virtual/tmpfs filesystems — only report real block devices.
-        if is_virtual_fs(disk.file_system()) {
+    for entry in mount_list {
+        // Only real filesystems — skip tmpfs, sysfs, proc, devtmpfs, etc.
+        let fstype = entry.fs_vfstype.as_str();
+        if matches!(
+            fstype,
+            "tmpfs"
+                | "sysfs"
+                | "proc"
+                | "devtmpfs"
+                | "devpts"
+                | "cgroup"
+                | "cgroup2"
+                | "pstore"
+                | "bpf"
+                | "tracefs"
+                | "securityfs"
+                | "hugetlbfs"
+                | "mqueue"
+                | "debugfs"
+                | "configfs"
+                | "fusectl"
+                | "efivarfs"
+                | "autofs"
+        ) {
             continue;
         }
 
-        // In sysinfo 0.39, Disk has a single mount_point() returning &Path (not multiple).
-        let mp_str = match disk.mount_point().to_str() {
-            Some(s) => s,
-            None => continue,
+        let mount_point = entry.fs_file.clone();
+
+        // Call statvfs on the mount point
+        let cpath = match CString::new(mount_point.as_bytes()) {
+            Ok(p) => p,
+            Err(_) => continue,
         };
 
-        // sysinfo's Disk provides total_space() and available_space() natively — no statvfs needed.
-        let total_bytes = disk.total_space();
-        // Skip partitions with zero total size (e.g., some special mounts).
-        if total_bytes == 0 {
-            continue;
+        if let Ok(stat) = statvfs(&cpath) {
+            let block_size = stat.f_bsize as u64;
+            let total = stat.f_blocks * block_size;
+            let available = stat.f_bavail * block_size;
+            let used = total.saturating_sub(available);
+
+            if total == 0 {
+                continue;
+            }
+
+            partitions.push(PartitionStat {
+                mount: mount_point,
+                total,
+                used,
+            });
         }
-
-        let avail_bytes = disk.available_space();
-        let used_bytes = total_bytes.saturating_sub(avail_bytes);
-
-        // Note: sysinfo 0.39 Disk does not expose read/write IO bytes — those require direct /sys reads.
-        // For now, we report None for IO stats; future enhancement could add procfs-based IO counters.
-
-        partitions.push(PartitionStat {
-            mount: mp_str.to_string(),
-            total: total_bytes,
-            used: used_bytes,
-        });
     }
 
     DiskStats { partitions }
@@ -271,33 +289,6 @@ pub fn root_used_percent(stats: &DiskStats) -> f32 {
     } else {
         0.0
     }
-}
-
-/// Check if a filesystem type string indicates a virtual/tmpfs filesystem that should be skipped.
-fn is_virtual_fs(fs_type: &OsStr) -> bool {
-    let fs_str = match fs_type.to_str() {
-        Some(s) => s,
-        None => return true, // If we can't determine the FS type, skip it for safety
-    };
-
-    matches!(
-        fs_str,
-        "tmpfs"
-            | "devtmpfs"
-            | "proc"
-            | "sysfs"
-            | "cgroup"
-            | "cgroup2"
-            | "pstore"
-            | "bpf"
-            | "tracefs"
-            | "debugfs"
-            | "mqueue"
-            | "hugetlbfs"
-            | "fusectl"
-            | "securityfs"
-            | "configfs"
-    )
 }
 
 #[cfg(test)]

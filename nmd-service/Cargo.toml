@@ -26,16 +26,13 @@ x25519-dalek = { workspace = true }
 # OsRng for keypair + nonce-prefix generation
 rand = { workspace = true }
 
-# System info for machine_id and uptime collection at service level
-sysinfo = { workspace = true }
-procfs = { workspace = true }
+# System info for machine_id collection at service level (uptime now uses procfs directly in metrics-core)
 
 # Configuration parsing (TOML)
 toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
 serde = { version = "1.0", features = ["derive"] }
 
-# JSON serialization for TCP pairing messages
-serde_json = "1.0"
+
 
 # Hex encoding/decoding for X25519 public key serialization in config (workspace dep)
 hex = { workspace = true }

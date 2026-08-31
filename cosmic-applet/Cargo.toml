@@ -53,16 +53,11 @@ serde_json = "1.0"
 # Async runtime for UDP receiver and UI event loop
 tokio = { version = "1", features = ["full"] }
 
-# Random number generation for debug/fake data mode
-rand = { version = "0.8", default-features = false, features = ["std"] }
-getrandom = { version = "0.2", features = ["std"] }
-
 # System process spawning (for local_monitor.rs — opens system monitor app)
-std-subprocess = { package = "subprocess", version = "0.2" }
+# subprocess crate is not available; using std::process instead
 
 # Minimon sensor dependencies (Phase 1: copied from minimon-applet)
-sysinfo = "0.39"                  # System information (CPU, memory, disk, network from /proc)
-nvml-wrapper = "0.12"             # NVIDIA GPU monitoring
+
 anyhow = { version = "1.0", features = ["backtrace"] }  # Error handling
 zbus = { version = "5.7" }        # D-Bus for laptop battery detection
 zvariant = "5.6"                  # D-Bus types
@@ -71,6 +66,13 @@ hex = { workspace = true }  # Hex string conversion with serde (workspace dep, f
 i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"] }
 i18n-embed-fl = "0.10"            # Fluent localization macros
 rust-embed = "8.3"                # Embed localization files
+
+# Random number generation - rand for real keypair generation, getrandom for tests
+rand = { version = "0.8", default-features = false, features = ["std"] }
+getrandom = { version = "0.2", features = ["std"], optional = true }
+
+[features]
+dev = []
 
 # Library target compiled from the same source as the binary — exposes AppState, UdpReceiver,
 # RemoteMachine, ConfigManager etc. to integration tests (tests/) and benchmarks (benches/).

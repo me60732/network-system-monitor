@@ -280,6 +280,7 @@ impl AppState {
     }
 
     /// Create AppState with fake debug data (Pluto, Saturn machines with random metrics).
+    #[cfg(feature = "dev")]
     pub fn new_debug() -> Self {
         use crate::config::manager::MachineConfig;
         use crate::remote_machine::RemoteMachine;
@@ -311,7 +312,9 @@ impl AppState {
         drop(config_read);
 
         // ── Local machine setup for debug mode ───────────────────────────────
-        let hostname = sysinfo::System::host_name().unwrap_or_else(|| "local".to_string());
+        let hostname = std::fs::read_to_string("/proc/sys/kernel/hostname")
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|_| "local".to_string());
         let local_machine_config =
             crate::config::manager::MachineConfig::new(hostname.clone(), "127.0.0.1".to_string());
         let local_machine = RemoteMachine::new_debug(hostname.clone());
@@ -363,9 +366,10 @@ impl Default for AppState {
         let minimon_config = Self::load_minimon_config();
 
         // ── Local machine setup ──────────────────────────────────────────────────
-        // Determine hostname for the local machine
-        use sysinfo::System;
-        let hostname = System::host_name().unwrap_or_else(|| "local".to_string());
+        // Determine hostname for the local machine — read directly from the kernel
+        let hostname = std::fs::read_to_string("/proc/sys/kernel/hostname")
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|_| "local".to_string());
         let local_machine_config =
             crate::config::manager::MachineConfig::new(hostname.clone(), "127.0.0.1".to_string());
 
@@ -406,14 +410,7 @@ impl Default for AppState {
         let local_metrics_rx = std::sync::Mutex::new(local_rx);
         let hostname_for_thread = hostname.clone();
         std::thread::spawn(move || {
-            let config = nmd_service::ServiceConfig {
-                host: "127.0.0.1".to_string(),
-                port: 51057,
-                refresh_interval_secs: 1,
-                machine_id: hostname_for_thread,
-                receiver_pubkey: None,
-            };
-            let mut collector = nmd_service::MetricsAggregator::new(config);
+            let mut collector = nmd_service::MetricsAggregator::new(&hostname_for_thread);
             loop {
                 let packet = collector.aggregate();
                 if local_tx.send(packet).is_err() {
@@ -480,55 +477,79 @@ fn main() -> Result<(), cosmic::iced::Error> {
     // Parse command-line arguments and locate config file.
     let args: Vec<String> = std::env::args().collect();
 
-    // Check for --test flag for development mode
-    let test_mode = args.contains(&"--test".to_string());
-    // Check for --debug flag for fake data mode
-    let debug_mode = args.contains(&"--debug".to_string());
+    #[cfg(feature = "dev")]
+    {
+        // Check for --test and --debug flags for development/debug modes
+        let test_mode = args.contains(&"--test".to_string());
+        let debug_mode = args.contains(&"--debug".to_string());
 
-    let config_path = args
-        .iter()
-        .skip(1)
-        .find(|arg| !arg.starts_with("--"))
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| {
-            crate::config::manager::default_config_path()
-                .to_str()
-                .unwrap_or("config.toml")
-                .to_string()
-        });
+        let config_path = args
+            .iter()
+            .skip(1)
+            .find(|arg| !arg.starts_with("--"))
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| {
+                crate::config::manager::default_config_path()
+                    .to_str()
+                    .unwrap_or("config.toml")
+                    .to_string()
+            });
 
-    if test_mode || debug_mode {
-        if debug_mode {
-            log::info!("🎲 DEBUG MODE: Running with fake data (Pluto, Saturn, localhost)");
-            log::info!("Usage: cargo run -- --debug [--test]");
-            unsafe {
-                std::env::set_var("COSMIC_APPLET_DEBUG", "1");
+        if test_mode || debug_mode {
+            if debug_mode {
+                log::info!("🎲 DEBUG MODE: Running with fake data (Pluto, Saturn, localhost)");
+                log::info!("Usage: cargo run -- --debug [--test]");
+                unsafe {
+                    std::env::set_var("COSMIC_APPLET_DEBUG", "1");
+                }
             }
-        }
-        if test_mode {
-            log::info!("🧪 DEVELOPMENT MODE: Running in standalone window for testing");
-            log::info!("Usage: cargo run -- --test [--debug]");
-        }
-        log::info!("cosmic-applet starting — config: {}", config_path);
-        log::info!("This shows the panel widget in a normal window for development");
+            if test_mode {
+                log::info!("🧪 DEVELOPMENT MODE: Running in standalone window for testing");
+                log::info!("Usage: cargo run -- --test [--debug]");
+            }
+            log::info!("cosmic-applet starting — config: {}", config_path);
+            log::info!("This shows the panel widget in a normal window for development");
 
-        // Larger window for settings testing if window is clicked
-        // (settings window is 700x500, so use 1000x600 to accommodate)
-        let window_size = cosmic::iced::Size::new(1000.0, 600.0);
-        log::info!(
-            "Window size: {}x{} (tall enough for settings window)",
-            window_size.width,
-            window_size.height
-        );
+            // Larger window for settings testing if window is clicked
+            // (settings window is 700x500, so use 1000x600 to accommodate)
+            let window_size = cosmic::iced::Size::new(1000.0, 600.0);
+            log::info!(
+                "Window size: {}x{} (tall enough for settings window)",
+                window_size.width,
+                window_size.height
+            );
 
-        // Launch as a regular COSMIC application with proper window
-        cosmic::app::run::<PanelApplet>(
-            cosmic::app::Settings::default()
-                .size(window_size)
-                .exit_on_close(true),
-            (),
-        )
-    } else {
+            // Launch as a regular COSMIC application with proper window
+            cosmic::app::run::<PanelApplet>(
+                cosmic::app::Settings::default()
+                    .size(window_size)
+                    .exit_on_close(true),
+                (),
+            )
+        } else {
+            log::info!(
+                "cosmic-applet starting in PANEL MODE — config: {}",
+                config_path
+            );
+            // Launch as a COSMIC applet — requires implementing cosmic::Application (done above).
+            cosmic::applet::run::<PanelApplet>(())
+        }
+    }
+
+    #[cfg(not(feature = "dev"))]
+    {
+        let config_path = args
+            .iter()
+            .skip(1)
+            .find(|arg| !arg.starts_with("--"))
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| {
+                crate::config::manager::default_config_path()
+                    .to_str()
+                    .unwrap_or("config.toml")
+                    .to_string()
+            });
+
         log::info!(
             "cosmic-applet starting in PANEL MODE — config: {}",
             config_path
@@ -553,6 +574,7 @@ impl Application for PanelApplet {
         &mut self.core
     }
 
+    #[cfg(feature = "dev")]
     fn init(core: Core, _flags: Self::Flags) -> (Self, Task<Self::Message>) {
         // Check if we're in debug mode (set via environment variable from main)
         let debug_mode = std::env::var("COSMIC_APPLET_DEBUG").is_ok();
@@ -608,6 +630,62 @@ impl Application for PanelApplet {
         } else {
             log::info!("🎲 DEBUG MODE: Skipping UDP/TCP receivers, using fake data");
         }
+
+        // Initialize AppState with shared state (settings_window already created in default).
+        (
+            PanelApplet {
+                core,
+                shared_state, // Use the same Arc instance
+                popup: None,
+            },
+            Task::none(),
+        )
+    }
+
+    #[cfg(not(feature = "dev"))]
+    fn init(core: Core, _flags: Self::Flags) -> (Self, Task<Self::Message>) {
+        // Create shared AppState with default values (no debug mode available).
+        let app_state = AppState::default();
+
+        // Clone pairing manager before moving app_state into shared_state
+        let pairing_manager_clone = app_state.pairing_manager.clone();
+
+        // Wrap in Arc<RwLock> ONCE — both UI and UDP receiver share this instance
+        let shared_state = std::sync::Arc::new(std::sync::RwLock::new(app_state));
+
+        // Clone the Arc reference (not the data!) for the thread
+        let state_clone = std::sync::Arc::clone(&shared_state);
+
+        // Spawn UDP receiver in a background task — updates app state in real-time.
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+            rt.block_on(async move {
+                crate::network::udp_receiver::UdpReceiver::start_listening_with_pairing(
+                    state_clone,
+                    pairing_manager_clone,
+                )
+                .await;
+            });
+        });
+
+        // Spawn TCP pairing listener on same port
+        let state_clone_tcp = std::sync::Arc::clone(&shared_state);
+        let tcp_port = {
+            shared_state
+                .read()
+                .unwrap()
+                .config_manager
+                .read()
+                .unwrap()
+                .udp_port
+        };
+        std::thread::spawn(move || {
+            let rt =
+                tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime for TCP");
+            rt.block_on(async move {
+                crate::network::tcp_listener::start_tcp_listener(tcp_port, state_clone_tcp).await;
+            });
+        });
 
         // Initialize AppState with shared state (settings_window already created in default).
         (

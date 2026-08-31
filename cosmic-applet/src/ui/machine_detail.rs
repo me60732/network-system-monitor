@@ -50,6 +50,7 @@ pub fn view(
     let cpu_percent = remote_machine.sensors.cpu.usage_percent;
     let memory_percent = remote_machine.sensors.memory.usage_percent();
     let memory_gb = remote_machine.sensors.memory.used_bytes as f64 / 1_073_741_824.0;
+    let memory_swap_pct = remote_machine.sensors.memory.swap_used_pct;
     let network_rx_kbps = remote_machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
     let network_tx_kbps = remote_machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
     let disk_write_kbps = remote_machine.sensors.disk.write_bytes_per_sec as f64 / 1024.0;
@@ -134,9 +135,20 @@ pub fn view(
                     text("Memory Usage").size(16).into(),
                     row(vec![
                         canvas(ring).width(48).height(48).into(),
-                        text(format!("{:.2} GB ({:.1}%)", memory_gb, memory_percent))
-                            .size(14)
-                            .into(),
+                        column(vec![
+                            text(format!("{:.2} GB ({:.1}%)", memory_gb, memory_percent))
+                                .size(14)
+                                .into(),
+                            if memory_swap_pct > 0.0 {
+                                text(format!("Swap: {:.1}%", memory_swap_pct))
+                                    .size(12)
+                                    .into()
+                            } else {
+                                text("Swap: none").size(12).into()
+                            },
+                        ])
+                        .spacing(4)
+                        .into(),
                     ])
                     .spacing(12)
                     .into(),

@@ -1,13 +1,14 @@
 //! Network interface statistics.
 //!
-//! Collects per-interface RX/TX byte counters using `sysinfo` (which reads from `/proc/net/dev`).
+//! Collects per-interface RX/TX byte counters using `procfs` (which reads from `/proc/net/dev`).
 //! Returns DELTA byte counts since the last collection call. The applet layer uses these directly
 //! as bytes-per-second rates (since collection interval is typically 1 second).
 //!
 //! This matches minimon-applet's collection pattern using `received()` and `transmitted()` deltas.
 
+use procfs::net::dev_status;
 use serde::{Deserialize, Serialize};
-use sysinfo::Networks;
+use std::collections::HashMap;
 
 /// Network statistics for a single interface.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -18,13 +19,13 @@ pub struct InterfaceStat {
     pub rx_bytes: u64,
     /// Total bytes transmitted since boot.
     pub tx_bytes: u64,
-    /// Total packets received since boot (if available from sysinfo).
+    /// Total packets received since boot (if available from procfs).
     pub rx_packets: Option<u64>,
-    /// Total packets transmitted since boot (if available from sysinfo).
+    /// Total packets transmitted since boot (if available from procfs).
     pub tx_packets: Option<u64>,
-    /// Packets dropped on receive (if available from sysinfo).
+    /// Packets dropped on receive (if available from procfs).
     pub rx_dropped: Option<u64>,
-    /// Packets dropped on transmit (if available from sysinfo).
+    /// Packets dropped on transmit (if available from procfs).
     pub tx_dropped: Option<u64>,
 }
 
@@ -37,44 +38,46 @@ pub struct NetworkStats {
 
 /// Stateful network collector that returns per-interval delta byte counts.
 ///
-/// Uses `sysinfo::Networks` which internally tracks old→new values to compute deltas.
+/// Uses `procfs::net::dev_status()` to read `/proc/net/dev` directly.
+/// Tracks previous cumulative byte counts and computes deltas itself (sysinfo was doing this internally — now we do it).
 /// Returns RX/TX bytes transferred since the last call to `collect()` (not cumulative).
 /// The applet layer uses these directly as bytes-per-second rates (collection interval ≈ 1 second).
 /// This matches minimon-applet's collection pattern using `received()` and `transmitted()` deltas.
 #[derive(Debug)]
 pub struct NetworkCollector {
-    /// sysinfo Networks instance - holds current interface data
-    networks: Networks,
+    /// Previous interface byte counts: name -> (rx_bytes, tx_bytes)
+    prev: HashMap<String, (u64, u64)>,
 }
 
 impl NetworkCollector {
     /// Create a new network collector with initial state.
     ///
-    /// Initializes sysinfo Networks.
+    /// Reads current interface bytes to establish baseline.
     pub fn new() -> Self {
-        let networks = Networks::new_with_refreshed_list();
-
-        NetworkCollector { networks }
+        let prev = read_interface_bytes();
+        NetworkCollector { prev }
     }
 
     /// Collect current network interface statistics (delta since last call).
     ///
-    /// Refreshes sysinfo data and returns RX/TX bytes transferred since the previous `collect()` call.
-    /// Uses `received()` and `transmitted()` which return deltas from sysinfo's internal tracking.
+    /// Reads procfs and returns RX/TX bytes transferred since the previous `collect()` call.
+    /// Uses cumulative counters from /proc/net/dev and computes deltas against stored baseline.
     /// Sums ALL interfaces (including loopback — it's negligible on a desktop).
     /// The applet uses these directly as bytes-per-second rates (collection interval ≈ 1 second).
     pub fn collect(&mut self) -> NetworkStats {
-        // Refresh network data (persistent instance, sysinfo tracks old→new internally)
-        self.networks.refresh(true);
+        let current = read_interface_bytes();
 
-        let mut total_rx: u64 = 0;
-        let mut total_tx: u64 = 0;
+        let mut total_rx = 0u64;
+        let mut total_tx = 0u64;
 
-        // Sum ALL interfaces (including loopback — negligible on desktop)
-        for (_, data) in &self.networks {
-            total_rx += data.received(); // delta since last refresh
-            total_tx += data.transmitted(); // delta since last refresh
+        for (name, (rx, tx)) in &current {
+            if let Some((prev_rx, prev_tx)) = self.prev.get(name) {
+                total_rx += rx.saturating_sub(*prev_rx);
+                total_tx += tx.saturating_sub(*prev_tx);
+            }
         }
+
+        self.prev = current;
 
         // Return a single aggregate entry — rx_bytes/tx_bytes are bytes since last collect() call
         NetworkStats {
@@ -89,6 +92,14 @@ impl NetworkCollector {
             }],
         }
     }
+}
+
+fn read_interface_bytes() -> HashMap<String, (u64, u64)> {
+    dev_status()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(name, s)| (name, (s.recv_bytes, s.sent_bytes)))
+        .collect()
 }
 
 #[cfg(test)]

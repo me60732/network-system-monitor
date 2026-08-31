@@ -1,62 +1,65 @@
 //! Memory and swap statistics.
 //!
-//! Collects RAM and swap utilization using the `sysinfo` crate, which reads from
+//! Collects RAM and swap utilization using `procfs`, which reads from
 //! `/proc/meminfo` on Linux. All values are in bytes unless noted otherwise.
 //!
 //! ## Data Flow
 //!
-//! 1. `collect()` creates a fresh [`sysinfo::System`] with all features enabled (`new_all`).
-//! 2. It refreshes memory and swap data via `refresh_memory()`, which reads `/proc/meminfo`.
-//! 3. Total/used/free RAM come from `SystemExt` methods: `total_memory()`, `available_memory()`, `free_memory()`.
-//!    - **Used memory calculation**: Uses sysinfo's `used_memory()` directly (matches Linux "used" semantics)
+//! 1. `collect()` uses `procfs::Meminfo::current()` to read `/proc/meminfo`.
+//! 2. procfs provides values in kilobytes — multiply by 1024 to get bytes.
+//! 3. Total/used/free RAM are computed from procfs fields:
+//!    - **Used memory** = total - available (Linux semantics, matches standard accounting)
+//!    - If `mem_available` is missing, fall back to `mem_free`
 //! 4. Swap usage percentage is computed as `(swap_used / swap_total) * 100.0`, or 0.0 if no swap exists.
-//!
-//! ## Memory Calculation Notes
-//!
-//! On Linux, "used memory" = total - available (where available includes reclaimable cache/buffer).
-//! sysinfo's `used_memory()` computes this internally and returns the same value.
 
+use procfs::{Current, Meminfo};
 use serde::{Deserialize, Serialize};
-use sysinfo::System;
 
 /// Memory and swap utilization statistics.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MemoryStats {
     /// Total physical RAM in bytes.
     pub total: u64,
-    /// Currently used RAM in bytes (sysinfo's used_memory()).
+    /// Currently used RAM in bytes (total - available).
     pub used: u64,
     /// Completely free/unused RAM in bytes.
     pub free: u64,
     /// Available RAM in bytes (includes reclaimable cache/buffer), for Linux semantics.
     pub available: u64,
+    /// Total swap space in bytes.
+    pub swap_total: u64,
+    /// Free swap space in bytes.
+    pub swap_free: u64,
     /// Swap usage as a percentage of total swap space (0.0–100.0).
-    pub swap_used: f32,
+    pub swap_used_percent: f32,
 }
 
 /// Collect current memory statistics.
 ///
-/// Uses `sysinfo::System` to read `/proc/meminfo` and report RAM and swap utilization.
+/// Uses `procfs::Meminfo` to read `/proc/meminfo` and report RAM and swap utilization.
 /// All byte values are in bytes. `swap_used` is a percentage (0.0–100.0) representing
 /// how much of total swap space is currently in use; returns 0.0 if no swap partition exists.
 ///
 /// ## Memory Calculation Notes
 ///
-/// **Used memory** = sysinfo's `used_memory()` which computes total - available on Linux.
+/// **Used memory** = total - available (where available includes reclaimable cache/buffer).
 /// This matches standard Linux semantics where "used" includes reclaimable cache/buffer memory.
 pub fn collect() -> MemoryStats {
-    let sys = System::new_all();
+    let m = match Meminfo::current() {
+        Ok(mem) => mem,
+        Err(_) => return MemoryStats::default(),
+    };
 
-    let total = sys.total_memory();
-    let free = sys.free_memory();
-    // Use sysinfo's used_memory() directly (it computes total - available internally)
-    let used = sys.used_memory();
-    let available = sys.available_memory();
+    // procfs Meminfo fields are in bytes on this platform — no conversion needed.
+    let total = m.mem_total;
+    let available = m.mem_available.unwrap_or(m.mem_free);
+    let used = total.saturating_sub(available);
+    let free = m.mem_free;
 
-    let swap_total = sys.total_swap();
-    let swap_used_bytes = sys.used_swap();
+    let swap_total = m.swap_total;
+    let swap_free = m.swap_free;
     let swap_used_percent = if swap_total > 0 {
-        ((swap_used_bytes as f64 / swap_total as f64) * 100.0) as f32
+        ((swap_total.saturating_sub(swap_free)) as f64 / swap_total as f64 * 100.0) as f32
     } else {
         0.0
     };
@@ -66,7 +69,9 @@ pub fn collect() -> MemoryStats {
         used,
         free,
         available,
-        swap_used: swap_used_percent,
+        swap_total,
+        swap_free,
+        swap_used_percent,
     }
 }
 
@@ -87,7 +92,7 @@ mod tests {
     fn test_swap_usage_within_bounds() {
         let stats = collect();
         // If there's no swap, percentage is 0.0; otherwise it should be 0–100%.
-        assert!(stats.swap_used >= 0.0 && stats.swap_used <= 100.0);
+        assert!(stats.swap_used_percent >= 0.0 && stats.swap_used_percent <= 100.0);
     }
 
     /// Total memory must be positive on any running Linux system.

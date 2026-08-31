@@ -48,43 +48,40 @@ pub fn request_pairing(
     stream.set_read_timeout(Some(Duration::from_secs(120))).ok();
     stream.set_write_timeout(Some(Duration::from_secs(10))).ok();
 
-    let hello = serde_json::json!({
-        "type": "hello",
-        "machine_id": machine_id,
-        "sender_pubkey": hex::encode(sender_x25519_pubkey),
-    });
+    let hello = format!(
+        r#"{{"type":"hello","machine_id":"{}","sender_pubkey":"{}"}}"#,
+        machine_id,
+        hex::encode(sender_x25519_pubkey)
+    );
 
-    if let Err(e) = write_message(&mut stream, &hello.to_string()) {
+    if let Err(e) = write_message(&mut stream, &hello) {
         return PairingResult::Failed(format!("Failed to send PairingHello: {}", e));
     }
 
     log::info!("⏳ Waiting for user to accept/deny pairing in the receiver UI (up to 120s)...");
 
     match read_message(&mut stream) {
-        Ok(msg) => match serde_json::from_str::<serde_json::Value>(&msg) {
-            Ok(v) => match v.get("type").and_then(|t| t.as_str()) {
-                Some("accept") => {
-                    let pubkey = v
-                        .get("receiver_pubkey")
-                        .and_then(|p| p.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    if pubkey.len() != 64 {
-                        return PairingResult::Failed(
-                            "Invalid receiver_pubkey length in accept".into(),
-                        );
-                    }
-                    log::info!("✅ Pairing accepted by receiver");
-                    PairingResult::Accepted(pubkey)
+        Ok(msg) => {
+            if msg.contains(r#""type":"accept""#) {
+                // extract receiver_pubkey with a simple find
+                let pubkey = extract_json_str(&msg, "receiver_pubkey").unwrap_or_default();
+                if pubkey.len() != 64 {
+                    return PairingResult::Failed(
+                        "Invalid receiver_pubkey length in accept".into(),
+                    );
                 }
-                Some("deny") => {
-                    log::info!("❌ Pairing denied by receiver");
-                    PairingResult::Denied
-                }
-                other => PairingResult::Failed(format!("Unexpected response type: {:?}", other)),
-            },
-            Err(e) => PairingResult::Failed(format!("JSON parse error: {}", e)),
-        },
+                log::info!("✅ Pairing accepted by receiver");
+                PairingResult::Accepted(pubkey)
+            } else if msg.contains(r#""type":"deny""#) {
+                log::info!("❌ Pairing denied by receiver");
+                PairingResult::Denied
+            } else {
+                PairingResult::Failed(format!(
+                    "Unexpected response: {}",
+                    &msg[..msg.len().min(80)]
+                ))
+            }
+        }
         Err(e) => PairingResult::Failed(format!("Failed to read response: {}", e)),
     }
 }
@@ -152,38 +149,33 @@ pub fn request_key_rotation(
         Err(e) => return PairingResult::Failed(format!("Encryption failed: {}", e)),
     };
 
-    let rotate_msg = serde_json::json!({
-        "type": "rotate",
-        "machine_id": machine_id,
-        "nonce": hex::encode(&nonce_bytes),
-        "ciphertext": hex::encode(&ciphertext),
-    });
+    let rotate_msg = format!(
+        r#"{{"type":"rotate","machine_id":"{}","nonce":"{}","ciphertext":"{}"}}"#,
+        machine_id,
+        hex::encode(&nonce_bytes),
+        hex::encode(&ciphertext)
+    );
 
-    if let Err(e) = write_message(&mut stream, &rotate_msg.to_string()) {
+    if let Err(e) = write_message(&mut stream, &rotate_msg) {
         return PairingResult::Failed(format!("Failed to send KeyRotation: {}", e));
     }
 
     match read_message(&mut stream) {
-        Ok(msg) => match serde_json::from_str::<serde_json::Value>(&msg) {
-            Ok(v) => match v.get("type").and_then(|t| t.as_str()) {
-                Some("rotated") => {
-                    log::info!("✅ Key rotation accepted by receiver");
-                    PairingResult::Accepted(String::new()) // pubkey not needed for rotation
-                }
-                Some("rotation_denied") => {
-                    let reason = v
-                        .get("reason")
-                        .and_then(|r| r.as_str())
-                        .unwrap_or("unknown");
-                    log::warn!("❌ Key rotation denied: {}", reason);
-                    PairingResult::Denied
-                }
-                other => {
-                    PairingResult::Failed(format!("Unexpected rotation response: {:?}", other))
-                }
-            },
-            Err(e) => PairingResult::Failed(format!("JSON parse error: {}", e)),
-        },
+        Ok(msg) => {
+            if msg.contains(r#""type":"rotated""#) {
+                log::info!("✅ Key rotation accepted by receiver");
+                PairingResult::Accepted(String::new()) // pubkey not needed for rotation
+            } else if msg.contains(r#""type":"rotation_denied""#) {
+                let reason = extract_json_str(&msg, "reason").unwrap_or_else(|| "unknown".into());
+                log::warn!("❌ Key rotation denied: {}", reason);
+                PairingResult::Denied
+            } else {
+                PairingResult::Failed(format!(
+                    "Unexpected rotation response: {}",
+                    &msg[..msg.len().min(80)]
+                ))
+            }
+        }
         Err(e) => PairingResult::Failed(format!("Failed to read response: {}", e)),
     }
 }
@@ -208,4 +200,20 @@ fn write_message(stream: &mut TcpStream, json: &str) -> Result<(), std::io::Erro
     stream.write_all(&len.to_be_bytes())?;
     stream.write_all(bytes)?;
     stream.flush()
+}
+
+/// Extract a string value from a flat JSON object by key.
+/// Finds `"key":"value"` or `"key": "value"` and returns value.
+fn extract_json_str(json: &str, key: &str) -> Option<String> {
+    let needle = format!(r#""{}""#, key);
+    let key_pos = json.find(&needle)?;
+    let after_key = &json[key_pos + needle.len()..];
+    let colon_pos = after_key.find(':')?;
+    let after_colon = after_key[colon_pos + 1..].trim_start();
+    if !after_colon.starts_with('"') {
+        return None;
+    }
+    let inner = &after_colon[1..];
+    let end = inner.find('"')?;
+    Some(inner[..end].to_string())
 }
