@@ -77,8 +77,9 @@ pub fn view(
 
     // Show the compact panel widget (shows what's currently visible with charts)
     // Pass sensor_config from machine_config, not full minimon_config
+    let display = crate::ui::panel_widget::GlobalDisplayConfig::from_minimon(minimon_config);
     let panel_widget =
-        PanelWidget::view_single_machine(remote_machine, &content_order, &sensor_config);
+        PanelWidget::view_single_machine(remote_machine, &content_order, &sensor_config, &display);
 
     // Build detail sections for enabled sensors NOT visible in panel
     let mut metrics_items: Vec<Element<'static, AppMessage>> =
@@ -397,7 +398,7 @@ pub fn view(
     let scrollable_content = scrollable(content).height(Length::Shrink);
 
     container(scrollable_content)
-        .width(Length::Fixed(430.0))
+        .width(Length::Shrink)
         .max_height(600.0)
         .into()
 }

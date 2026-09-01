@@ -1904,11 +1904,13 @@ impl Application for PanelApplet {
         };
 
         // Panel always shows local machine sensor readings
+        let display = crate::ui::panel_widget::GlobalDisplayConfig::from_minimon(&minimon_config);
         let inner: Element<'_, Self::Message> =
             crate::ui::panel_widget::PanelWidget::view_from_machines(
                 &[local_machine],
                 &minimon_config.content_order,
                 &minimon_config.sensor_config, // local machine's sensor config
+                &display,
             );
 
         // Add pending pairing badge if needed
@@ -2017,6 +2019,7 @@ impl Application for PanelApplet {
                     &local_machine_name,
                     &minimon_config.sensor_config, // for local machine
                     &config,
+                    &minimon_config,
                 )
             }
             View::MachineSensorConfig(ref machine_name) => {

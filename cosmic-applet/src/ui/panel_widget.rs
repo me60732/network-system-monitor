@@ -10,6 +10,24 @@ const GPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-gpu";
 const NETWORK_ICON: &str = "io.github.cosmic_utils.minimon-applet-network";
 const DISK_ICON: &str = "drive-harddisk-symbolic";
 
+/// Global display settings threaded into all render helpers.
+#[derive(Clone, Copy)]
+pub struct GlobalDisplayConfig {
+    pub value_size: u16,
+    pub monospace: bool,
+    pub spacing: u16,
+}
+
+impl GlobalDisplayConfig {
+    pub fn from_minimon(config: &crate::minimon_config::MinimonConfig) -> Self {
+        Self {
+            value_size: config.value_size_default,
+            monospace: config.monospace_values,
+            spacing: config.panel_spacing,
+        }
+    }
+}
+
 /// PanelWidget namespace for rendering methods
 pub struct PanelWidget;
 
@@ -19,6 +37,7 @@ impl PanelWidget {
         machines: &[crate::remote_machine::RemoteMachine],
         content_order: &ContentOrder,
         sensor_config: &crate::minimon_config::MachineSensorConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         // Aggregate metrics from all machines (simple average for now)
         let mut total_cpu = 0.0;
@@ -117,23 +136,28 @@ impl PanelWidget {
                     avg_cpu_temp,
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
+                    display,
                 ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
-                ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(&avg_memory_data, &sensor_config.memory)
-                }
+                ContentType::MemoryUsage => Self::render_memory_metric_with_data(
+                    &avg_memory_data,
+                    &sensor_config.memory,
+                    display,
+                ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     avg_gpu_temp,
                     &avg_gpu_data,
                     &sensor_config.gpu,
+                    display,
                 ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
                 }
                 ContentType::DiskUsage => Self::render_disk_metric(
                     avg_disk_write_kbps,
                     avg_disk_read_kbps,
                     &sensor_config.disks1,
+                    display,
                 ),
             };
             log::debug!("    → Added to metrics_items");
@@ -143,7 +167,7 @@ impl PanelWidget {
         log::debug!("Total panel items rendered: {}", metrics_items.len());
 
         let metrics_row = row(metrics_items)
-            .spacing(8)
+            .spacing(2 + display.spacing * 2)
             .padding([4, 8])
             .align_y(cosmic::iced::Alignment::Center);
 
@@ -156,6 +180,7 @@ impl PanelWidget {
         content_order: &ContentOrder,
         sensor_config: &crate::minimon_config::MachineSensorConfig,
         on_click: AppMessage,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
@@ -191,28 +216,35 @@ impl PanelWidget {
                     cpu_temp,
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
+                    display,
                 ),
                 ContentType::CpuTemp => continue, // handled inside render_cpu_with_temp
-                ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(memory_data, &sensor_config.memory)
-                }
+                ContentType::MemoryUsage => Self::render_memory_metric_with_data(
+                    memory_data,
+                    &sensor_config.memory,
+                    display,
+                ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     gpu_temp,
                     &machine.sensors.gpu,
                     &sensor_config.gpu,
+                    display,
                 ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
                 }
-                ContentType::DiskUsage => {
-                    Self::render_disk_metric(disk_write_kbps, disk_read_kbps, &sensor_config.disks1)
-                }
+                ContentType::DiskUsage => Self::render_disk_metric(
+                    disk_write_kbps,
+                    disk_read_kbps,
+                    &sensor_config.disks1,
+                    display,
+                ),
             };
             metrics_items.push(element);
         }
 
         let metrics_row = row(metrics_items)
-            .spacing(8)
+            .spacing(2 + display.spacing * 2)
             .padding([4, 8])
             .align_y(cosmic::iced::Alignment::Center);
 
@@ -228,6 +260,7 @@ impl PanelWidget {
         machine: &crate::remote_machine::RemoteMachine,
         content_order: &ContentOrder,
         sensor_config: &crate::minimon_config::MachineSensorConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
@@ -263,28 +296,35 @@ impl PanelWidget {
                     cpu_temp,
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
+                    display,
                 ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
-                ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(memory_data, &sensor_config.memory)
-                }
+                ContentType::MemoryUsage => Self::render_memory_metric_with_data(
+                    memory_data,
+                    &sensor_config.memory,
+                    display,
+                ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     gpu_temp,
                     &machine.sensors.gpu,
                     &sensor_config.gpu,
+                    display,
                 ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
                 }
-                ContentType::DiskUsage => {
-                    Self::render_disk_metric(disk_write_kbps, disk_read_kbps, &sensor_config.disks1)
-                }
+                ContentType::DiskUsage => Self::render_disk_metric(
+                    disk_write_kbps,
+                    disk_read_kbps,
+                    &sensor_config.disks1,
+                    display,
+                ),
             };
             metrics_items.push(element);
         }
 
         row(metrics_items)
-            .spacing(8)
+            .spacing(2 + display.spacing * 2)
             .padding([4, 8])
             .align_y(cosmic::iced::Alignment::Center)
             .into()
@@ -296,6 +336,7 @@ impl PanelWidget {
         temp: f32,
         cpu_config: &crate::minimon_config::CpuConfig,
         temp_config: &crate::minimon_config::CpuTempConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -306,7 +347,11 @@ impl PanelWidget {
 
         // Show label if either config wants it
         if cpu_config.label_visible() {
-            items.push(text("CPU").size(11).into());
+            let mut cpu_text = text("CPU").size(display.value_size);
+            if display.monospace {
+                cpu_text = cpu_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(cpu_text.into());
         }
 
         // Always render CPU usage chart
@@ -321,13 +366,14 @@ impl PanelWidget {
             }
             let temp_percent = (temp / 100.0).clamp(0.0, 1.0) * 100.0;
             let temp_colors = ChartColors::new(DeviceKind::CpuTemp, ChartKind::Ring);
+            // Note: font override not applied to ring text (canvas-rendered)
             let temp_ring =
                 RingChart::new_with_text(temp_percent, &format!("{}°", temp as i32), &temp_colors);
             items.push(canvas(temp_ring).width(36).height(36).into());
         }
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }
@@ -348,6 +394,7 @@ impl PanelWidget {
     fn render_memory_metric_with_data(
         data: &crate::simple_sensors::MemoryData,
         config: &crate::minimon_config::MemoryConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -356,7 +403,11 @@ impl PanelWidget {
         }
 
         if config.label_visible() {
-            items.push(text("MEM").size(11).into());
+            let mut mem_text = text("MEM").size(display.value_size);
+            if display.monospace {
+                mem_text = mem_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(mem_text.into());
         }
 
         // Check percentage config to determine text format
@@ -369,13 +420,14 @@ impl PanelWidget {
             // Display GB used as text inside ring (not percentage)
             let used_gb = data.used_bytes as f64 / 1_073_741_824.0;
             let colors = ChartColors::new(DeviceKind::Memory, ChartKind::Ring);
+            // Note: font override not applied to ring text (canvas-rendered)
             let ring =
                 RingChart::new_with_text(data.usage_percent(), &Self::fmt_ring(used_gb), &colors);
             items.push(canvas(ring).width(36).height(36).into());
         }
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }
@@ -385,6 +437,7 @@ impl PanelWidget {
     fn render_memory_metric(
         value: f32,
         config: &crate::minimon_config::MemoryConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -393,7 +446,11 @@ impl PanelWidget {
         }
 
         if config.label_visible() {
-            items.push(text("MEM").size(11).into());
+            let mut mem_text = text("MEM").size(display.value_size);
+            if display.monospace {
+                mem_text = mem_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(mem_text.into());
         }
 
         // Always render chart when sensor is shown
@@ -402,7 +459,7 @@ impl PanelWidget {
         items.push(canvas(ring).width(36).height(36).into());
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }
@@ -412,6 +469,7 @@ impl PanelWidget {
         temp: f32,
         gpu_data: &crate::simple_sensors::GpuData,
         gpu_config: &crate::minimon_config::GpuConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -426,13 +484,18 @@ impl PanelWidget {
         }
 
         if show_label {
-            items.push(text("GPU").size(11).into());
+            let mut gpu_text = text("GPU").size(display.value_size);
+            if display.monospace {
+                gpu_text = gpu_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(gpu_text.into());
         }
 
         // Render temp chart if enabled
         if show_temp {
             let temp_percent = (temp / 100.0).clamp(0.0, 1.0) * 100.0;
             let temp_colors = ChartColors::new(DeviceKind::GpuTemp, ChartKind::Ring);
+            // Note: font override not applied to ring text (canvas-rendered)
             let temp_ring =
                 RingChart::new_with_text(temp_percent, &format!("{}°", temp as i32), &temp_colors);
             items.push(canvas(temp_ring).width(36).height(36).into());
@@ -462,6 +525,7 @@ impl PanelWidget {
             } else {
                 // Display GB used as text inside ring (not percentage)
                 let vram_gb = gpu_data.vram_used_bytes as f64 / 1_073_741_824.0;
+                // Note: font override not applied to ring text (canvas-rendered)
                 let vram_ring =
                     RingChart::new_with_text(vram_percent, &Self::fmt_ring(vram_gb), &vram_colors);
                 items.push(canvas(vram_ring).width(36).height(36).into());
@@ -469,7 +533,7 @@ impl PanelWidget {
         }
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }
@@ -479,6 +543,7 @@ impl PanelWidget {
         rx_kbps: f64,
         tx_kbps: f64,
         config: &crate::minimon_config::NetworkConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -487,7 +552,11 @@ impl PanelWidget {
         }
 
         if config.label_visible() {
-            items.push(text("NET").size(11).into());
+            let mut net_text = text("NET").size(display.value_size);
+            if display.monospace {
+                net_text = net_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(net_text.into());
         }
 
         use cosmic::widget::column;
@@ -496,15 +565,29 @@ impl PanelWidget {
 
         items.push(
             column(vec![
-                text(format!("↓{}", rx_formatted)).size(9).into(),
-                text(format!("↑{}", tx_formatted)).size(9).into(),
+                {
+                    let mut rx_text = text(format!("↓{}", rx_formatted))
+                        .size(display.value_size.saturating_sub(2).max(7));
+                    if display.monospace {
+                        rx_text = rx_text.font(cosmic::iced::Font::MONOSPACE);
+                    }
+                    rx_text.into()
+                },
+                {
+                    let mut tx_text = text(format!("↑{}", tx_formatted))
+                        .size(display.value_size.saturating_sub(2).max(7));
+                    if display.monospace {
+                        tx_text = tx_text.font(cosmic::iced::Font::MONOSPACE);
+                    }
+                    tx_text.into()
+                },
             ])
             .spacing(1)
             .into(),
         );
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }
@@ -514,6 +597,7 @@ impl PanelWidget {
         write_kbps: f64,
         read_kbps: f64,
         config: &crate::minimon_config::DisksConfig,
+        display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -522,7 +606,11 @@ impl PanelWidget {
         }
 
         if config.label_visible() {
-            items.push(text("DSK").size(11).into());
+            let mut dsk_text = text("DSK").size(display.value_size);
+            if display.monospace {
+                dsk_text = dsk_text.font(cosmic::iced::Font::MONOSPACE);
+            }
+            items.push(dsk_text.into());
         }
 
         use cosmic::widget::column;
@@ -531,15 +619,29 @@ impl PanelWidget {
 
         items.push(
             column(vec![
-                text(format!("W{}", write_formatted)).size(9).into(),
-                text(format!("R{}", read_formatted)).size(9).into(),
+                {
+                    let mut write_text = text(format!("W{}", write_formatted))
+                        .size(display.value_size.saturating_sub(2).max(7));
+                    if display.monospace {
+                        write_text = write_text.font(cosmic::iced::Font::MONOSPACE);
+                    }
+                    write_text.into()
+                },
+                {
+                    let mut read_text = text(format!("R{}", read_formatted))
+                        .size(display.value_size.saturating_sub(2).max(7));
+                    if display.monospace {
+                        read_text = read_text.font(cosmic::iced::Font::MONOSPACE);
+                    }
+                    read_text.into()
+                },
             ])
             .spacing(1)
             .into(),
         );
 
         row(items)
-            .spacing(4)
+            .spacing(display.spacing.max(2))
             .align_y(cosmic::iced::Alignment::Center)
             .into()
     }

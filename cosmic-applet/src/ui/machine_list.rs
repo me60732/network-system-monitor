@@ -2,7 +2,7 @@
 //!
 //! Displays a row for each machine with its full sensor panel, and a settings button at the bottom.
 
-use crate::minimon_config::{ContentOrder, MachineSensorConfig};
+use crate::minimon_config::{ContentOrder, MachineSensorConfig, MinimonConfig};
 use crate::ui::PanelWidget;
 use crate::{AppMessage, remote_machine::RemoteMachine};
 use cosmic::Element;
@@ -16,6 +16,7 @@ pub fn view(
     local_machine_name: &str,
     local_sensor_config: &MachineSensorConfig,
     config_manager: &crate::config::manager::ConfigManager,
+    minimon_config: &MinimonConfig,
 ) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<'static, AppMessage>> = Vec::new();
 
@@ -69,7 +70,8 @@ pub fn view(
                 .map(|m| m.sensor_config.clone())
                 .unwrap_or_default()
         };
-        let machine_row = create_machine_row(machine, content_order, &sensor_config);
+        let display = crate::ui::panel_widget::GlobalDisplayConfig::from_minimon(minimon_config);
+        let machine_row = create_machine_row(machine, content_order, &sensor_config, &display);
         items.push(machine_row);
         items.push(divider::horizontal::default().into());
     }
@@ -79,7 +81,7 @@ pub fn view(
     let scrollable_content = scrollable(content).height(Length::Shrink);
 
     container(scrollable_content)
-        .width(Length::Fixed(430.0))
+        .width(Length::Shrink)
         .max_height(600.0)
         .into()
 }
@@ -89,6 +91,7 @@ fn create_machine_row(
     machine: &RemoteMachine,
     content_order: &ContentOrder,
     sensor_config: &MachineSensorConfig,
+    display: &crate::ui::panel_widget::GlobalDisplayConfig,
 ) -> Element<'static, AppMessage> {
     let machine_name = machine.name.clone();
 
@@ -98,6 +101,7 @@ fn create_machine_row(
         content_order,
         sensor_config,
         AppMessage::OpenMachineDetail(machine_name.clone()),
+        display,
     );
 
     // Build the row with machine name above the sensor panel
