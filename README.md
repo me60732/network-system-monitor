@@ -41,33 +41,25 @@ Both machines must be on the same local network. All communication is over UDP p
 
 ## Installation
 
-### Desktop machine (the one with COSMIC)
+### One-line installer (recommended)
+
+Run this on **every machine** — desktop and remote alike. The script asks what to install (sender / receiver / both) and whether to use a pre-built binary or compile from source. If building from source it installs Rust automatically.
 
 ```bash
-git clone https://github.com/me60732/network-system-monitor.git
-cd network-system-monitor
-
-# Build and install the applet
-bash cosmic-applet/install-local.sh
+curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash
 ```
 
-Right-click the COSMIC panel → **Add Applet** → **Network System Monitor**.
+> **Note:** use `curl … | sudo bash`, not `sudo curl … | bash` — the pipe spawns a new shell, so `sudo` must be on `bash` or the script won't have root.
 
-### Each remote machine you want to monitor
+What the script does:
+1. Asks **what to install** — `sender` (nmd-service, for remote machines), `receiver` (cosmic-applet, for your desktop), or `both`
+2. Asks **how to install** — pre-built binary from GitHub Releases, or compile from source
+3. If compiling from source, installs Rust via `rustup` if it isn't already present
+4. Installs the chosen component and (for the sender) configures `/etc/nmd/config.toml`
 
-```bash
-git clone https://github.com/me60732/network-system-monitor.git
-cd network-system-monitor/nmd-service
+After installing on your desktop, right-click the COSMIC panel → **Add Applet** → **Network System Monitor**.
 
-sudo bash install-scripts/install.sh
-```
-
-The install script will:
-1. Ask for your desktop machine's IP address and a name for this machine
-2. Build and install `nmd-service` as a systemd unit
-3. Start sending metrics immediately
-
-On first contact the applet shows a **pairing request** — accept it to complete setup. The X25519 public key exchange happens automatically over TCP; after pairing all traffic is encrypted UDP.
+On first contact from a remote machine the applet shows a **pairing request** — accept it. The X25519 key exchange happens automatically over TCP; after that all traffic is encrypted UDP.
 
 ---
 
