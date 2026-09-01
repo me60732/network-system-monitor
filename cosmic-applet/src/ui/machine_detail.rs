@@ -33,7 +33,7 @@ pub fn view(
     let cpu_temp_chart_visible = sensor_config.cputemp.chart_visible();
     let memory_chart_visible = sensor_config.memory.chart_visible();
     let network_chart_visible = sensor_config.network1.chart_visible();
-    let _disk_chart_visible = false; // Disk doesn't have panel chart yet
+    let disk_chart_visible = sensor_config.disks1.chart_visible();
 
     // Fix GPU visibility: use three independent booleans instead of one combined check
     let gpu_load_chart_visible = sensor_config.gpu.usage.chart_visible();
@@ -190,88 +190,94 @@ pub fn view(
         );
     }
 
-    // Disk detail (disk has no chart in the row so always shows in detail)
-    {
-        let mut disk_items: Vec<Element<'static, AppMessage>> = vec![];
-
-        // Header "Disk Load"
-        disk_items.push(text("Disk Load").size(16).into());
-
-        // Rate column (write/read) with adaptive unit scaling
+    // Disk W/R throughput (shown in detail whenever NOT visible as chart in the row)
+    if !disk_chart_visible {
         let write_formatted = crate::utils::formatting::format_throughput_adaptive(disk_write_kbps);
         let read_formatted = crate::utils::formatting::format_throughput_adaptive(disk_read_kbps);
 
-        disk_items.push(
-            column(vec![
-                text(format!("W {}", write_formatted)).size(14).into(),
-                text(format!("R {}", read_formatted)).size(14).into(),
-            ])
-            .spacing(4)
-            .into(),
-        );
-
-        // Add partition information if any exist
-        if !disk_partitions.is_empty() {
-            disk_items.push(text("Partitions").size(14).into());
-            for partition in disk_partitions {
-                let used_gb = partition.used as f64 / 1_073_741_824.0;
-                let total_gb = partition.total as f64 / 1_073_741_824.0;
-                let used_percent = if partition.total > 0 {
-                    (partition.used as f64 / partition.total as f64) * 100.0
-                } else {
-                    0.0
-                };
-
-                disk_items.push(
+        metrics_items.push(
+            container(
+                column(vec![
+                    text("Disk Load").size(16).into(),
                     column(vec![
-                        row(vec![
-                            text(partition.mount.clone()).size(12).into(),
-                            text(format!(
-                                "{:.1}GB / {:.1}GB ({:.1}%)",
-                                used_gb, total_gb, used_percent
-                            ))
-                            .size(12)
-                            .into(),
-                        ])
-                        .spacing(8)
-                        .into(),
-                        container(
-                            row(vec![
-                                container(text("").size(1))
-                                    .width(Length::FillPortion((used_percent * 100.0) as u16))
-                                    .height(Length::Fixed(16.0))
-                                    .style(move |_theme| cosmic::iced::widget::container::Style {
-                                        background: Some(cosmic::iced::Background::Color(
-                                            cosmic::iced::Color::from_rgb(0.8, 0.2, 0.2),
-                                        )),
-                                        ..Default::default()
-                                    })
-                                    .into(),
-                                container(text("").size(1))
-                                    .width(Length::FillPortion(
-                                        ((100.0 - used_percent) * 100.0) as u16,
-                                    ))
-                                    .height(Length::Fixed(16.0))
-                                    .style(move |_theme| cosmic::iced::widget::container::Style {
-                                        background: Some(cosmic::iced::Background::Color(
-                                            cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
-                                        )),
-                                        ..Default::default()
-                                    })
-                                    .into(),
-                            ])
-                            .spacing(0),
-                        )
-                        .width(Length::Fill)
-                        .into(),
+                        text(format!("W {}", write_formatted)).size(14).into(),
+                        text(format!("R {}", read_formatted)).size(14).into(),
                     ])
                     .spacing(4)
                     .into(),
-                );
-            }
+                ])
+                .spacing(8),
+            )
+            .padding(16)
+            .into(),
+        );
+    }
+
+    // Disk partitions (always shown — never appears in the machine row)
+    if !disk_partitions.is_empty() {
+        let mut partition_items: Vec<Element<'static, AppMessage>> = vec![];
+        partition_items.push(text("Partitions").size(16).into());
+
+        for partition in disk_partitions {
+            let used_gb = partition.used as f64 / 1_073_741_824.0;
+            let total_gb = partition.total as f64 / 1_073_741_824.0;
+            let used_percent = if partition.total > 0 {
+                (partition.used as f64 / partition.total as f64) * 100.0
+            } else {
+                0.0
+            };
+
+            partition_items.push(
+                column(vec![
+                    row(vec![
+                        text(partition.mount.clone()).size(12).into(),
+                        text(format!(
+                            "{:.1}GB / {:.1}GB ({:.1}%)",
+                            used_gb, total_gb, used_percent
+                        ))
+                        .size(12)
+                        .into(),
+                    ])
+                    .spacing(8)
+                    .into(),
+                    container(
+                        row(vec![
+                            container(text("").size(1))
+                                .width(Length::FillPortion((used_percent * 100.0) as u16))
+                                .height(Length::Fixed(16.0))
+                                .style(move |_theme| cosmic::iced::widget::container::Style {
+                                    background: Some(cosmic::iced::Background::Color(
+                                        cosmic::iced::Color::from_rgb(0.8, 0.2, 0.2),
+                                    )),
+                                    ..Default::default()
+                                })
+                                .into(),
+                            container(text("").size(1))
+                                .width(Length::FillPortion(((100.0 - used_percent) * 100.0) as u16))
+                                .height(Length::Fixed(16.0))
+                                .style(move |_theme| cosmic::iced::widget::container::Style {
+                                    background: Some(cosmic::iced::Background::Color(
+                                        cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
+                                    )),
+                                    ..Default::default()
+                                })
+                                .into(),
+                        ])
+                        .spacing(0),
+                    )
+                    .width(Length::Fill)
+                    .into(),
+                ])
+                .spacing(4)
+                .into(),
+            );
         }
 
-        metrics_items.push(container(column(disk_items).spacing(8)).padding(16).into());
+        metrics_items.push(
+            container(column(partition_items).spacing(8))
+                .padding(16)
+                .into(),
+        );
     }
 
     // GPU detail sections (replace single block with three independent checks)

@@ -9,9 +9,10 @@
 use procfs::mounts;
 use rustix::fs::statvfs;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ffi::CString;
 use std::io::BufRead;
+use std::os::unix::fs::MetadataExt;
 
 /// Disk partition statistics for one mount point.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -220,6 +221,7 @@ impl DiskIoCollector {
 pub fn collect() -> DiskStats {
     let mount_list = mounts().unwrap_or_default();
     let mut partitions = Vec::new();
+    let mut seen_devices: HashSet<u64> = HashSet::new();
 
     for entry in mount_list {
         // Only real filesystems — skip tmpfs, sysfs, proc, devtmpfs, etc.
@@ -244,11 +246,28 @@ pub fn collect() -> DiskStats {
                 | "fusectl"
                 | "efivarfs"
                 | "autofs"
+                | "squashfs"    // snap packages
+                | "overlay"     // docker/container layers
+                | "snapfuse"    // snap (fuse variant)
+                | "fuse.snapfuse" // snap (fuse variant, alternate name)
         ) {
             continue;
         }
 
         let mount_point = entry.fs_file.clone();
+
+        // Deduplicate by device number — bind mounts and sub-directory mounts
+        // share the same st_dev as their parent partition, so we keep only the
+        // first (primary) mount point seen for each underlying block device.
+        // /proc/mounts lists mounts in mount order, so "/" always comes before
+        // bind-mounted subdirectories like "/tmp" or "/var/lib/something".
+        let dev = match std::fs::metadata(&mount_point) {
+            Ok(m) => m.dev(),
+            Err(_) => continue,
+        };
+        if !seen_devices.insert(dev) {
+            continue;
+        }
 
         // Call statvfs on the mount point
         let cpath = match CString::new(mount_point.as_bytes()) {

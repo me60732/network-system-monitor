@@ -8,6 +8,7 @@ const TEMP_ICON: &str = "io.github.cosmic_utils.minimon-applet-temperature";
 const RAM_ICON: &str = "io.github.cosmic_utils.minimon-applet-ram";
 const GPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-gpu";
 const NETWORK_ICON: &str = "io.github.cosmic_utils.minimon-applet-network";
+const DISK_ICON: &str = "drive-harddisk-symbolic";
 
 /// PanelWidget namespace for rendering methods
 pub struct PanelWidget;
@@ -60,6 +61,16 @@ impl PanelWidget {
         let rx_kbps = total_rx / 1024.0;
         let tx_kbps = total_tx / 1024.0;
 
+        // Calculate average disk data
+        let mut total_disk_write = 0.0f64;
+        let mut total_disk_read = 0.0f64;
+        for machine in machines {
+            total_disk_write += machine.sensors.disk.write_bytes_per_sec as f64;
+            total_disk_read += machine.sensors.disk.read_bytes_per_sec as f64;
+        }
+        let avg_disk_write_kbps = total_disk_write / 1024.0;
+        let avg_disk_read_kbps = total_disk_read / 1024.0;
+
         // Calculate average GPU data for VRAM bytes display
         let mut total_vram_used = 0u64;
         let mut total_vram_total = 0u64;
@@ -91,7 +102,7 @@ impl PanelWidget {
                 ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
                 ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
                 ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
-                ContentType::DiskUsage => false, // Not implemented yet
+                ContentType::DiskUsage => sensor_config.disks1.chart_visible(),
             };
 
             log::debug!("  {:?} - should_render={}", content_type, should_render);
@@ -119,9 +130,11 @@ impl PanelWidget {
                 ContentType::NetworkUsage => {
                     Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
-                ContentType::DiskUsage => {
-                    continue; // Already filtered above but keep for safety
-                }
+                ContentType::DiskUsage => Self::render_disk_metric(
+                    avg_disk_write_kbps,
+                    avg_disk_read_kbps,
+                    &sensor_config.disks1,
+                ),
             };
             log::debug!("    → Added to metrics_items");
             metrics_items.push(element);
@@ -151,6 +164,8 @@ impl PanelWidget {
         let gpu_temp = machine.sensors.gpu.gpu_temp.unwrap_or(0.0);
         let rx_kbps = machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
         let tx_kbps = machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
+        let disk_write_kbps = machine.sensors.disk.write_bytes_per_sec as f64 / 1024.0;
+        let disk_read_kbps = machine.sensors.disk.read_bytes_per_sec as f64 / 1024.0;
 
         // Build metrics row dynamically based on content order and visibility flags
         let mut metrics_items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
@@ -163,7 +178,7 @@ impl PanelWidget {
                 ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
                 ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
                 ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
-                ContentType::DiskUsage => false, // Not implemented yet
+                ContentType::DiskUsage => sensor_config.disks1.chart_visible(),
             };
 
             if !should_render {
@@ -190,7 +205,7 @@ impl PanelWidget {
                     Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
                 ContentType::DiskUsage => {
-                    continue; // Already filtered above but keep for safety
+                    Self::render_disk_metric(disk_write_kbps, disk_read_kbps, &sensor_config.disks1)
                 }
             };
             metrics_items.push(element);
@@ -221,6 +236,8 @@ impl PanelWidget {
         let gpu_temp = machine.sensors.gpu.gpu_temp.unwrap_or(0.0);
         let rx_kbps = machine.sensors.network.rx_bytes_per_sec as f64 / 1024.0;
         let tx_kbps = machine.sensors.network.tx_bytes_per_sec as f64 / 1024.0;
+        let disk_write_kbps = machine.sensors.disk.write_bytes_per_sec as f64 / 1024.0;
+        let disk_read_kbps = machine.sensors.disk.read_bytes_per_sec as f64 / 1024.0;
 
         // Build metrics row dynamically based on content order and visibility flags
         let mut metrics_items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
@@ -233,7 +250,7 @@ impl PanelWidget {
                 ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
                 ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
                 ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
-                ContentType::DiskUsage => false, // Not implemented yet
+                ContentType::DiskUsage => sensor_config.disks1.chart_visible(),
             };
 
             if !should_render {
@@ -260,7 +277,7 @@ impl PanelWidget {
                     Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
                 ContentType::DiskUsage => {
-                    continue; // Already filtered above but keep for safety
+                    Self::render_disk_metric(disk_write_kbps, disk_read_kbps, &sensor_config.disks1)
                 }
             };
             metrics_items.push(element);
@@ -473,7 +490,6 @@ impl PanelWidget {
             items.push(text("NET").size(11).into());
         }
 
-        // Only show the text speeds with adaptive unit scaling
         use cosmic::widget::column;
         let rx_formatted = crate::utils::formatting::format_throughput_adaptive(rx_kbps);
         let tx_formatted = crate::utils::formatting::format_throughput_adaptive(tx_kbps);
@@ -482,6 +498,41 @@ impl PanelWidget {
             column(vec![
                 text(format!("↓{}", rx_formatted)).size(9).into(),
                 text(format!("↑{}", tx_formatted)).size(9).into(),
+            ])
+            .spacing(1)
+            .into(),
+        );
+
+        row(items)
+            .spacing(4)
+            .align_y(cosmic::iced::Alignment::Center)
+            .into()
+    }
+
+    /// Render disk metrics — icon + stacked W/R throughput text (mirrors network layout)
+    fn render_disk_metric(
+        write_kbps: f64,
+        read_kbps: f64,
+        config: &crate::minimon_config::DisksConfig,
+    ) -> cosmic::Element<'static, AppMessage> {
+        let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
+
+        if config.icon_visible() {
+            items.push(icon::from_name(DISK_ICON).symbolic(true).size(20).into());
+        }
+
+        if config.label_visible() {
+            items.push(text("DSK").size(11).into());
+        }
+
+        use cosmic::widget::column;
+        let write_formatted = crate::utils::formatting::format_throughput_adaptive(write_kbps);
+        let read_formatted = crate::utils::formatting::format_throughput_adaptive(read_kbps);
+
+        items.push(
+            column(vec![
+                text(format!("W{}", write_formatted)).size(9).into(),
+                text(format!("R{}", read_formatted)).size(9).into(),
             ])
             .spacing(1)
             .into(),
