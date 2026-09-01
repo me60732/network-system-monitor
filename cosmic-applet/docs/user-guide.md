@@ -69,24 +69,19 @@ Each percentage-based metric is color-coded based on severity:
 
 ---
 
-## Grid Window
+## Panel Widget & Machine List
 
-Clicking the panel widget expands into a grid window showing all registered remote machines.
+The panel widget displays a single-line summary of local system metrics. Clicking it opens a **machine list** (not a grid window) that always shows all registered remote machines.
 
-### Columns
+### UI Flow
 
-| Column    | Description                                    |
-|-----------|-------------------------------------------------|
-| Name      | Machine hostname with online/offline indicator  |
-| CPU       | Aggregate usage percentage (0–100%)             |
-| Memory    | RAM used as percentage of total                  |
-| Disk      | Root partition usage percentage                  |
-| Network   | RX/TX byte counters since boot                   |
-| Uptime    | Time since last reboot (human-readable)          |
-| GPU VRAM  | Video memory used in MB (if discrete GPU present)|
-| Temperature | CPU/GPU temp in Celsius                        |
+1. **Machine List**: Always visible — one row per machine with status indicators
+2. **Click Machine Row**: Opens **machine detail** view
+3. **Machine Detail Top**: Shows the sensor panel row (configured via sensor config)
+4. **Machine Detail Below**: All metrics NOT visible in the panel row
+5. **Gear Icon (⚙)**: Opens per-machine sensor configuration menu
 
-### Status Indicators
+### Status Indicators (per machine row)
 
 - **●** — Machine is online (recent UDP packet received within timeout).
 - **○** — Machine is offline or pending first-packet registration.
@@ -97,26 +92,26 @@ Clicking the panel widget expands into a grid window showing all registered remo
 
 To monitor a remote machine:
 
-1. Ensure `nmd-service` is installed and running on the target machine.
-2. In the grid window, click **+ Add Machine**.
+1. Ensure `nmd` is installed and running on the target machine.
+2. In the machine list UI, click **+ Add Machine** or edit config.toml directly.
 3. Enter the machine's hostname/IP address and confirm it matches the `machine_id` in nmd-service's config.
 4. The machine appears as **Pending** (○) until its first UDP packet arrives.
 
 ---
 
-## Metric Selection
+## Per-Machine Sensor Configuration
 
-Each machine can have individual metrics shown or hidden via checkbox selection:
+What shows in the panel row is configured per-machine via the gear icon (⚙) in machine detail view:
 
-- CPU usage percentage
-- Memory used percentage
-- Disk usage percentage
-- Network RX/TX bytes
-- Uptime
-- GPU VRAM usage
-- Temperature
+- CPU usage percentage (ring chart + label)
+- Memory used percentage (ring chart + label, configurable as % or GB)
+- Disk usage and I/O (text-only, not in panel row by default)
+- Network RX/TX rates (ring chart + adaptive units)
+- Uptime (text-only)
+- GPU VRAM usage (ring chart + label, configurable as % or GB)
+- Temperature (ring chart + custom °C text)
 
-Uncheck a metric to hide its column for that specific machine. Changes are saved automatically to `config.toml`.
+**Global Settings**: Value size, monospace font, panel spacing, content order — apply to ALL machines via Settings UI.
 
 ---
 
@@ -134,16 +129,17 @@ All metrics use consistent color coding across the panel widget and grid window:
 
 ## Troubleshooting
 
-### Machine shows ○ (offline) in the grid window
+### Machine shows ○ (offline) in the machine list
 
-- Verify `nmd-service` is running on the remote machine: `systemctl status nmd.service`.
+- Verify `nmd` is running on the remote machine: `systemctl status nmd`.
 - Check that UDP port 51057 is open between machines.
-- Ensure the HMAC secret key at `/etc/nmd/secret.key` matches on both desktop and remote machine.
+- Ensure the receiver's X25519 pubkey is correctly set in sender config (`receiver_pubkey = "<hex>"` in `/etc/nmd/config.toml`).
 
 ### No metrics appear in the panel widget
 
-- Confirm `metrics-core` can read system files (`/proc/stat`, `/proc/meminfo`).
-- Check applet logs: `journalctl -f /cosmic-applet`.
+- Confirm nmd-service is sending packets: check sender logs.
+- Check applet logs: look for "Packet received" messages.
+- Verify pairing was accepted: check `~/.config/cosmic-applet/pairing.toml`.
 
 ---
 

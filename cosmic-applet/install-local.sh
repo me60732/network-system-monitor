@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_ID="com.cosmic.network_system_monitor"
-BINARY_NAME="$APP_ID"
+BINARY_NAME="cosmic-applet"
 INSTALL_BIN="/usr/local/bin"
 INSTALL_DESKTOP="/usr/share/applications"
 INSTALL_ICONS="/usr/share/icons/hicolor/scalable/apps"

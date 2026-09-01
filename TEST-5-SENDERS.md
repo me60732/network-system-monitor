@@ -10,7 +10,7 @@ This test simulates 5 remote machines sending metrics to one receiver:
 - **5 Senders:** All running on localhost, named `a`, `b`, `c`, `d`, `e`
 - **1 Receiver:** cosmic-applet listening on port 51057
 - **Refresh Rate:** 1 second (5 packets/sec total)
-- **Shared Key:** All machines use the same HMAC secret
+- **Pairing:** Each machine pairs with the receiver via TCP to receive X25519 pubkey
 
 **What It Tests:**
 - ✅ Concurrent UDP packet handling
@@ -32,7 +32,7 @@ This test simulates 5 remote machines sending metrics to one receiver:
 **Output:**
 ```
 === Setting up 5-sender test environment ===
-✓ Secret key generated: test-env/5-senders/secret.key
+✓ Config files created for machines a-e (no shared secret needed)
 ✓ Created config for machine 'a'
 ✓ Created config for machine 'b'
 ✓ Created config for machine 'c'
@@ -197,7 +197,7 @@ All logs are stored in `test-env/5-senders/logs/`:
 
 ```
 test-env/5-senders/
-├── secret.key                    # Shared HMAC key
+# No shared key needed - each machine pairs with receiver via TCP
 ├── config-a.toml                 # Sender configs
 ├── config-b.toml
 ├── config-c.toml

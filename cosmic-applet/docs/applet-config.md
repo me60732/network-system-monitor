@@ -1,7 +1,6 @@
 # Network System Monitor — Applet Configuration Reference
 
-> **Status**: Stub documentation (Troi to complete)
-> Last updated: 2026-08-20
+This document describes the TOML configuration file format for the cosmic-applet.
 
 This document describes the TOML configuration file format for the cosmic-applet, which extends minimon-applet's config structure with per-machine metric selection and UDP receiver settings.
 
@@ -33,21 +32,21 @@ If no config file is found, a default configuration with only `localhost` as a m
 | Option             | Type    | Default                          | Description                                  |
 |--------------------|---------|----------------------------------|----------------------------------------------|
 | `udp_port`         | integer | `51057`                          | UDP port the applet listens on for incoming MetricPacket traffic. Must match nmd-service's send port. |
-| `hmac_secret_path` | string  | `/etc/nmd/secret.key`            | Path to the HMAC-SHA256 pre-shared key file (32 bytes). Shared with all remote machines. |
-| `auto_expand_grid` | boolean | `true`                           | Whether the grid window auto-expands when a new machine comes online. Set to `false` for manual toggle only. |
+| `auto_expand_grid` | boolean | `true`                           | Whether the machine list window auto-expands when a new machine comes online. Set to `false` for manual toggle only. |
 
 ---
 
 ## Machine Entries
 
-The `[machines]` section contains an array of machine configurations. Each entry extends minimon-applet's format with additional fields.
+The `[machines]` section contains an array of machine configurations.
 
 | Option        | Type    | Default  | Description                                  |
 |---------------|---------|----------|----------------------------------------------|
-| `name`        | string  | (required) | Unique identifier — must match nmd-service's `machine_id`. Used for UDP packet routing and HMAC replay protection. |
+| `name`        | string  | (required) | Unique identifier — must match nmd-service's `machine_id`. Used for UDP packet routing and replay protection. |
 | `enabled`     | boolean | `true`   | Whether this machine is actively monitored. Disable to temporarily exclude without deleting config. |
 | `host`        | string  | (required) | IP address or hostname of the remote machine running nmd-service. |
 | `port`        | integer | `51057`  | UDP port on the remote machine's nmd-service sender. Usually matches `udp_port`. |
+| `sensor_config` | object | (optional) | Per-machine sensor configuration (what shows in panel row via gear icon). |
 
 ### Example Machine Entry
 
@@ -64,28 +63,30 @@ show_memory = true
 
 ---
 
-## Per-Machine Metric Selection
+## Per-Machine Sensor Configuration
 
-Each machine can have individual metrics shown or hidden in the grid window via boolean checkbox fields. All default to `true` if omitted.
+Each machine has its own `MachineSensorConfig` stored in MachineConfig. What shows in the panel row is configured per-machine via the gear icon in machine detail view.
 
-| Option         | Type    | Default  | Description                                    |
-|----------------|---------|----------|-------------------------------------------------|
-| `show_cpu`     | boolean | `true`   | Display CPU usage percentage column for this machine. |
-| `show_memory`  | boolean | `true`   | Display memory used percentage column.          |
-| `show_disk`    | boolean | `true`   | Display disk usage percentage column.           |
-| `show_network` | boolean | `true`   | Display network RX/TX bytes column.              |
-| `show_uptime`  | boolean | `true`   | Display uptime column (human-readable).          |
-| `show_gpu_vram`| boolean | `true`   | Display GPU VRAM usage in MB column.            |
-| `show_temperature` | boolean | `true` | Display temperature (°C) column.                |
-
-### Example: Hide GPU Column for a Machine Without Discrete Graphics
+### Example Per-Machine Config with Sensor Configuration
 
 ```toml
 [[machines]]
 name = "spark"
 host = "192.168.1.30"
-show_gpu_vram = false    # This machine has no discrete GPU — hide the column
-show_temperature = false  # No thermal sensors available on this hardware
+enabled = true
+
+# Per-machine sensor configuration (what shows in panel row)
+sensor_config = {
+  cpu_chart_visible = true,
+  cpu_label_visible = true,
+  memory_chart_visible = true,
+  memory_percentage = true,  # Show as percentage
+  disk_chart_visible = false,  # Disk not shown in row
+  network_chart_visible = true,
+  gpu_load_chart_visible = false,  # No GPU on this machine
+  gpu_vram_chart_visible = false,
+  temperature_chart_visible = true,
+}
 ```
 
 ---
@@ -97,7 +98,6 @@ When no config file is found, the applet generates a default `config.toml` with 
 ```toml
 # Network System Monitor — cosmic-applet configuration
 udp_port = 51057
-hmac_secret_path = "/etc/nmd/secret.key"
 auto_expand_grid = true
 
 [[machines]]
@@ -105,20 +105,22 @@ name = "localhost"
 enabled = true
 host = "127.0.0.1"
 port = 51057
-show_cpu = true
-show_memory = true
-show_disk = true
-show_network = true
-show_uptime = true
-show_gpu_vram = true
-show_temperature = true
+sensor_config = {
+  cpu_chart_visible = true,
+  memory_chart_visible = true,
+  disk_chart_visible = false,
+  network_chart_visible = true,
+  gpu_load_chart_visible = true,
+  gpu_vram_chart_visible = true,
+  temperature_chart_visible = true,
+}
 ```
 
 ---
 
-## Secret Key Management (Worf Phase 1A)
+## Pairing System
 
-The HMAC pre-shared key is stored at the path specified by `hmac_secret_path` (default: `/etc/nmd/secret.key`). It must be exactly **32 bytes** for HMAC-SHA256. This file is generated on each remote machine by the install script (`install-scripts/install.sh`) and shared out-of-band to the desktop applet during setup.
+The ChaCha20-Poly1305 AEAD encryption uses ECDH-derived per-machine shared keys stored in `~/.config/cosmic-applet/pairing.toml`. The sender's `receiver_pubkey` field in `/etc/nmd/config.toml` is set automatically via TCP pairing on first start.
 
 ### Generating a Key Manually
 

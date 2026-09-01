@@ -302,7 +302,7 @@ impl PairingManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use getrandom::getrandom;
+    use rand::{Rng, SeedableRng};
     use std::path::PathBuf;
 
     #[test]
@@ -310,9 +310,9 @@ mod tests {
         // Create temp directory
         let config_path = PathBuf::from("/tmp/test-pairing.toml");
 
-        // Generate sender keypair for test using getrandom to create secret bytes
+        // Generate sender keypair for test using rand to create secret bytes
         let mut sender_secret_bytes = [0u8; 32];
-        getrandom(&mut sender_secret_bytes).expect("Failed to generate random bytes");
+        rand::rngs::StdRng::seed_from_u64(42).fill(&mut sender_secret_bytes);
         let sender_pubkey = X25519PublicKey::from(sender_secret_bytes);
 
         // Create manager and add pairing
@@ -346,8 +346,8 @@ mod tests {
         // Generate two X25519 secrets from random bytes
         let mut alice_secret_bytes = [0u8; 32];
         let mut bob_secret_bytes = [0u8; 32];
-        getrandom(&mut alice_secret_bytes).expect("Failed to generate random bytes");
-        getrandom(&mut bob_secret_bytes).expect("Failed to generate random bytes");
+        rand::rngs::StdRng::seed_from_u64(42).fill(&mut alice_secret_bytes);
+        rand::rngs::StdRng::seed_from_u64(43).fill(&mut bob_secret_bytes);
 
         let alice_secret = X25519Secret::from(alice_secret_bytes);
         let bob_secret = X25519Secret::from(bob_secret_bytes);
@@ -378,7 +378,7 @@ mod tests {
     fn test_remove_pairing() {
         // Generate sender keypair
         let mut sender_secret_bytes = [0u8; 32];
-        getrandom(&mut sender_secret_bytes).expect("Failed to generate random bytes");
+        rand::rngs::StdRng::seed_from_u64(44).fill(&mut sender_secret_bytes);
         let sender_pubkey = X25519PublicKey::from(sender_secret_bytes);
 
         let config_path = PathBuf::from("/tmp/test-remove-pairing.toml");

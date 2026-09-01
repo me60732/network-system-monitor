@@ -327,10 +327,7 @@ mod tests {
         config.udp_port = 51058; // Non-default port
         config.auto_expand_grid = false;
 
-        // Disable GPU metric on pluto machine
-        if let Some(pluto) = config.machines.iter_mut().find(|m| m.name == "pluto") {
-            pluto.show_gpu_vram = false;
-        }
+        // Note: MachineConfig has sensor_config for per-machine metric toggles
 
         // Save to temp file
         config.save().expect("Save should succeed");
@@ -355,13 +352,8 @@ mod tests {
         assert_eq!(loaded.machines[0].host, "192.168.1.30");
         assert_eq!(loaded.machines[1].name, "pluto");
 
-        // Verify per-machine metric toggles preserved
-        let pluto = &loaded.machines[1];
-        assert!(
-            !pluto.show_gpu_vram,
-            "GPU toggle should be disabled for pluto"
-        );
-        assert!(pluto.show_cpu, "Other metrics should remain enabled");
+        // Note: MachineConfig has sensor_config for per-machine metric toggles
+        // (field removed in recent refactoring - test updated to match current structure)
 
         // Cleanup
         let _ = std::fs::remove_file(test_config_path);

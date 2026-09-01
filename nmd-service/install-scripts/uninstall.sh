@@ -5,7 +5,7 @@ set -euo pipefail
 
 SERVICE_NAME="nmd-service"
 BINARY_PATH="/usr/local/bin/nmd-service"
-SYSTEMD_UNIT="/etc/systemd/system/${SERVICE_NAME}.service"
+SYSTEMD_UNIT="/etc/systemd/system/nmd.service"
 CONFIG_DIR="/etc/nmd"
 
 RED='\033[0;31m'
@@ -20,23 +20,24 @@ die() { error "$*"; exit 1; }
 
 [[ $EUID -eq 0 ]] || die "This script must be run as root (use sudo)"
 
-warn "This will remove nmd-service from this machine."
+warn "This will remove nmd from this machine."
 read -p "Continue? [y/N] " -n 1 -r
 echo
 [[ $REPLY =~ ^[Yy]$ ]] || { log "Cancelled."; exit 0; }
 
 # Stop and disable service
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-    log "Stopping $SERVICE_NAME"
-    systemctl stop "$SERVICE_NAME"
+if systemctl is-active --quiet nmd; then
+    log "Stopping nmd"
+    systemctl stop nmd
 fi
 
-if systemctl is-enabled --quiet "$SERVICE_NAME" 2>/dev/null; then
-    log "Disabling $SERVICE_NAME"
-    systemctl disable "$SERVICE_NAME"
+if systemctl is-enabled --quiet nmd 2>/dev/null; then
+    log "Disabling nmd"
+    systemctl disable nmd
 fi
 
 # Remove systemd unit
+SYSTEMD_UNIT="/etc/systemd/system/nmd.service"
 if [[ -f "$SYSTEMD_UNIT" ]]; then
     log "Removing systemd unit: $SYSTEMD_UNIT"
     rm -f "$SYSTEMD_UNIT"

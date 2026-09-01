@@ -354,8 +354,8 @@ mod tests {
     /// Aggregated packet contains correct machine ID (Beverly writes after implementation).
     #[test]
     fn test_aggregate_returns_machine_id() {
-        let config = ServiceConfig::default();
-        let mut aggregator = MetricsAggregator::new(config);
+        let machine_id = "test-host";
+        let mut aggregator = MetricsAggregator::new(machine_id);
 
         let packet = aggregator.aggregate();
 
@@ -369,8 +369,8 @@ mod tests {
     /// Aggregated packet has a valid timestamp (Beverly writes after implementation).
     #[test]
     fn test_aggregate_timestamp_valid() {
-        let config = ServiceConfig::default();
-        let mut aggregator = MetricsAggregator::new(config);
+        let machine_id = "test-host";
+        let mut aggregator = MetricsAggregator::new(machine_id);
 
         let packet = aggregator.aggregate();
         assert!(

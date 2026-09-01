@@ -11,7 +11,6 @@ use cosmic_applet::network::test_support::{
 };
 use cosmic_applet::network::udp_receiver::UdpReceiver;
 use cosmic_applet::remote_machine::RemoteMachine;
-use cosmic_applet::ui::SettingsWindow;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 

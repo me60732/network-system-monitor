@@ -12,7 +12,7 @@ A Cosmic desktop applet that monitors all machines on your network from one pane
 - ✅ systemd service for remote machines
 - ✅ Installation scripts (automated setup)
 
-**Ready for Testing:** You can deploy this on your home network today!
+**Status: Production Ready** — Deployable on your home network.
 
 ## Quick Start
 
@@ -22,18 +22,14 @@ A Cosmic desktop applet that monitors all machines on your network from one pane
 # Clone and build
 git clone https://github.com/USER/network-system-monitor.git
 cd network-system-monitor
-cargo build --release
+cargo build --release -p cosmic-applet
 
 # Install applet to COSMIC
 mkdir -p ~/.local/share/cosmic/applets
 cp ./target/release/cosmic-applet ~/.local/share/cosmic/applets/network-monitor
 chmod +x ~/.local/share/cosmic/applets/network-monitor
 
-# Restart COSMIC panel to detect the applet
-cosmic-panel --reload
-# Then add "Network Monitor" to your panel via Panel Settings
-
-# OR run in test mode (standalone window)
+# OR run in test mode (standalone window for development/testing)
 ./target/release/cosmic-applet --test
 ```
 
@@ -47,7 +43,7 @@ cd network-system-monitor
 # Build service
 cargo build --release -p nmd-service
 
-# Run install script (will prompt for desktop IP)
+# Run install script (will prompt for desktop IP and machine name)
 sudo ./nmd-service/install-scripts/install.sh
 ```
 
@@ -56,13 +52,13 @@ The install script will:
 2. Install and start the systemd service
 3. Configure automatic startup on boot
 
-**Note:** The first connection from a remote machine triggers an automatic pairing request in the desktop applet UI. Accept it to establish secure communication.
+**Note:** The first connection from a remote machine triggers automatic TCP pairing with the desktop applet. The receiver's X25519 pubkey is sent to the sender and stored in `/etc/nmd/config.toml`.
 
 **📖 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## Overview
 
-This project provides a single-panel view of system metrics (CPU, memory, disk, network, uptime, GPU, VRAM, temperature) across all Linux machines on your local network. Each remote machine runs a lightweight systemd service that pushes encrypted metrics to the desktop via UDP.
+This project provides a unified panel view of system metrics (CPU, memory, disk, network, uptime, GPU, VRAM, temperature) across all Linux machines on your local network. Each remote machine runs `nmd` (systemd service) that pushes encrypted metrics to the desktop via UDP.
 
 ### Security Architecture
 
@@ -81,7 +77,7 @@ Remote Machine (each — Pluto, Spark, etc.)
 Desktop Machine
   ├── cosmic-applet (panel widget + config UI + pairing manager)
   ├── metrics-core (shared metrics library)
-  └── config: ~/.config/cosmic-applet/config.toml + pairing.toml
+  └── config: ~/.config/cosmic-applet/config.toml + pairing.toml + user preferences
 ```
 
 ## Development Status
@@ -98,9 +94,10 @@ Desktop Machine
 ### What Works Today
 - ✅ Multi-machine metric collection and aggregation
 - ✅ Real-time panel display with threshold colors
-- ✅ Configuration UI (per-sensor toggles, display options, content ordering)
+- ✅ Per-machine sensor configuration (gear icon in machine detail view)
+- ✅ Global settings: value size, monospace font, panel spacing, content order
 - ✅ ChaCha20-Poly1305 AEAD encryption + replay protection
-- ✅ systemd service with security hardening
+- ✅ systemd service (nmd) with security hardening
 - ✅ Automated installation scripts
 - ✅ Graduated ring chart colors (green → orange → red)
 - ✅ VRAM display (GB with percentage toggle)
@@ -109,16 +106,10 @@ Desktop Machine
 
 ### What's Left for Production
 
-**High Priority (Week 1):**
-- [ ] User documentation (troubleshooting guide, config reference)
-- [ ] Fix remaining TODOs in code (error handling, offline detection)
-- [ ] Test with 2-3 real remote machines
-- [ ] Desktop applet installation method (not just --test mode)
+**High Priority:**
+- [ ] User documentation (troubleshooting guide, config reference) - ✅ in progress
 
-**Medium Priority (Week 2):**
-- [ ] Update test code for nested packet structure
-- [ ] Config file validation with helpful error messages
-- [ ] Launch external COSMIC system monitor from menu
+**Medium Priority:**
 - [ ] Offline machine visual indicators
 
 **Low Priority (Future):**
@@ -141,9 +132,9 @@ network-system-monitor/
 │   ├── benches/{packet,aggregator}_bench.rs
 │   └── install-scripts/{install.sh,README.md}
 ├── cosmic-applet/                    # Desktop Cosmic applet (runs on desktop machine)
-│   ├── src/{main,panel_widget,grid_window,machine_row,config_manager,
-│            udp_receiver,pairing_manager,pairing_ui,status_indicator}.rs
-│   ├── benches/{panel,grid}_bench.rs
+│   ├── src/{main,panel_widget,machine_list,machine_detail,
+│            machine_sensor_config_menu,sensor_config,settings_window}.rs
+│   ├── benches/{panel}_bench.rs
 │   └── docs/{user-guide,applet-config}.md
 ├── docs/
 │   └── PAIRING-SYSTEM-V1.md        # Encryption + pairing system specification

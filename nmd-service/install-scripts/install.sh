@@ -13,8 +13,8 @@ set -euo pipefail
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/nmd"
 CONFIG_FILE="$CONFIG_DIR/config.toml"
-SYSTEMD_UNIT="/etc/systemd/system/nmd-service.service"
-SERVICE_NAME="nmd-service"
+SYSTEMD_UNIT="/etc/systemd/system/nmd.service"
+SERVICE_NAME="nmd"
 BINARY_NAME="nmd-service"
 
 # Colors
@@ -158,20 +158,20 @@ EOF
 log "Reloading systemd daemon"
 systemctl daemon-reload
 
-log "Enabling $SERVICE_NAME to start on boot"
-systemctl enable "$SERVICE_NAME"
+log "Enabling nmd to start on boot"
+systemctl enable nmd
 
-log "Starting $SERVICE_NAME"
-systemctl start "$SERVICE_NAME"
+log "Starting nmd"
+systemctl start nmd
 
 # Wait for startup
 sleep 2
 
 # Check status
-if systemctl is-active --quiet "$SERVICE_NAME"; then
+if systemctl is-active --quiet nmd; then
     log "✓ Installation complete! Service is running."
     log ""
-    log "Check status:  systemctl status $SERVICE_NAME"
+    log "Check status:  systemctl status nmd"
     log "View logs:     journalctl -u $SERVICE_NAME -f"
     log "Config file:   $CONFIG_FILE"
     log "Keypair:       /var/lib/nmd/.config/nmd/keypair.key (auto-generated on first start)"

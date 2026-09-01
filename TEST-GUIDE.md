@@ -20,7 +20,7 @@ The test environment simulates a complete network monitoring setup on localhost:
 ### Debug Output (nmd-service sender)
 ```
 INFO  nmd_service — nmd-service starting up
-INFO  nmd_service — Loaded config — host=127.0.0.1, port=51057, interval=2000ms
+INFO  nmd_service — Loaded config — host=127.0.0.1, port=51057, refresh_interval_secs=1
 DEBUG nmd_service — Sent metrics — seq=1, cpu=12.5%, mem=45.3%
 DEBUG nmd_service — Sent metrics — seq=2, cpu=13.1%, mem=45.4%
 ```
@@ -28,7 +28,7 @@ DEBUG nmd_service — Sent metrics — seq=2, cpu=13.1%, mem=45.4%
 ### Debug Output (cosmic-applet receiver)
 ```
 DEBUG cosmic_applet::network — Received packet from 127.0.0.1 (342 bytes)
-DEBUG cosmic_applet::network — HMAC verification passed
+DEBUG cosmic_applet::network — ChaCha20-Poly1305 AEAD decryption and tag verification passed
 DEBUG cosmic_applet::network — Updated machine: test-machine
 ```
 
@@ -65,27 +65,23 @@ Watch the applet panel and machine detail view - the units should automatically 
 
 ## Configuration Files
 
-### Test Secret Key
-Location: `test-env/etc/nmd/secret.key`
-- 32-byte hex string for HMAC-SHA256
-- Shared between sender and receiver
+### No shared secret key needed - ChaCha20-Poly1305 AEAD uses per-machine ECDH-derived keys
 
 ### nmd-service Config
 Location: `test-env/nmd-config.toml`
 ```toml
 host = "127.0.0.1"
 port = 51057
-interval_ms = 2000
+refresh_interval_secs = 1
 machine_id = "test-machine"
-hmac_secret_path = "./test-env/etc/nmd/secret.key"
+# receiver_pubkey is set automatically via TCP pairing on first start
+# receiver_pubkey = "<64-char hex X25519 public key from applet Settings → General>"
 ```
 
 ### cosmic-applet Config
 Location: `test-env/applet-config.toml`
 ```toml
-[udp_receiver]
-port = 51057
-hmac_secret_path = "./test-env/etc/nmd/secret.key"
+# No hmac_secret_path needed - ChaCha20-Poly1305 AEAD uses per-machine ECDH-derived keys
 
 [[machines]]
 name = "test-machine"
@@ -104,19 +100,18 @@ temperature = true
 
 ## Troubleshooting
 
-### "HMAC verification failed"
-- Check that both sender and receiver use the same secret key
-- Verify secret key is exactly 32 bytes
-- Check file permissions (should be 600)
+### "Decryption failed" or "Tag verification failed"
+- Ensure receiver's X25519 pubkey is correctly set in sender config (`receiver_pubkey = "<hex>"`)
+- Verify pairing was accepted: check `~/.config/cosmic-applet/pairing.toml`
 
 ### "No data received"
 - Verify port 51057 is not in use: `netstat -an | grep 51057`
 - Check firewall rules (should allow localhost traffic)
 - Look for errors in sender debug output
 
-### "Connection refused"
+### "Connection refused" during TCP pairing
 - Start the receiver (cosmic-applet) before the sender (nmd-service)
-- UDP is connectionless but the receiver must be listening
+- The sender initiates a TCP connection to receive the receiver's X25519 pubkey
 
 ### Metrics not updating
 - Check sender is running (`ps aux | grep nmd-service`)
@@ -140,7 +135,7 @@ mv ~/.config/com.system-76.CosmicApplet/config.toml.backup \
 
 Once local testing is complete:
 
-1. Install nmd-service on remote machines: `nmd-service/install-scripts/install.sh`
-2. Configure cosmic-applet with real machine IPs in `config.toml`
-3. Set up systemd service for nmd-service on each machine
+1. Install nmd on remote machines: `nmd-service/install-scripts/install.sh`
+2. Configure cosmic-applet with real machine IPs in config.toml
+3. Per-machine sensor configuration via gear icon in machine detail view
 4. Monitor multiple machines from single desktop panel

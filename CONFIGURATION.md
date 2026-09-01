@@ -9,7 +9,7 @@ Complete reference for Network System Monitor configuration files.
 - **Pairing storage**: `~/.config/cosmic-applet/pairing.toml`
 - **Receiver keypair**: Auto-generated at `~/.config/cosmic-applet/receiver.key` (Ed25519)
 
-### Remote Machines (nmd-service)
+### Remote Machines (nmd service)
 - **Config file**: `/etc/nmd/config.toml`
 - **Sender keypair**: Auto-generated at `~/.config/nmd/keypair.key` (Ed25519)
 
@@ -73,7 +73,7 @@ temperature = true
 - Reserved for future features (offline detection, SSH integration)
 
 **port** (integer, default: 51057)
-- UDP port on the remote nmd-service instance
+- UDP port on the remote nmd instance
 
 **enabled** (boolean, default: true)
 - Whether to display this machine in the applet
@@ -208,7 +208,7 @@ host = "192.168.1.50"
 
 ### Sender Keypair (`~/.config/nmd/keypair.key`)
 - Ed25519 identity keypair (64 bytes: 32 private + 32 public)
-- Auto-generated on first nmd-service start
+- Auto-generated on first nmd start
 - Used for ECDH key derivation during pairing
 - Permissions: `0600` (owner read/write only)
 
@@ -219,90 +219,83 @@ host = "192.168.1.50"
 
 ---
 
-## HMAC Secret Key — REMOVED
+## Pairing System Configuration (`~/.config/cosmic-applet/pairing.toml`)
 
-**Note:** The old HMAC secret key system has been replaced by ChaCha20-Poly1305 AEAD encryption with TOFU pairing.
+### Format
 
-The following are **no longer applicable**:
-- `/etc/nmd/secret.key` file generation
-- `hmac_secret_path` config field
-- Manual key copying between machines
+```toml
+# Machine pairing registry
+# Generated automatically when accept pairing UI prompt in the applet
 
-All machines currently use the same temporary `TEMP_SHARED_KEY = [0x42; 32]` placeholder. Per-machine ECDH-derived keys are wired in the pairing flow but not yet fully enabled (sender pubkey field is `[0u8; 32]` placeholder).
+[[paired_machines]]
+machine_id = "pluto"
+shared_key = "a1b2c3d4e5f6..."  # 32-byte ChaCha20 key (64 hex chars)
+paired_at = "2026-08-28T14:32:00Z"
+host = "192.168.1.100"
+
+[[paired_machines]]
+machine_id = "server-alpha"
+shared_key = "1a2b3c4d5e6f..."
+paired_at = "2026-08-27T09:15:00Z"
+host = "192.168.1.50"
+```
+
+**machine_id** (string, required)
+- Unique identifier of the paired machine (must match nmd's `machine_id`)
+
+**shared_key** (hex string, 64 chars)
+- 32-byte ChaCha20 key derived via ECDH during pairing
+- Hex-encoded for TOML storage
+
+**paired_at** (ISO 8601 datetime string)
+- Timestamp when pairing was established
+
+**host** (string)
+- IP address or hostname of the paired machine at time of pairing
 
 ---
 
-## User Preferences
+## Per-Machine Sensor Configuration
 
-Generated automatically by the applet UI. Contains per-sensor display preferences.
+Each machine has its own `MachineSensorConfig` stored in `MachineConfig`. What shows in the machine row is configured per-machine via the gear icon in `machine_detail`.
 
-### Example Structure
+### Example Machine Config Structure
 
 ```toml
-[cpu]
-chart_visible = true
-label_visible = true
-icon_visible = true
-percentage = false
+[[machines]]
+name = "pluto"
+host = "192.168.1.50"
+enabled = true
 
-[cpu_temp]
-chart_visible = true
-label_visible = true
-icon_visible = true
+# Per-machine sensor configuration (what shows in panel row)
+sensor_config = {
+  cpu_chart_visible = true,
+  cpu_label_visible = true,
+  memory_chart_visible = true,
+  memory_percentage = true,
+  disk_chart_visible = false,  # Disk not shown in row
+  network_chart_visible = true,
+  gpu_load_chart_visible = true,
+  gpu_vram_chart_visible = true,
+  temperature_chart_visible = true,
+}
 
-[memory]
-chart_visible = true
-label_visible = true
-icon_visible = true
-percentage = true
-
-[gpu_load]
-chart_visible = true
-label_visible = true
-icon_visible = true
-
-[gpu_vram]
-chart_visible = true
-label_visible = true
-icon_visible = true
-percentage = false  # Show GB instead of percentage
-
-[network]
-chart_visible = true
-label_visible = true
-icon_visible = true
-
-[disk]
-chart_visible = true
-label_visible = true
-icon_visible = true
-
-[content_order]
-order = ["cpu", "cpu_temp", "memory", "gpu_load", "gpu_vram", "network", "disk"]
+# Refresh rate per machine (configured via nmd config file)
+refresh_interval_secs = 1
 ```
 
-### Sensor Options
+### Per-Machine Sensor Options
 
 **chart_visible** (boolean, default: true)
-- Whether to display the ring chart for this sensor
+- Whether to display the ring chart for this sensor in the panel row
 
 **label_visible** (boolean, default: true)
-- Whether to display the text label
-
-**icon_visible** (boolean, default: true)
-- Whether to display the icon
+- Whether to display the text label for this sensor
 
 **percentage** (boolean, default varies)
 - For memory: show as percentage of total RAM
 - For GPU VRAM: show as percentage of total VRAM
 - Default: `false` for VRAM (shows GB), `true` for memory
-
-### Content Order
-
-**order** (array of strings)
-- Order sensors are displayed in the panel (left to right)
-- Sensors not in list are hidden
-- Edit via applet config UI (Settings → Content Order)
 
 ---
 
@@ -325,7 +318,7 @@ grep machine_id /etc/nmd/config.toml
 
 **"No metrics received"**
 - Cause: Firewall blocking UDP port, wrong destination IP, or service not running
-- Fix: Check firewall (`sudo ufw allow 51057/udp`), verify destination IP, check service status (`systemctl status nmd-service`)
+- Fix: Check firewall (`sudo ufw allow 51057/udp`), verify destination IP, check service status (`systemctl status nmd`)
 
 **"Permission denied reading config"**
 - Cause: File permissions too restrictive or file missing

@@ -7,20 +7,21 @@ Complete guide for deploying Network System Monitor across your home network.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Desktop Machine (COSMIC Desktop)                                │
-│  - cosmic-applet (panel widget + config UI + pairing manager)   │
-│  - ChaCha20-Poly1305 receiver on port 51057                     │
-│  - TOFU pairing: ~/.config/cosmic-applet/pairing.toml           │
+│  - cosmic-applet (panel widget + machine list UI + config)      │
+│  - UDP receiver on port 51057                                   │
+│  - Per-machine sensor config via gear icon in machine detail    │
+│  - Global settings: value size, monospace font, panel spacing   │
 └─────────────────────────────────────────────────────────────────┘
                               ▲
                               │ UDP packets every 1s
-                              │ (ChaCha20-Poly1305 AEAD)
+                              │ (ChaCha20-Poly1305 AEAD + TOFU pairing)
                               │
         ┌─────────────────────┼─────────────────────┐
         │                     │                     │
 ┌───────▼────────┐    ┌───────▼────────┐    ┌───────▼────────┐
 │ Remote Machine │    │ Remote Machine │    │ Remote Machine │
 │ (Pluto)        │    │ (Spark)        │    │ ...            │
-│ nmd-service    │    │ nmd-service    │    │ nmd-service    │
+│ nmd            │    │ nmd            │    │ nmd            │
 │ systemd daemon │    │ systemd daemon │    │ systemd daemon │
 └────────────────┘    └────────────────┘    └────────────────┘
 ```
@@ -66,14 +67,22 @@ host = "127.0.0.1"
 port = 51057
 enabled = true
 
-[machines.metrics]
-cpu = true
-memory = true
-disk = true
-network = true
-uptime = true
-gpu_vram = true
-temperature = true
+# Per-machine sensor configuration (what shows in panel row)
+sensor_config = {
+  cpu_chart_visible = true,
+  memory_chart_visible = true,
+  disk_chart_visible = false,  # Disk not shown in row (configured per-machine)
+  network_chart_visible = true,
+  gpu_load_chart_visible = true,
+  gpu_vram_chart_visible = true,
+  temperature_chart_visible = true,
+}
+
+# Global settings apply to ALL machines (configured via Settings UI):
+# - value_size: font size for metric values
+# - monospace_font: use monospace font for values
+# - panel_spacing: spacing between sensors in row
+# - content_order: order of sensors left-to-right in panel
 EOF
 ```
 
@@ -137,7 +146,7 @@ sudo chmod +x /usr/share/cosmic/applets/network-monitor
 
 ### 2. Local Machine Setup (Testing on Same Machine)
 
-The applet and nmd-service can both run on the same machine for testing:
+The applet and nmd can both run on the same machine for testing:
 
 ```bash
 # Build both binaries
@@ -180,7 +189,7 @@ The script will:
 1. Prompt for desktop machine IP and UDP port
 2. Generate local config at `/etc/nmd/config.toml`
 3. Install binary to `/usr/local/bin/nmd-service`
-4. Create and enable systemd service
+4. Create and enable nmd systemd service
 5. Start the service
 
 #### Option B: Manual installation
@@ -214,18 +223,25 @@ sudo cp ./target/release/nmd-service /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nmd-service
 
 # Create systemd unit
-sudo tee /etc/systemd/system/nmd-service.service <<'EOF'
+sudo tee /etc/systemd/system/nmd.service <<'EOF'
 [Unit]
-Description=Network Monitor Daemon
+Description=Network System Monitor — metrics sender
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/nmd-service --config /etc/nmd/config.toml
-Restart=always
-RestartSec=5
-User=nobody
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nmd
+
+# Run as dedicated unprivileged user
+User=nmd
+Group=nmd
+Environment=HOME=/var/lib/nmd
 Group=nogroup
 NoNewPrivileges=true
 ProtectSystem=strict
@@ -239,32 +255,34 @@ EOF
 
 # Enable and start
 sudo systemctl daemon-reload
-sudo systemctl enable nmd-service
-sudo systemctl start nmd-service
+sudo systemctl enable nmd
+sudo systemctl start nmd
 ```
 
 ### 4. Pairing Flow (First Connection)
 
 When the first UDP packet arrives from a remote machine:
 
-1. The desktop applet detects an unknown sender
-2. A pairing request appears in the applet's dropdown menu
+1. The desktop applet detects an unknown sender via TOFU pairing system
+2. A pairing request appears in the applet's UI dropdown menu
 3. The UI shows:
-   - Machine ID (from `machine_id` field in config)
+   - Machine ID (from `machine_id` field in nmd config)
    - Sender IP address
-   - Accept/Deny buttons
-
-**Bootstrap mode:** The sender starts without `receiver_pubkey`, using TEMP_SHARED_KEY initially.
+   - Accept/Deny dropdown
 
 **Accept:** The receiver generates an ECDH-derived shared key and stores it in `~/.config/cosmic-applet/pairing.toml`
 
 **Deny:** The packet is dropped, no pairing entry created
 
-**Configure sender:** After accepting the pairing:
-   - Copy the receiver's X25519 pubkey from the applet's Settings panel
-   - Add it to the sender's config as `receiver_pubkey = "<hex>"`
-   - Restart the service: `systemctl restart nmd-service`
+**Automatic sender setup:** After accepting the pairing:
+   - The sender automatically receives the receiver's X25519 pubkey via TCP
+   - The sender stores it in `/etc/nmd/config.toml` as `receiver_pubkey = "<hex>"`
    - Subsequent packets use ECDH-derived keys (fully encrypted end-to-end)
+
+**Manual setup (if TCP pairing unavailable):**
+   - Copy the receiver's X25519 pubkey from applet Settings → General
+   - Add it to sender config: `receiver_pubkey = "<hex>"` in `/etc/nmd/config.toml`
+   - Restart: `systemctl restart nmd`
 
 
 
@@ -274,13 +292,13 @@ When the first UDP packet arrives from a remote machine:
 
 ```bash
 # Check service status
-sudo systemctl status nmd-service
+sudo systemctl status nmd
 
 # View logs
-sudo journalctl -u nmd-service -f
+sudo journalctl -u nmd -f
 
 # Expected output:
-#   "Loaded config from /etc/nmd/config.toml — host=192.168.1.100, port=51057, refresh_interval=1s"
+#   "Loaded config from /etc/nmd/config.toml — host=192.168.1.100, port=51057, refresh_interval_secs=1"
 #   "UDP sender initialized: dest=192.168.1.100:51057"
 #   "Sending metrics to 192.168.1.100:51057 (machine_id=pluto, interval=1s)"
 ```
@@ -322,7 +340,7 @@ Open the COSMIC panel and verify the applet shows metrics from all machines.
 3. **Check service logs**
    ```bash
    # Remote
-   sudo journalctl -u nmd-service -n 50
+   sudo journalctl -u nmd -n 50
    
    # Desktop (applet logs to stdout)
    ```
@@ -336,16 +354,16 @@ Open the COSMIC panel and verify the applet shows metrics from all machines.
 
 ### High CPU usage on remote machines
 
-Expected: < 1% CPU usage per nmd-service instance
+Expected: < 1% CPU usage per nmd instance
 
 If higher:
-- Check metrics collection interval (`refresh_interval_secs` in config — default 1s is appropriate)
-- Review which metrics are enabled
+- Check metrics collection interval (`refresh_interval_secs` in `/etc/nmd/config.toml` — default 1s is appropriate)
+- Review which metrics are enabled in `[metrics]` section
 - Check for I/O bottlenecks (disk metrics on slow drives)
 
 ### Metrics not updating
 
-1. Check service is running: `systemctl status nmd-service`
+1. Check service is running: `systemctl status nmd`
 2. Verify config interval: `grep refresh_interval_secs /etc/nmd/config.toml`
 3. Check applet is receiving packets: look for "Packet received" logs
 4. Verify pairing was accepted: check `~/.config/cosmic-applet/pairing.toml`
@@ -363,11 +381,11 @@ If higher:
 - Replay protection: timestamp freshness (< 10s) + monotonic sequence numbers per session
 
 ### systemd Hardening
-The service runs with restricted privileges:
-- User: `nobody`
+The nmd service runs with restricted privileges:
+- User: `nmd` (dedicated system user)
 - `NoNewPrivileges=true`
 - `ProtectSystem=strict`
-- `ProtectHome=true`
+- `ProtectHome=read-only`
 - No network access required (outbound UDP only)
 
 ### Network Exposure
@@ -384,7 +402,7 @@ sudo ./nmd-service/install-scripts/uninstall.sh
 ```
 
 This will:
-- Stop and disable the service
+- Stop and disable nmd service
 - Remove binary and systemd unit
 - Optionally remove config directory
 
@@ -400,7 +418,7 @@ rm -rf ~/.config/cosmic-applet/pairing.toml  # pairing data
 
 ## Advanced Configuration
 
-### Custom Metrics Interval
+### Custom Refresh Rate (Per-Machine)
 
 Edit `/etc/nmd/config.toml` on each remote machine:
 
@@ -408,20 +426,26 @@ Edit `/etc/nmd/config.toml` on each remote machine:
 refresh_interval_secs = 5  # 5 seconds instead of 1
 ```
 
-Then restart: `sudo systemctl restart nmd-service`
+Then restart: `sudo systemctl restart nmd`
 
-### Disable Specific Metrics
+**Note:** Refresh rate is configured per-machine via nmd config, NOT in the applet's global settings UI.
+
+### Disable Specific Metrics Per Machine
+
+Edit `/etc/nmd/config.toml` on each remote machine:
 
 ```toml
 [metrics]
 cpu = true
 memory = true
-disk = false        # Disable disk metrics
-network = false     # Disable network metrics
+disk = false        # Disable disk metrics collection
+network = false     # Disable network metrics collection
 uptime = true
 gpu = false         # Disable GPU (useful for machines without GPU)
 temperature = true
 ```
+
+**Note:** Metric display in the panel row is controlled per-machine via the `sensor_config` section in MachineConfig (configured via gear icon in machine detail view).
 
 ### Multiple Desktop Machines
 
@@ -442,12 +466,11 @@ port = 51057
 ## Next Steps
 
 1. Add more remote machines (repeat step 2 for each)
-2. Configure which metrics to display (use applet config UI)
-3. Customize panel display order
-4. Set up per-machine thresholds (TODO: feature not yet implemented)
+2. Configure per-machine sensor display via gear icon in machine detail view
+3. Global settings: value size, monospace font, panel spacing, content order
 
 ## Support
 
 - Report issues: https://github.com/USER/REPO/issues
-- View logs: `journalctl -u nmd-service -f` (remote), `./cosmic-applet --test` (desktop)
+- View logs: `journalctl -u nmd -f` (remote), `./cosmic-applet --test` (desktop)
 - Configuration reference: See CONFIGURATION.md

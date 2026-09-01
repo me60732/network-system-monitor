@@ -4,12 +4,12 @@
 //!
 //! **Performance target**: < 5ms per aggregate cycle (includes all metric collection).
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use nmd_service::{MetricsAggregator, ServiceConfig};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use nmd_service::MetricsAggregator;
 
 fn bench_aggregate_overhead(c: &mut Criterion) {
-    let config = ServiceConfig::default();
-    let mut aggregator = MetricsAggregator::new(config);
+    let machine_id = "test-host";
+    let mut aggregator = MetricsAggregator::new(machine_id);
 
     c.bench_function("aggregate_overhead", |b| {
         b.iter(|| {
