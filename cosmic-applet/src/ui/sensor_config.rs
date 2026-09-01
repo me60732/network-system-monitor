@@ -4,18 +4,16 @@
 //! Each sensor has detailed options for chart display, labels, icons, and sensor-specific settings.
 //! All charts use Ring type only (no chart type dropdown needed).
 
-use crate::{AppMessage, minimon_config::MinimonConfig};
-use cosmic::widget::{button, column, container, divider, row, scrollable, text, toggler};
-use cosmic::iced::{Alignment, Length};
+use crate::minimon_config::{DisksVariant, NetworkVariant};
+use crate::{AppMessage, minimon_config::MachineSensorConfig};
 use cosmic::Element;
-use crate::minimon_config::{NetworkVariant, DisksVariant};
+use cosmic::iced::{Alignment, Length};
+use cosmic::widget::{button, column, container, divider, row, scrollable, text, toggler};
 
 /// View for CPU sensor configuration (includes load and temperature)
-pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_cpu_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("CPU").size(24).into(),
     ];
 
@@ -33,7 +31,7 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show label
@@ -47,7 +45,7 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -61,17 +59,11 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Colors button
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
     // Divider between sections
     items.push(divider::horizontal::default().into());
@@ -79,9 +71,11 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
     // === CPU Temperature Section ===
     items.push(text("Temperature").size(16).into());
     items.push(
-        text("For Intel processors shows single highest temperature found across all sensors/cores.")
-            .size(12)
-            .into()
+        text(
+            "For Intel processors shows single highest temperature found across all sensors/cores.",
+        )
+        .size(12)
+        .into(),
     );
 
     // Show sensor
@@ -95,7 +89,7 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show label
@@ -109,7 +103,7 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -123,16 +117,13 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)
@@ -140,15 +131,15 @@ pub fn view_cpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
 }
 
 /// View for CPU Temperature sensor configuration
-pub fn view_cpu_temp_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_cpu_temp_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("CPU Temperature").size(24).into(),
-        text("For Intel processors shows single highest temperature found across all sensors/cores.")
-            .size(12)
-            .into(),
+        text(
+            "For Intel processors shows single highest temperature found across all sensors/cores.",
+        )
+        .size(12)
+        .into(),
     ];
 
     // Show sensor
@@ -162,7 +153,7 @@ pub fn view_cpu_temp_config(config: &MinimonConfig) -> Element<'static, AppMessa
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show label
@@ -176,7 +167,7 @@ pub fn view_cpu_temp_config(config: &MinimonConfig) -> Element<'static, AppMessa
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -190,50 +181,38 @@ pub fn view_cpu_temp_config(config: &MinimonConfig) -> Element<'static, AppMessa
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Temperature unit dropdown
     items.push(
         row(vec![
             text("Temperature unit").into(),
-            button::text("Celsius ▾")
-                .into(),
+            button::text("Celsius ▾").into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Minimum temperature input
     items.push(
         row(vec![
             text("Minimum temperature").into(),
-            button::text("0")
-                .width(Length::Fixed(80.0))
-                .into(),
+            button::text("0").width(Length::Fixed(80.0)).into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Colors button
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)
@@ -241,11 +220,9 @@ pub fn view_cpu_temp_config(config: &MinimonConfig) -> Element<'static, AppMessa
 }
 
 /// View for Memory sensor configuration
-pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_memory_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("Memory Usage").size(24).into(),
     ];
 
@@ -260,7 +237,7 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show allocated on chart
@@ -274,7 +251,7 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Tooltip text
@@ -295,7 +272,7 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -309,7 +286,7 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // As percentage
@@ -323,25 +300,16 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Colors button
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)
@@ -349,11 +317,9 @@ pub fn view_memory_config(config: &MinimonConfig) -> Element<'static, AppMessage
 }
 
 /// View for Network sensor configuration
-pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_network_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("Network load").size(24).into(),
     ];
 
@@ -368,7 +334,7 @@ pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessag
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show label
@@ -382,7 +348,7 @@ pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessag
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -396,7 +362,7 @@ pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessag
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Section divider and header
@@ -414,25 +380,16 @@ pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessag
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Colors button
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)
@@ -440,11 +397,9 @@ pub fn view_network_config(config: &MinimonConfig) -> Element<'static, AppMessag
 }
 
 /// View for Disk sensor configuration
-pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_disk_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("Disk load").size(24).into(),
     ];
 
@@ -459,7 +414,7 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show label
@@ -473,7 +428,7 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
@@ -487,7 +442,7 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Disk write section
@@ -504,16 +459,10 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
     // Disk read section
     items.push(divider::horizontal::default().into());
@@ -529,24 +478,15 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)
@@ -554,44 +494,39 @@ pub fn view_disk_config(config: &MinimonConfig) -> Element<'static, AppMessage> 
 }
 
 /// View for GPU sensor configuration
-pub fn view_gpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
+pub fn view_gpu_config(config: &MachineSensorConfig) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<AppMessage>> = vec![
-        button::text("← Back")
-            .on_press(AppMessage::Back)
-            .into(),
+        button::text("← Back").on_press(AppMessage::Back).into(),
         text("Graphics").size(24).into(),
         text("NVIDIA GeForce RTX 4090").size(16).into(),
     ];
-
-    // Get default GPU config from HashMap
-    let default_gpu = config.gpus.get("default");
 
     // Show label
     items.push(
         row(vec![
             text("Show label").into(),
-            toggler(default_gpu.map(|g| g.usage.label_visible()).unwrap_or(false))
+            toggler(config.gpu.usage.label_visible())
                 .on_toggle(AppMessage::ToggleGpuShowLabel)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // Show icon
     items.push(
         row(vec![
             text("Show icon").into(),
-            toggler(default_gpu.map(|g| g.usage.icon_visible()).unwrap_or(true))
+            toggler(config.gpu.usage.icon_visible())
                 .on_toggle(AppMessage::ToggleGpuShowIcon)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // GPU load section
@@ -601,23 +536,17 @@ pub fn view_gpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
     items.push(
         row(vec![
             text("Show sensor").into(),
-            toggler(default_gpu.map(|g| g.usage.chart_visible()).unwrap_or(true))
+            toggler(config.gpu.usage.chart_visible())
                 .on_toggle(AppMessage::ToggleGpuLoadShowChart)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
     // GPU VRAM section
     items.push(divider::horizontal::default().into());
@@ -626,37 +555,31 @@ pub fn view_gpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
     items.push(
         row(vec![
             text("Show sensor").into(),
-            toggler(default_gpu.map(|g| g.vram.chart_visible()).unwrap_or(true))
+            toggler(config.gpu.vram.chart_visible())
                 .on_toggle(AppMessage::ToggleGpuVramShowChart)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     // As percentage toggle
     items.push(
         row(vec![
             text("As percentage").into(),
-            toggler(default_gpu.map(|g| g.vram.percentage).unwrap_or(false))
+            toggler(config.gpu.vram.percentage)
                 .on_toggle(AppMessage::ToggleGpuVramAsPercentage)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
     // GPU Temperature section
     items.push(divider::horizontal::default().into());
@@ -665,54 +588,42 @@ pub fn view_gpu_config(config: &MinimonConfig) -> Element<'static, AppMessage> {
     items.push(
         row(vec![
             text("Show sensor").into(),
-            toggler(default_gpu.map(|g| g.temp.chart_visible()).unwrap_or(false))
+            toggler(config.gpu.temp.chart_visible())
                 .on_toggle(AppMessage::ToggleGpuTempShowChart)
                 .width(Length::Shrink)
                 .into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     items.push(
         row(vec![
             text("Temperature unit").into(),
-            button::text("Celsius ▾")
-                .into(),
+            button::text("Celsius ▾").into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
     items.push(
         row(vec![
             text("Minimum temperature").into(),
-            button::text("0")
-                .width(Length::Fixed(80.0))
-                .into(),
+            button::text("0").width(Length::Fixed(80.0)).into(),
         ])
         .spacing(12)
         .align_y(Alignment::Center)
-        .into()
+        .into(),
     );
 
-    items.push(
-        container(
-            button::text("Colors")
-        )
-        .width(Length::Fill)
-        .into()
-    );
+    items.push(container(button::text("Colors")).width(Length::Fill).into());
 
-    let content = column(items)
-        .spacing(16)
-        .padding(24);
-    
-    let scrollable_content = scrollable(content)
-        .height(Length::Shrink);
-    
+    let content = column(items).spacing(16).padding(24);
+
+    let scrollable_content = scrollable(content).height(Length::Shrink);
+
     container(scrollable_content)
         .width(Length::Fixed(430.0))
         .max_height(600.0)

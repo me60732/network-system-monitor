@@ -37,18 +37,6 @@ pub enum SettingsMessage {
     MoveContentUp(usize),
     /// Move content item down in order
     MoveContentDown(usize),
-    /// Toggle CPU sensor visibility
-    ToggleCpuVisible(bool),
-    /// Toggle CPU temperature sensor visibility
-    ToggleCpuTempVisible(bool),
-    /// Toggle memory sensor visibility
-    ToggleMemoryVisible(bool),
-    /// Toggle network sensor visibility
-    ToggleNetworkVisible(bool),
-    /// Toggle disk sensor visibility
-    ToggleDiskVisible(bool),
-    /// Toggle GPU sensor visibility
-    ToggleGpuVisible(bool),
     /// No operation — used when a widget needs to return a message but no action is required.
     NoOp,
 }

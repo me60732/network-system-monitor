@@ -4,7 +4,7 @@
 
 pub mod machine_detail;
 pub mod machine_list;
-pub mod main_menu;
+pub mod machine_sensor_config_menu;
 pub mod panel_widget;
 pub mod sensor_config;
 pub mod settings_window;

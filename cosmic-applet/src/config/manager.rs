@@ -58,34 +58,9 @@ pub struct MachineConfig {
     /// Port number for the remote nmd-service UDP sender (default: 51057).
     pub port: u16,
 
-    // ── Per-Machine Metric Selection (checkbox selection — Troi completes UI) ───────────
-    /// Whether to display CPU usage percentage in grid panel.
-    #[serde(default = "default_true")]
-    pub show_cpu: bool,
-
-    /// Whether to display memory usage percentage in grid panel.
-    #[serde(default = "default_true")]
-    pub show_memory: bool,
-
-    /// Whether to display disk usage percentage in grid panel.
-    #[serde(default = "default_true")]
-    pub show_disk: bool,
-
-    /// Whether to display network RX/TX rate in grid panel.
-    #[serde(default = "default_true")]
-    pub show_network: bool,
-
-    /// Whether to display uptime in grid panel.
-    #[serde(default = "default_true")]
-    pub show_uptime: bool,
-
-    /// Whether to display GPU VRAM usage (if available) in grid panel.
-    #[serde(default = "default_true")]
-    pub show_gpu_vram: bool,
-
-    /// Whether to display temperature (°C) in grid panel.
-    #[serde(default = "default_true")]
-    pub show_temperature: bool,
+    /// Per-machine sensor configuration (which sensors are visible in panel)
+    #[serde(default)]
+    pub sensor_config: crate::minimon_config::MachineSensorConfig,
 }
 
 /// Default value for boolean serde fields — returns true so metrics are shown by default.
@@ -94,20 +69,14 @@ fn default_true() -> bool {
 }
 
 impl MachineConfig {
-    /// Create a new machine configuration with the given name and host, all metrics enabled by default.
+    /// Create a new machine configuration with the given name and host.
     pub fn new(name: String, host: String) -> Self {
         MachineConfig {
             name,
             enabled: true,
             host,
             port: DEFAULT_UDP_PORT,
-            show_cpu: true,
-            show_memory: true,
-            show_disk: true,
-            show_network: true,
-            show_uptime: true,
-            show_gpu_vram: true,
-            show_temperature: true,
+            sensor_config: crate::minimon_config::MachineSensorConfig::default(),
         }
     }
 

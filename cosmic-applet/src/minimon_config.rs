@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cosmic::{
     cosmic_config::{self, CosmicConfigEntry, cosmic_config_derive::CosmicConfigEntry},
     cosmic_theme::palette::Srgba,
@@ -546,7 +544,6 @@ pub enum ContentType {
 pub struct ContentOrder {
     pub order: Vec<ContentType>,
 }
-
 impl Default for ContentOrder {
     fn default() -> Self {
         Self {
@@ -562,46 +559,22 @@ impl Default for ContentOrder {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, CosmicConfigEntry, PartialEq)]
-#[version = 1]
-pub struct MinimonConfig {
-    pub refresh_rate: u32,
-    pub value_size_default: u16,
-    pub monospace_values: bool,
-
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct MachineSensorConfig {
     pub cpu: CpuConfig,
     pub cputemp: CpuTempConfig,
     pub memory: MemoryConfig,
-
     pub network1: NetworkConfig,
     pub network2: NetworkConfig,
-
     pub disks1: DisksConfig,
     pub disks2: DisksConfig,
-
-    pub gpus: HashMap<String, GpuConfig>,
-
-    pub sysmon: Option<String>,
-
-    pub panel_spacing: u16,
-
-    pub content_order: ContentOrder,
-    
-    // Sensor visibility toggles (apply to all machines)
-    pub sensor_cpu_visible: bool,
-    pub sensor_cpu_temp_visible: bool,
-    pub sensor_memory_visible: bool,
-    pub sensor_network_visible: bool,
-    pub sensor_disk_visible: bool,
-    pub sensor_gpu_visible: bool,
+    pub gpu: GpuConfig, // single GpuConfig, replaces the HashMap
 }
 
-impl Default for MinimonConfig {
+impl Default for MachineSensorConfig {
     fn default() -> Self {
         Self {
-            refresh_rate: 1000,
-            value_size_default: 11,
-            monospace_values: false,
             cpu: CpuConfig::default(),
             cputemp: CpuTempConfig::default(),
             memory: MemoryConfig::default(),
@@ -621,17 +594,35 @@ impl Default for MinimonConfig {
                 variant: DisksVariant::Read,
                 ..Default::default()
             },
-            gpus: HashMap::new(),
-            sysmon: None,
+            gpu: GpuConfig::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, CosmicConfigEntry, PartialEq)]
+#[serde(default)]
+#[version = 1]
+pub struct MinimonConfig {
+    pub refresh_rate: u32,
+    pub value_size_default: u16,
+    pub monospace_values: bool,
+
+    pub panel_spacing: u16,
+
+    pub content_order: ContentOrder,
+
+    pub sensor_config: MachineSensorConfig,
+}
+
+impl Default for MinimonConfig {
+    fn default() -> Self {
+        Self {
+            refresh_rate: 1000,
+            value_size_default: 11,
+            monospace_values: false,
             panel_spacing: 3, // Slider setting for cosmic.space_xs()
             content_order: ContentOrder::default(),
-            // All sensors visible by default
-            sensor_cpu_visible: true,
-            sensor_cpu_temp_visible: true,
-            sensor_memory_visible: true,
-            sensor_network_visible: true,
-            sensor_disk_visible: true,
-            sensor_gpu_visible: true,
+            sensor_config: MachineSensorConfig::default(),
         }
     }
 }

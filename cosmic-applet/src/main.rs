@@ -53,7 +53,7 @@ pub mod utils;
 
 // Import types from submodules
 use crate::config::manager::ConfigManager;
-use crate::ui::{SettingsWindow, main_menu};
+use crate::ui::SettingsWindow;
 use cosmic::iced::Limits;
 
 /// UDP message payload types received from remote machines.
@@ -74,8 +74,8 @@ pub enum View {
     Panel,
     /// Machine list - shows all machines when 2+ machines exist
     MachineList,
-    /// Main menu - sensor configuration menu
-    MainMenu,
+    /// Machine sensor config menu - per-machine sensor configuration
+    MachineSensorConfig(String), // NEW - replaces MainMenu, carries machine name
     /// Machine detail view - per-machine metric settings
     MachineDetail(String),
     /// General settings - app-wide configuration
@@ -99,8 +99,6 @@ pub enum View {
 pub enum AppMessage {
     /// No operation — used when a widget needs to return a message but no action is required.
     NoOp,
-    /// Navigation: open main menu from panel
-    OpenMainMenu,
     /// Navigation: open machine detail view by name
     OpenMachineDetail(String),
     /// Navigation: open settings (main menu) from machine list
@@ -144,6 +142,8 @@ pub enum AppMessage {
     AcceptPairing(String),
     /// Deny a pending pairing request by machine_id
     DenyPairing(String),
+    /// Navigation: open machine sensor config menu for a specific machine
+    OpenMachineSensorConfig(String),
 
     // CPU sensor configuration toggles
     ToggleCpuShowChart(bool),
@@ -227,6 +227,8 @@ pub struct AppState {
     pub pairing_manager: std::sync::Arc<std::sync::RwLock<crate::pairing_manager::PairingManager>>,
     /// In-memory queue of pending pairing requests waiting for user approval (60-second timeout)
     pub pending_pairings: Vec<crate::pairing_manager::PairingRequest>,
+    /// Which machine is being configured in sensor_config views
+    pub editing_machine_name: Option<String>,
 }
 
 impl AppState {
@@ -336,6 +338,7 @@ impl AppState {
             local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
+            editing_machine_name: None,
         }
     }
 }
@@ -438,6 +441,7 @@ impl Default for AppState {
             local_machine_config,
             pairing_manager,
             pending_pairings: Vec::new(),
+            editing_machine_name: None,
         }
     }
 }
@@ -780,27 +784,16 @@ impl Application for PanelApplet {
 
                 Task::none()
             }
-            AppMessage::OpenMainMenu => {
-                // Navigate to main menu or machine list depending on machine count.
+            AppMessage::OpenSettings => {
+                // Navigate to machine list from settings.
                 let mut app_state = self.shared_state.write().unwrap();
-                let machine_count = app_state.machines.len();
-                app_state.current_view = if machine_count >= 1 {
-                    View::MachineList
-                } else {
-                    View::MainMenu
-                };
+                app_state.current_view = View::MachineList;
                 Task::none()
             }
             AppMessage::OpenMachineDetail(machine_name) => {
                 // Open machine detail view by name.
                 let mut app_state = self.shared_state.write().unwrap();
                 app_state.current_view = View::MachineDetail(machine_name);
-                Task::none()
-            }
-            AppMessage::OpenSettings => {
-                // Navigate to main menu (settings) from machine list.
-                let mut app_state = self.shared_state.write().unwrap();
-                app_state.current_view = View::MainMenu;
                 Task::none()
             }
             AppMessage::OpenGeneralSettings => {
@@ -839,27 +832,29 @@ impl Application for PanelApplet {
                 app_state.current_view = View::GpuConfig;
                 Task::none()
             }
+            AppMessage::OpenMachineSensorConfig(machine_name) => {
+                // Open machine sensor config menu for a specific machine.
+                let mut app_state = self.shared_state.write().unwrap();
+                app_state.editing_machine_name = Some(machine_name.clone());
+                app_state.current_view = View::MachineSensorConfig(machine_name);
+                Task::none()
+            }
             AppMessage::Back => {
                 // Go back to previous view.
                 let mut app_state = self.shared_state.write().unwrap();
-                let machine_count = app_state.machines.len();
-                app_state.current_view = match app_state.current_view {
+                app_state.current_view = match &app_state.current_view {
                     View::MachineList => View::Panel,
-                    View::MainMenu | View::GeneralSettings => {
-                        if machine_count >= 1 {
-                            View::MachineList
+                    View::MachineDetail(_) => View::MachineList,
+                    View::MachineSensorConfig(name) => View::MachineDetail(name.clone()),
+                    View::GeneralSettings => View::MachineList,
+                    // Sensor config views go back to MachineSensorConfig
+                    _ => {
+                        if let Some(ref name) = app_state.editing_machine_name.clone() {
+                            View::MachineSensorConfig(name.clone())
                         } else {
-                            View::Panel
+                            View::MachineList
                         }
                     }
-                    View::MachineDetail(_) => {
-                        if machine_count >= 1 {
-                            View::MachineList
-                        } else {
-                            View::Panel
-                        }
-                    }
-                    _ => View::MainMenu,
                 };
                 Task::none()
             }
@@ -951,6 +946,16 @@ impl Application for PanelApplet {
                                         machine_id_str.clone(),
                                     )
                                 });
+                            // Copy local machine's sensor config as the default for new machines
+                            let local_sensor_config =
+                                state.settings_window.minimon_config.sensor_config.clone();
+                            let mut cm = state.config_manager.write().unwrap();
+                            if let Some(mc) =
+                                cm.machines.iter_mut().find(|m| m.name == machine_id_str)
+                            {
+                                mc.sensor_config = local_sensor_config;
+                            }
+                            let _ = cm.save();
                             // Send TCP response if this request came via TCP
                             if let Some(arc_tx) = req.tcp_response.as_ref() {
                                 if let Some(tx) = arc_tx.lock().unwrap().take() {
@@ -995,7 +1000,7 @@ impl Application for PanelApplet {
 
                 match settings_message {
                     crate::ui::settings_window::SettingsMessage::CloseWindow => {
-                        app_state.current_view = View::MainMenu;
+                        app_state.current_view = View::MachineList;
                     }
                     crate::ui::settings_window::SettingsMessage::UpdateRefreshRate(seconds) => {
                         app_state.settings_window.minimon_config.refresh_rate =
@@ -1074,39 +1079,7 @@ impl Application for PanelApplet {
                             );
                         }
                     }
-                    crate::ui::settings_window::SettingsMessage::ToggleCpuVisible(visible) => {
-                        app_state.settings_window.minimon_config.sensor_cpu_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::ToggleCpuTempVisible(visible) => {
-                        app_state
-                            .settings_window
-                            .minimon_config
-                            .sensor_cpu_temp_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::ToggleMemoryVisible(visible) => {
-                        app_state
-                            .settings_window
-                            .minimon_config
-                            .sensor_memory_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::ToggleNetworkVisible(visible) => {
-                        app_state
-                            .settings_window
-                            .minimon_config
-                            .sensor_network_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::ToggleDiskVisible(visible) => {
-                        app_state.settings_window.minimon_config.sensor_disk_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::ToggleGpuVisible(visible) => {
-                        app_state.settings_window.minimon_config.sensor_gpu_visible = visible;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
+
                     crate::ui::settings_window::SettingsMessage::NoOp => {
                         // No operation — do nothing.
                     }
@@ -1118,356 +1091,764 @@ impl Application for PanelApplet {
             // CPU sensor configuration toggles
             AppMessage::ToggleCpuShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.cpu.show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cpu
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cpu.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.cpu.show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cpu
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cpu.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.cpu.show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cpu
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cpu.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.cpu.show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cpu
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cpu.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
 
             // CPU Temperature sensor configuration toggles
             AppMessage::ToggleCpuTempShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .cputemp
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cputemp
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cputemp.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuTempShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .cputemp
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cputemp
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cputemp.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuTempShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .cputemp
-                    .show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cputemp
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cputemp.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleCpuTempShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .cputemp
-                    .show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .cputemp
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.cputemp.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
 
             // Memory sensor configuration toggles
             AppMessage::ToggleMemoryShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .memory
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleMemoryShowAllocated(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.memory.show_allocated = enabled;
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .show_allocated = enabled;
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.show_allocated = enabled;
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleMemoryShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .memory
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleMemoryShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .memory
-                    .show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleMemoryShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .memory
-                    .show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleMemoryAsPercentage(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state.settings_window.minimon_config.memory.percentage = enabled;
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .memory
+                        .percentage = enabled;
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.memory.percentage = enabled;
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
 
             // Network sensor configuration toggles
             AppMessage::ToggleNetworkCombine(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                if enabled {
-                    state.settings_window.minimon_config.network1.variant =
-                        crate::minimon_config::NetworkVariant::Combined;
-                } else {
-                    state.settings_window.minimon_config.network1.variant =
-                        crate::minimon_config::NetworkVariant::Download;
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    if enabled {
+                        state
+                            .settings_window
+                            .minimon_config
+                            .sensor_config
+                            .network1
+                            .variant = crate::minimon_config::NetworkVariant::Combined;
+                    } else {
+                        state
+                            .settings_window
+                            .minimon_config
+                            .sensor_config
+                            .network1
+                            .variant = crate::minimon_config::NetworkVariant::Download;
+                    }
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        if enabled {
+                            mc.sensor_config.network1.variant =
+                                crate::minimon_config::NetworkVariant::Combined;
+                        } else {
+                            mc.sensor_config.network1.variant =
+                                crate::minimon_config::NetworkVariant::Download;
+                        }
+                    }
+                    let _ = cm.save();
                 }
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
                 Task::none()
             }
             AppMessage::ToggleNetworkShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .network1
-                    .show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .network1
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.network1.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleNetworkShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .network1
-                    .show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .network1
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.network1.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleNetworkShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .network1
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .network1
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.network1.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleNetworkShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .network1
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .network1
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.network1.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
 
             // Disk sensor configuration toggles
             AppMessage::ToggleDiskCombine(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                if enabled {
-                    state.settings_window.minimon_config.disks1.variant =
-                        crate::minimon_config::DisksVariant::Combined;
-                } else {
-                    state.settings_window.minimon_config.disks1.variant =
-                        crate::minimon_config::DisksVariant::Write;
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    if enabled {
+                        state
+                            .settings_window
+                            .minimon_config
+                            .sensor_config
+                            .disks1
+                            .variant = crate::minimon_config::DisksVariant::Combined;
+                    } else {
+                        state
+                            .settings_window
+                            .minimon_config
+                            .sensor_config
+                            .disks1
+                            .variant = crate::minimon_config::DisksVariant::Write;
+                    }
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        if enabled {
+                            mc.sensor_config.disks1.variant =
+                                crate::minimon_config::DisksVariant::Combined;
+                        } else {
+                            mc.sensor_config.disks1.variant =
+                                crate::minimon_config::DisksVariant::Write;
+                        }
+                    }
+                    let _ = cm.save();
                 }
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
                 Task::none()
             }
             AppMessage::ToggleDiskShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks1
-                    .show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks1
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks1.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleDiskShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks1
-                    .show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks1
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks1.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleDiskWriteShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks1
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks1
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks1.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleDiskWriteShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks1
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks1
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks1.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleDiskReadShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks2
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks2
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks2.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleDiskReadShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .disks2
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .disks2
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.disks2.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
 
             // GPU sensor configuration toggles
             AppMessage::ToggleGpuShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .usage
-                    .show_label(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .usage
+                        .show_label(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.usage.show_label(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .usage
-                    .show_icon(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .usage
+                        .show_icon(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.usage.show_icon(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuLoadShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .usage
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .usage
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.usage.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuLoadShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .usage
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .usage
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.usage.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuVramShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .vram
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .vram
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.vram.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuVramAsPercentage(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .vram
-                    .percentage = enabled;
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .vram
+                        .percentage = enabled;
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.vram.percentage = enabled;
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuTempShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .temp
-                    .show_chart(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .temp
+                        .show_chart(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.temp.show_chart(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::ToggleGpuTempShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
-                state
-                    .settings_window
-                    .minimon_config
-                    .gpus
-                    .entry("default".to_string())
-                    .or_default()
-                    .temp
-                    .show_value(enabled);
-                AppState::save_minimon_config(&state.settings_window.minimon_config);
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                if editing.as_deref() == Some(&local_name) || editing.is_none() {
+                    state
+                        .settings_window
+                        .minimon_config
+                        .sensor_config
+                        .gpu
+                        .temp
+                        .show_value(enabled);
+                    AppState::save_minimon_config(&state.settings_window.minimon_config);
+                } else if let Some(machine_name) = editing {
+                    let mut cm = state.config_manager.write().unwrap();
+                    if let Some(mc) = cm.machines.iter_mut().find(|m| m.name == machine_name) {
+                        mc.sensor_config.gpu.temp.show_value(enabled);
+                    }
+                    let _ = cm.save();
+                }
                 Task::none()
             }
             AppMessage::CopyToClipboard(text) => {
@@ -1543,7 +1924,7 @@ impl Application for PanelApplet {
             crate::ui::panel_widget::PanelWidget::view_from_machines(
                 &[local_machine],
                 &minimon_config.content_order,
-                &minimon_config,
+                &minimon_config.sensor_config, // local machine's sensor config
             );
 
         // Add pending pairing badge if needed
@@ -1636,38 +2017,51 @@ impl Application for PanelApplet {
             View::Panel | View::MachineList => {
                 let state = self.shared_state.read().unwrap();
                 let local_machine = state.local_machine.clone();
-                let local_machine_config = state.local_machine_config.clone();
+                let local_machine_name = state.local_machine.name.clone();
                 let remote_machines: Vec<_> = state.machines.values().cloned().collect();
                 let content_order = state.settings_window.minimon_config.content_order.clone();
                 let minimon_config = state.settings_window.minimon_config.clone();
                 drop(state);
 
-                if remote_machines.is_empty() {
-                    // Only local machine — show its detail view directly
-                    crate::ui::machine_detail::view(
-                        &local_machine_config,
-                        &local_machine,
-                        &minimon_config,
-                        true,
+                // Build machines list with their sensor configs
+                let mut all_machines = vec![local_machine];
+                all_machines.extend(remote_machines);
+
+                crate::ui::machine_list::view(
+                    &all_machines,
+                    &content_order,
+                    &local_machine_name,
+                    &minimon_config.sensor_config, // for local machine
+                    &config,
+                )
+            }
+            View::MachineSensorConfig(ref machine_name) => {
+                let state = self.shared_state.read().unwrap();
+                let local_machine = state.local_machine.clone();
+
+                if local_machine.name == *machine_name {
+                    let sensor_config = state.settings_window.minimon_config.sensor_config.clone();
+                    drop(state);
+                    crate::ui::machine_sensor_config_menu::view(
+                        machine_name,
+                        Some(&local_machine),
+                        &sensor_config,
                     )
                 } else {
-                    // Show machine list: local first, then remotes
-                    let mut all_machines = vec![local_machine];
-                    all_machines.extend(remote_machines);
-                    crate::ui::machine_list::view(&all_machines, &content_order, &minimon_config)
+                    let machine_opt = state.machines.get(machine_name).cloned();
+                    let sensor_config = config
+                        .machines
+                        .iter()
+                        .find(|m| m.name == *machine_name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default();
+                    drop(state);
+                    crate::ui::machine_sensor_config_menu::view(
+                        machine_name,
+                        machine_opt.as_ref(),
+                        &sensor_config,
+                    )
                 }
-            }
-            View::MainMenu => {
-                // Show main menu with machine data (remote machines only)
-                let state = self.shared_state.read().unwrap();
-                let machines_vec: Vec<_> = state.machines.values().cloned().collect();
-                let minimon_config = state.settings_window.minimon_config.clone();
-                drop(state);
-                main_menu::view(
-                    &self.shared_state.read().unwrap().config_manager,
-                    &machines_vec,
-                    &minimon_config,
-                )
             }
             View::MachineDetail(ref machine_name) => {
                 let state = self.shared_state.read().unwrap();
@@ -1677,13 +2071,11 @@ impl Application for PanelApplet {
 
                 if local_machine.name == *machine_name {
                     // Local machine detail — no Remove button
+                    // Use saved sensor config from settings window
+                    let mut lmc = local_machine_config.clone();
+                    lmc.sensor_config = minimon_config.sensor_config.clone();
                     drop(state);
-                    crate::ui::machine_detail::view(
-                        &local_machine_config,
-                        &local_machine,
-                        &minimon_config,
-                        true,
-                    )
+                    crate::ui::machine_detail::view(&lmc, &local_machine, &minimon_config, true)
                 } else if let Some(remote_machine) = state.machines.get(machine_name).cloned() {
                     let config_entry = config
                         .machines
@@ -1721,39 +2113,123 @@ impl Application for PanelApplet {
             }
             View::CpuConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_cpu_config(&minimon_config)
+                crate::ui::sensor_config::view_cpu_config(&sensor_config)
             }
             View::CpuTempConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_cpu_temp_config(&minimon_config)
+                crate::ui::sensor_config::view_cpu_temp_config(&sensor_config)
             }
             View::MemoryConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_memory_config(&minimon_config)
+                crate::ui::sensor_config::view_memory_config(&sensor_config)
             }
             View::NetworkConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_network_config(&minimon_config)
+                crate::ui::sensor_config::view_network_config(&sensor_config)
             }
             View::DiskConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_disk_config(&minimon_config)
+                crate::ui::sensor_config::view_disk_config(&sensor_config)
             }
             View::GpuConfig => {
                 let state = self.shared_state.read().unwrap();
-                let minimon_config = state.settings_window.minimon_config.clone();
+                let editing = state.editing_machine_name.clone();
+                let local_name = state.local_machine.name.clone();
+                let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
+                {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                } else if let Some(ref name) = editing {
+                    config
+                        .machines
+                        .iter()
+                        .find(|m| &m.name == name)
+                        .map(|m| m.sensor_config.clone())
+                        .unwrap_or_default()
+                } else {
+                    state.settings_window.minimon_config.sensor_config.clone()
+                };
                 drop(state);
-                crate::ui::sensor_config::view_gpu_config(&minimon_config)
+                crate::ui::sensor_config::view_gpu_config(&sensor_config)
             }
         };
 

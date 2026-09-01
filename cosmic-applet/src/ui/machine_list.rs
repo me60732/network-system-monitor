@@ -2,7 +2,7 @@
 //!
 //! Displays a row for each machine with its full sensor panel, and a settings button at the bottom.
 
-use crate::minimon_config::{ContentOrder, MinimonConfig};
+use crate::minimon_config::{ContentOrder, MachineSensorConfig};
 use crate::ui::PanelWidget;
 use crate::{AppMessage, remote_machine::RemoteMachine};
 use cosmic::Element;
@@ -13,7 +13,9 @@ use cosmic::widget::{button, column, container, divider, icon, row, scrollable, 
 pub fn view(
     machines: &[RemoteMachine],
     content_order: &ContentOrder,
-    config: &MinimonConfig,
+    local_machine_name: &str,
+    local_sensor_config: &MachineSensorConfig,
+    config_manager: &crate::config::manager::ConfigManager,
 ) -> Element<'static, AppMessage> {
     let mut items: Vec<Element<'static, AppMessage>> = Vec::new();
 
@@ -57,7 +59,17 @@ pub fn view(
 
     // Add a row for each machine
     for machine in machines {
-        let machine_row = create_machine_row(machine, content_order, config);
+        let sensor_config = if machine.name == local_machine_name {
+            local_sensor_config.clone()
+        } else {
+            config_manager
+                .machines
+                .iter()
+                .find(|m| m.name == machine.name)
+                .map(|m| m.sensor_config.clone())
+                .unwrap_or_default()
+        };
+        let machine_row = create_machine_row(machine, content_order, &sensor_config);
         items.push(machine_row);
         items.push(divider::horizontal::default().into());
     }
@@ -76,7 +88,7 @@ pub fn view(
 fn create_machine_row(
     machine: &RemoteMachine,
     content_order: &ContentOrder,
-    config: &MinimonConfig,
+    sensor_config: &MachineSensorConfig,
 ) -> Element<'static, AppMessage> {
     let machine_name = machine.name.clone();
 
@@ -84,7 +96,7 @@ fn create_machine_row(
     let sensor_panel = PanelWidget::view_single_machine_clickable(
         machine,
         content_order,
-        config,
+        sensor_config,
         AppMessage::OpenMachineDetail(machine_name.clone()),
     );
 

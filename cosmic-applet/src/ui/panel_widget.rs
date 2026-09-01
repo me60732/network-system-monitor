@@ -1,25 +1,8 @@
-//! # PanelWidget — Single-line Cosmic panel rendering respecting MinimonConfig visibility flags
-//!
-//! Renders desktop system stats in a single-line format suitable for the Cosmic panel.
-//! Visibility of icons, charts, values, and labels is controlled by MinimonConfig settings:
-//! - `config.cpu.icon_visible()` → icon display
-//! - `config.cpu.chart_visible()` → ring chart display
-//! - `config.cpu.value_visible()` → value text display (inside rings or standalone)
-//! - `config.cpu.label_visible()` → label text display
-//!
-//! Layout format (single line, < 1s load target):
-//! ```text
-//! [cpu-icon] 0.90 [temp-icon] 34° [mem-icon] 3.00 [gpu-icon] 3.17 [net-icon] ↓ 29.4 KB/s ↑ 15.0 KB/s
-//! ```
-//!
-//! Click-to-expand opens Main Menu with machine list.
-
 use crate::AppMessage;
-use crate::charts::{ChartColors, ChartKind, DeviceKind, RingChart};
-use crate::minimon_config::{ContentOrder, ContentType, MinimonConfig};
+use crate::charts::ring::RingChart;
+use crate::minimon_config::{ChartColors, ChartKind, ContentOrder, ContentType, DeviceKind};
 use cosmic::widget::{button, canvas, icon, row, text};
 
-/// Icon names (using custom minimon icons - fallback to standard if not available)
 const CPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-cpu";
 const TEMP_ICON: &str = "io.github.cosmic_utils.minimon-applet-temperature";
 const RAM_ICON: &str = "io.github.cosmic_utils.minimon-applet-ram";
@@ -34,7 +17,7 @@ impl PanelWidget {
     pub fn view_from_machines(
         machines: &[crate::remote_machine::RemoteMachine],
         content_order: &ContentOrder,
-        config: &MinimonConfig,
+        sensor_config: &crate::minimon_config::MachineSensorConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         // Aggregate metrics from all machines (simple average for now)
         let mut total_cpu = 0.0;
@@ -103,15 +86,11 @@ impl PanelWidget {
         for content_type in &content_order.order {
             // Check if sensor is enabled before rendering
             let should_render = match content_type {
-                ContentType::CpuUsage => config.cpu.chart_visible(),
-                ContentType::CpuTemp => config.cputemp.chart_visible(),
-                ContentType::MemoryUsage => config.memory.chart_visible(),
-                ContentType::GpuInfo => config
-                    .gpus
-                    .get("default")
-                    .map(|g| g.usage.chart_visible())
-                    .unwrap_or(false),
-                ContentType::NetworkUsage => config.network1.chart_visible(),
+                ContentType::CpuUsage => sensor_config.cpu.chart_visible(),
+                ContentType::CpuTemp => sensor_config.cputemp.chart_visible(),
+                ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
+                ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
+                ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
                 ContentType::DiskUsage => false, // Not implemented yet
             };
 
@@ -122,18 +101,23 @@ impl PanelWidget {
             }
 
             let element = match content_type {
-                ContentType::CpuUsage => {
-                    Self::render_cpu_with_temp(avg_cpu, avg_cpu_temp, &config.cpu, &config.cputemp)
-                }
+                ContentType::CpuUsage => Self::render_cpu_with_temp(
+                    avg_cpu,
+                    avg_cpu_temp,
+                    &sensor_config.cpu,
+                    &sensor_config.cputemp,
+                ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
                 ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(&avg_memory_data, &config.memory)
+                    Self::render_memory_metric_with_data(&avg_memory_data, &sensor_config.memory)
                 }
-                ContentType::GpuInfo => {
-                    Self::render_gpu_group_with_data(avg_gpu_temp, &avg_gpu_data, config)
-                }
+                ContentType::GpuInfo => Self::render_gpu_group_with_data(
+                    avg_gpu_temp,
+                    &avg_gpu_data,
+                    &sensor_config.gpu,
+                ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
                 ContentType::DiskUsage => {
                     continue; // Already filtered above but keep for safety
@@ -157,7 +141,7 @@ impl PanelWidget {
     pub fn view_single_machine_clickable(
         machine: &crate::remote_machine::RemoteMachine,
         content_order: &ContentOrder,
-        config: &MinimonConfig,
+        sensor_config: &crate::minimon_config::MachineSensorConfig,
         on_click: AppMessage,
     ) -> cosmic::Element<'static, AppMessage> {
         // Extract metrics from this machine
@@ -174,15 +158,11 @@ impl PanelWidget {
         for content_type in &content_order.order {
             // Check if sensor is enabled before rendering
             let should_render = match content_type {
-                ContentType::CpuUsage => config.cpu.chart_visible(),
-                ContentType::CpuTemp => config.cputemp.chart_visible(),
-                ContentType::MemoryUsage => config.memory.chart_visible(),
-                ContentType::GpuInfo => config
-                    .gpus
-                    .get("default")
-                    .map(|g| g.usage.chart_visible())
-                    .unwrap_or(false),
-                ContentType::NetworkUsage => config.network1.chart_visible(),
+                ContentType::CpuUsage => sensor_config.cpu.chart_visible(),
+                ContentType::CpuTemp => sensor_config.cputemp.chart_visible(),
+                ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
+                ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
+                ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
                 ContentType::DiskUsage => false, // Not implemented yet
             };
 
@@ -191,18 +171,23 @@ impl PanelWidget {
             }
 
             let element = match content_type {
-                ContentType::CpuUsage => {
-                    Self::render_cpu_with_temp(cpu, cpu_temp, &config.cpu, &config.cputemp)
-                }
+                ContentType::CpuUsage => Self::render_cpu_with_temp(
+                    cpu,
+                    cpu_temp,
+                    &sensor_config.cpu,
+                    &sensor_config.cputemp,
+                ),
                 ContentType::CpuTemp => continue, // handled inside render_cpu_with_temp
                 ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(memory_data, &config.memory)
+                    Self::render_memory_metric_with_data(memory_data, &sensor_config.memory)
                 }
-                ContentType::GpuInfo => {
-                    Self::render_gpu_group_with_data(gpu_temp, &machine.sensors.gpu, config)
-                }
+                ContentType::GpuInfo => Self::render_gpu_group_with_data(
+                    gpu_temp,
+                    &machine.sensors.gpu,
+                    &sensor_config.gpu,
+                ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
                 ContentType::DiskUsage => {
                     continue; // Already filtered above but keep for safety
@@ -227,7 +212,7 @@ impl PanelWidget {
     pub fn view_single_machine(
         machine: &crate::remote_machine::RemoteMachine,
         content_order: &ContentOrder,
-        config: &MinimonConfig,
+        sensor_config: &crate::minimon_config::MachineSensorConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
@@ -243,15 +228,11 @@ impl PanelWidget {
         for content_type in &content_order.order {
             // Check if sensor is enabled before rendering
             let should_render = match content_type {
-                ContentType::CpuUsage => config.cpu.chart_visible(),
-                ContentType::CpuTemp => config.cputemp.chart_visible(),
-                ContentType::MemoryUsage => config.memory.chart_visible(),
-                ContentType::GpuInfo => config
-                    .gpus
-                    .get("default")
-                    .map(|g| g.usage.chart_visible())
-                    .unwrap_or(false),
-                ContentType::NetworkUsage => config.network1.chart_visible(),
+                ContentType::CpuUsage => sensor_config.cpu.chart_visible(),
+                ContentType::CpuTemp => sensor_config.cputemp.chart_visible(),
+                ContentType::MemoryUsage => sensor_config.memory.chart_visible(),
+                ContentType::GpuInfo => sensor_config.gpu.usage.chart_visible(),
+                ContentType::NetworkUsage => sensor_config.network1.chart_visible(),
                 ContentType::DiskUsage => false, // Not implemented yet
             };
 
@@ -260,18 +241,23 @@ impl PanelWidget {
             }
 
             let element = match content_type {
-                ContentType::CpuUsage => {
-                    Self::render_cpu_with_temp(cpu, cpu_temp, &config.cpu, &config.cputemp)
-                }
+                ContentType::CpuUsage => Self::render_cpu_with_temp(
+                    cpu,
+                    cpu_temp,
+                    &sensor_config.cpu,
+                    &sensor_config.cputemp,
+                ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
                 ContentType::MemoryUsage => {
-                    Self::render_memory_metric_with_data(memory_data, &config.memory)
+                    Self::render_memory_metric_with_data(memory_data, &sensor_config.memory)
                 }
-                ContentType::GpuInfo => {
-                    Self::render_gpu_group_with_data(gpu_temp, &machine.sensors.gpu, config)
-                }
+                ContentType::GpuInfo => Self::render_gpu_group_with_data(
+                    gpu_temp,
+                    &machine.sensors.gpu,
+                    &sensor_config.gpu,
+                ),
                 ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &config.network1)
+                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1)
                 }
                 ContentType::DiskUsage => {
                     continue; // Already filtered above but keep for safety
@@ -408,18 +394,15 @@ impl PanelWidget {
     fn render_gpu_group_with_data(
         temp: f32,
         gpu_data: &crate::simple_sensors::GpuData,
-        config: &MinimonConfig,
+        gpu_config: &crate::minimon_config::GpuConfig,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
-        // Get GPU config from HashMap, use defaults if not present
-        let gpu_config = config.gpus.get("default");
-
-        let show_icon = gpu_config.map(|g| g.usage.icon_visible()).unwrap_or(true);
-        let show_label = gpu_config.map(|g| g.usage.label_visible()).unwrap_or(false);
-        let show_temp = gpu_config.map(|g| g.temp.chart_visible()).unwrap_or(false);
-        let show_load = gpu_config.map(|g| g.usage.chart_visible()).unwrap_or(true);
-        let show_vram = gpu_config.map(|g| g.vram.chart_visible()).unwrap_or(false);
+        let show_icon = gpu_config.usage.icon_visible();
+        let show_label = gpu_config.usage.label_visible();
+        let show_temp = gpu_config.temp.chart_visible();
+        let show_load = gpu_config.usage.chart_visible();
+        let show_vram = gpu_config.vram.chart_visible();
 
         if show_icon {
             items.push(icon::from_name(GPU_ICON).symbolic(true).size(20).into());
@@ -453,7 +436,7 @@ impl PanelWidget {
             let vram_colors = ChartColors::new(DeviceKind::Vram, ChartKind::Ring);
 
             // Check if percentage display is enabled (like memory)
-            let show_as_percentage = gpu_config.map(|g| g.vram.percentage).unwrap_or(false);
+            let show_as_percentage = gpu_config.vram.percentage;
 
             if show_as_percentage {
                 // Display percentage text inside ring
@@ -466,62 +449,6 @@ impl PanelWidget {
                     RingChart::new_with_text(vram_percent, &Self::fmt_ring(vram_gb), &vram_colors);
                 items.push(canvas(vram_ring).width(36).height(36).into());
             }
-        }
-
-        row(items)
-            .spacing(4)
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
-    }
-
-    /// Render GPU group (DEPRECATED - use render_gpu_group_with_data for correct VRAM display)
-    #[allow(dead_code)]
-    fn render_gpu_group(
-        temp: f32,
-        load: f32,
-        vram: f32,
-        config: &MinimonConfig,
-    ) -> cosmic::Element<'static, AppMessage> {
-        let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
-
-        // Get GPU config from HashMap, use defaults if not present
-        let gpu_config = config.gpus.get("default");
-
-        let show_icon = gpu_config.map(|g| g.usage.icon_visible()).unwrap_or(true);
-        let show_label = gpu_config.map(|g| g.usage.label_visible()).unwrap_or(false);
-        let show_temp = gpu_config.map(|g| g.temp.chart_visible()).unwrap_or(false);
-        let show_load = gpu_config.map(|g| g.usage.chart_visible()).unwrap_or(true);
-        let show_vram = gpu_config.map(|g| g.vram.chart_visible()).unwrap_or(false);
-
-        if show_icon {
-            items.push(icon::from_name(GPU_ICON).symbolic(true).size(20).into());
-        }
-
-        if show_label {
-            items.push(text("GPU").size(11).into());
-        }
-
-        // Render temp chart if enabled
-        if show_temp {
-            let temp_percent = (temp / 100.0).clamp(0.0, 1.0) * 100.0;
-            let temp_colors = ChartColors::new(DeviceKind::GpuTemp, ChartKind::Ring);
-            let temp_ring =
-                RingChart::new_with_text(temp_percent, &format!("{}°", temp as i32), &temp_colors);
-            items.push(canvas(temp_ring).width(36).height(36).into());
-        }
-
-        // Render load chart if enabled
-        if show_load {
-            let load_colors = ChartColors::new(DeviceKind::Gpu, ChartKind::Ring);
-            let load_ring = RingChart::new(load, &load_colors);
-            items.push(canvas(load_ring).width(36).height(36).into());
-        }
-
-        // Render VRAM chart if enabled
-        if show_vram {
-            let vram_colors = ChartColors::new(DeviceKind::Vram, ChartKind::Ring);
-            let vram_ring = RingChart::new(vram, &vram_colors);
-            items.push(canvas(vram_ring).width(36).height(36).into());
         }
 
         row(items)

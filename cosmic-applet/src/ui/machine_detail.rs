@@ -11,40 +11,34 @@ use crate::charts::ring::RingChart;
 use crate::minimon_config::{ChartColors, ChartKind, DeviceKind};
 use crate::ui::panel_widget::PanelWidget;
 use cosmic::Element;
-use cosmic::iced::Length;
-use cosmic::widget::{button, canvas, column, container, divider, row, scrollable, text};
+use cosmic::iced::{Alignment, Length};
+use cosmic::widget::{button, canvas, column, container, divider, icon, row, scrollable, text};
 
 /// View the machine detail view for a specific machine with live data
 pub fn view(
     machine_config: &crate::config::manager::MachineConfig,
     remote_machine: &crate::remote_machine::RemoteMachine,
-    minimon_config: &crate::minimon_config::MinimonConfig,
-    is_local: bool, // if true, hide the Remove button
+    minimon_config: &crate::minimon_config::MinimonConfig, // global settings only
+    is_local: bool,                                        // if true, hide the Remove button
 ) -> Element<'static, AppMessage> {
     // Clone all data upfront to make Element 'static
     let machine_name_for_title = machine_config.name.clone();
     let machine_name_for_remove = machine_config.name.clone();
 
-    // Check what's enabled in machine config
-    let show_cpu = machine_config.show_cpu;
-    let show_memory = machine_config.show_memory;
-    let show_network = machine_config.show_network;
-    let show_disk = machine_config.show_disk;
-    let show_gpu_vram = machine_config.show_gpu_vram;
-    let show_temperature = machine_config.show_temperature;
-    let show_uptime = machine_config.show_uptime;
+    // Get per-machine sensor config from machine_config
+    let sensor_config = &machine_config.sensor_config;
 
-    // Check what's visible in the panel (has charts)
-    let cpu_chart_visible = minimon_config.cpu.chart_visible();
-    let cpu_temp_chart_visible = minimon_config.cputemp.chart_visible();
-    let memory_chart_visible = minimon_config.memory.chart_visible();
-    let network_chart_visible = minimon_config.network1.chart_visible();
-    let disk_chart_visible = false; // Disk doesn't have panel chart yet
-    let gpu_chart_visible = minimon_config
-        .gpus
-        .get("default")
-        .map(|g| g.usage.chart_visible() || g.vram.chart_visible() || g.temp.chart_visible())
-        .unwrap_or(false);
+    // Check what's visible in the panel (has charts) using per-machine sensor_config
+    let cpu_chart_visible = sensor_config.cpu.chart_visible();
+    let cpu_temp_chart_visible = sensor_config.cputemp.chart_visible();
+    let memory_chart_visible = sensor_config.memory.chart_visible();
+    let network_chart_visible = sensor_config.network1.chart_visible();
+    let _disk_chart_visible = false; // Disk doesn't have panel chart yet
+
+    // Fix GPU visibility: use three independent booleans instead of one combined check
+    let gpu_load_chart_visible = sensor_config.gpu.usage.chart_visible();
+    let gpu_vram_chart_visible = sensor_config.gpu.vram.chart_visible();
+    let gpu_temp_chart_visible = sensor_config.gpu.temp.chart_visible();
 
     // Clone sensor data for rendering details
     let cpu_percent = remote_machine.sensors.cpu.usage_percent;
@@ -66,19 +60,32 @@ pub fn view(
     // Back button at top-left
     let back_button = button::text("← Back").on_press(AppMessage::Back).into();
 
-    // Machine name as title
-    let machine_title = text(machine_name_for_title).size(18).into();
+    // Machine name with settings button on same row
+    let machine_name_str = machine_name_for_title.clone();
+    let settings_button = button::custom(icon::from_name("preferences-system-symbolic").size(16))
+        .on_press(AppMessage::OpenMachineSensorConfig(machine_name_str));
+
+    let title_row = row(vec![
+        text(machine_name_for_title).size(18).into(),
+        cosmic::widget::container(cosmic::widget::text(""))
+            .width(Length::Fill)
+            .into(),
+        settings_button.into(),
+    ])
+    .align_y(Alignment::Center)
+    .into();
 
     // Show the compact panel widget (shows what's currently visible with charts)
+    // Pass sensor_config from machine_config, not full minimon_config
     let panel_widget =
-        PanelWidget::view_single_machine(remote_machine, &content_order, minimon_config);
+        PanelWidget::view_single_machine(remote_machine, &content_order, &sensor_config);
 
     // Build detail sections for enabled sensors NOT visible in panel
     let mut metrics_items: Vec<Element<'static, AppMessage>> =
-        vec![back_button, machine_title, panel_widget];
+        vec![back_button, title_row, panel_widget];
 
-    // CPU Load detail (if enabled but not visible in panel)
-    if show_cpu && !cpu_chart_visible {
+    // CPU Load detail (shown in detail whenever NOT visible as chart in the row)
+    if !cpu_chart_visible {
         let colors = ChartColors::new(DeviceKind::Cpu, ChartKind::Ring);
         let ring = RingChart::new(cpu_percent, &colors);
 
@@ -100,8 +107,8 @@ pub fn view(
         );
     }
 
-    // CPU Temperature detail (if enabled but not visible in panel)
-    if show_temperature && !cpu_temp_chart_visible {
+    // CPU Temperature detail (shown in detail whenever NOT visible as chart in the row)
+    if !cpu_temp_chart_visible {
         let colors = ChartColors::new(DeviceKind::CpuTemp, ChartKind::Ring);
         let temp_percent = temp_celsius.min(100.0);
         let ring = RingChart::new_with_text(temp_percent, &format!("{:.0}", temp_celsius), &colors);
@@ -124,8 +131,8 @@ pub fn view(
         );
     }
 
-    // Memory detail (if enabled but not visible in panel)
-    if show_memory && !memory_chart_visible {
+    // Memory detail (shown in detail whenever NOT visible as chart in the row)
+    if !memory_chart_visible {
         let colors = ChartColors::new(DeviceKind::Memory, ChartKind::Ring);
         let ring = RingChart::new(memory_percent, &colors);
 
@@ -160,8 +167,8 @@ pub fn view(
         );
     }
 
-    // Network detail (if enabled but not visible in panel)
-    if show_network && !network_chart_visible {
+    // Network detail (shown in detail whenever NOT visible as chart in the row)
+    if !network_chart_visible {
         let rx_formatted = crate::utils::formatting::format_throughput_adaptive(network_rx_kbps);
         let tx_formatted = crate::utils::formatting::format_throughput_adaptive(network_tx_kbps);
 
@@ -183,8 +190,8 @@ pub fn view(
         );
     }
 
-    // Disk detail (if enabled but not visible in panel - shows I/O throughput + partitions)
-    if show_disk && !disk_chart_visible {
+    // Disk detail (disk has no chart in the row so always shows in detail)
+    {
         let mut disk_items: Vec<Element<'static, AppMessage>> = vec![];
 
         // Header "Disk Load"
@@ -267,8 +274,33 @@ pub fn view(
         metrics_items.push(container(column(disk_items).spacing(8)).padding(16).into());
     }
 
-    // GPU detail (if enabled but not visible in panel)
-    if show_gpu_vram && !gpu_chart_visible {
+    // GPU detail sections (replace single block with three independent checks)
+
+    // GPU Load detail
+    if !gpu_load_chart_visible {
+        let colors = ChartColors::new(DeviceKind::Gpu, ChartKind::Ring);
+        let ring = RingChart::new(gpu_percent, &colors);
+
+        metrics_items.push(
+            container(
+                column(vec![
+                    text("GPU Load").size(16).into(),
+                    row(vec![
+                        canvas(ring).width(48).height(48).into(),
+                        text(format!("{:.2}%", gpu_percent)).size(14).into(),
+                    ])
+                    .spacing(12)
+                    .into(),
+                ])
+                .spacing(8),
+            )
+            .padding(16)
+            .into(),
+        );
+    }
+
+    // GPU VRAM detail
+    if !gpu_vram_chart_visible {
         let colors = ChartColors::new(DeviceKind::Vram, ChartKind::Ring);
         let ring = RingChart::new(gpu_percent, &colors);
 
@@ -292,8 +324,33 @@ pub fn view(
         );
     }
 
-    // Uptime detail (if enabled - always shown since no chart representation)
-    if show_uptime {
+    // GPU Temperature detail (use DeviceKind::GpuTemp)
+    if !gpu_temp_chart_visible {
+        let colors = ChartColors::new(DeviceKind::GpuTemp, ChartKind::Ring);
+        let temp_percent = temp_celsius.min(100.0);
+        let ring =
+            RingChart::new_with_text(temp_percent, &format!("{}", temp_celsius as i32), &colors);
+
+        metrics_items.push(
+            container(
+                column(vec![
+                    text("GPU Temperature").size(16).into(),
+                    row(vec![
+                        canvas(ring).width(48).height(48).into(),
+                        text(format!("{}°C", temp_celsius as i32)).size(14).into(),
+                    ])
+                    .spacing(12)
+                    .into(),
+                ])
+                .spacing(8),
+            )
+            .padding(16)
+            .into(),
+        );
+    }
+
+    // Uptime detail (always shown if uptime_seconds > 0, no longer gated by show_uptime)
+    if uptime_seconds > 0 {
         let uptime_formatted = crate::utils::formatting::format_uptime(uptime_seconds);
 
         metrics_items.push(
@@ -323,7 +380,7 @@ pub fn view(
                     .on_press(AppMessage::RemoveMachine(remove_name)),
             )
             .padding([0, 16, 16, 16])
-            .width(cosmic::iced::Length::Fill)
+            .width(Length::Fill)
             .into(),
         );
     }
