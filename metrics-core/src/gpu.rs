@@ -5,11 +5,10 @@
 /// - **0x10de (NVIDIA)**: Uses NVML library for accurate VRAM/load stats
 /// - **0x1002 (AMD)** or **0x8086 (Intel)**: Reads from card0 sysfs (mem_info_vram_*, gpu_busy_percent)
 use nvml_wrapper::Nvml;
-use serde::{Deserialize, Serialize};
 use std::fs;
 
 /// GPU statistics — optional because not all systems have a discrete GPU.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct GpuStats {
     /// Total VRAM in bytes, or `None` if no discrete GPU is detected.
     pub vram_total: Option<u64>,

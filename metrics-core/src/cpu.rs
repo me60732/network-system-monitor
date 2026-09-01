@@ -25,20 +25,19 @@
 //! CPU delta measurement adds ~1-2ms overhead for the extra procfs read.
 #![allow(missing_docs)]
 use procfs::CurrentSI;
-use serde::{Deserialize, Serialize};
 /// Per-core CPU utilization statistics.
 ///
 /// Represents the CPU usage for a single logical processor core.
 /// - `index`: Zero-indexed core number (0 = first logical processor)
 /// - `usage`: Current usage percentage for this core (0.0–100.0)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct CoreStat {
     pub index: u32,
     pub usage: f32,
 }
 
 /// Aggregate CPU statistics across all cores.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct CpuStats {
     /// Overall system-wide CPU usage percentage (0.0–100.0).
     pub usage: f32,

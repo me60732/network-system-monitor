@@ -21,6 +21,9 @@ pub struct RemoteMachine {
 
     /// Last update timestamp (seconds since Unix epoch for cloning support)
     pub last_update: u64,
+
+    /// Whether this is the local machine
+    pub is_local: bool,
 }
 
 impl RemoteMachine {
@@ -32,7 +35,14 @@ impl RemoteMachine {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
+            is_local: false,
         }
+    }
+
+    pub fn new_local(name: String) -> Self {
+        let mut machine = Self::new(name);
+        machine.is_local = true;
+        machine
     }
 
     /// Create a RemoteMachine with fake debug data including partitions
@@ -40,7 +50,7 @@ impl RemoteMachine {
     pub fn new_debug(name: String) -> Self {
         use crate::simple_sensors::PartitionInfo;
 
-        let mut machine = Self::new(name);
+        let mut machine = Self::new_local(name);
 
         // Add fake partition data
         machine.sensors.disk.partitions = vec![

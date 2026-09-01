@@ -1,7 +1,8 @@
 use crate::AppMessage;
 use crate::charts::ring::RingChart;
 use crate::minimon_config::{ChartColors, ChartKind, ContentOrder, ContentType, DeviceKind};
-use cosmic::widget::{button, canvas, icon, row, text};
+use cosmic::iced::Length;
+use cosmic::widget::{button, canvas, container, icon, row, text};
 
 const CPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-cpu";
 const TEMP_ICON: &str = "io.github.cosmic_utils.minimon-applet-temperature";
@@ -38,6 +39,7 @@ impl PanelWidget {
         content_order: &ContentOrder,
         sensor_config: &crate::minimon_config::MachineSensorConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         // Aggregate metrics from all machines (simple average for now)
         let mut total_cpu = 0.0;
@@ -137,27 +139,35 @@ impl PanelWidget {
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
                 ContentType::MemoryUsage => Self::render_memory_metric_with_data(
                     &avg_memory_data,
                     &sensor_config.memory,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     avg_gpu_temp,
                     &avg_gpu_data,
                     &sensor_config.gpu,
                     display,
+                    is_horizontal,
                 ),
-                ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
-                }
+                ContentType::NetworkUsage => Self::render_network_metric(
+                    rx_kbps,
+                    tx_kbps,
+                    &sensor_config.network1,
+                    display,
+                    is_horizontal,
+                ),
                 ContentType::DiskUsage => Self::render_disk_metric(
                     avg_disk_write_kbps,
                     avg_disk_read_kbps,
                     &sensor_config.disks1,
                     display,
+                    is_horizontal,
                 ),
             };
             log::debug!("    → Added to metrics_items");
@@ -182,6 +192,7 @@ impl PanelWidget {
         on_click: AppMessage,
         display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
+        let is_horizontal = true;
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
         let cpu_temp = machine.sensors.temperature.celsius;
@@ -217,27 +228,35 @@ impl PanelWidget {
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::CpuTemp => continue, // handled inside render_cpu_with_temp
                 ContentType::MemoryUsage => Self::render_memory_metric_with_data(
                     memory_data,
                     &sensor_config.memory,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     gpu_temp,
                     &machine.sensors.gpu,
                     &sensor_config.gpu,
                     display,
+                    is_horizontal,
                 ),
-                ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
-                }
+                ContentType::NetworkUsage => Self::render_network_metric(
+                    rx_kbps,
+                    tx_kbps,
+                    &sensor_config.network1,
+                    display,
+                    is_horizontal,
+                ),
                 ContentType::DiskUsage => Self::render_disk_metric(
                     disk_write_kbps,
                     disk_read_kbps,
                     &sensor_config.disks1,
                     display,
+                    is_horizontal,
                 ),
             };
             metrics_items.push(element);
@@ -262,6 +281,7 @@ impl PanelWidget {
         sensor_config: &crate::minimon_config::MachineSensorConfig,
         display: &GlobalDisplayConfig,
     ) -> cosmic::Element<'static, AppMessage> {
+        let is_horizontal = true;
         // Extract metrics from this machine
         let cpu = machine.sensors.cpu.usage_percent;
         let cpu_temp = machine.sensors.temperature.celsius;
@@ -297,27 +317,35 @@ impl PanelWidget {
                     &sensor_config.cpu,
                     &sensor_config.cputemp,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::CpuTemp => continue, // Skip - now combined with CPU
                 ContentType::MemoryUsage => Self::render_memory_metric_with_data(
                     memory_data,
                     &sensor_config.memory,
                     display,
+                    is_horizontal,
                 ),
                 ContentType::GpuInfo => Self::render_gpu_group_with_data(
                     gpu_temp,
                     &machine.sensors.gpu,
                     &sensor_config.gpu,
                     display,
+                    is_horizontal,
                 ),
-                ContentType::NetworkUsage => {
-                    Self::render_network_metric(rx_kbps, tx_kbps, &sensor_config.network1, display)
-                }
+                ContentType::NetworkUsage => Self::render_network_metric(
+                    rx_kbps,
+                    tx_kbps,
+                    &sensor_config.network1,
+                    display,
+                    is_horizontal,
+                ),
                 ContentType::DiskUsage => Self::render_disk_metric(
                     disk_write_kbps,
                     disk_read_kbps,
                     &sensor_config.disks1,
                     display,
+                    is_horizontal,
                 ),
             };
             metrics_items.push(element);
@@ -337,6 +365,7 @@ impl PanelWidget {
         cpu_config: &crate::minimon_config::CpuConfig,
         temp_config: &crate::minimon_config::CpuTempConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -372,10 +401,18 @@ impl PanelWidget {
             items.push(canvas(temp_ring).width(36).height(36).into());
         }
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Format a float value for display inside a ring chart.
@@ -395,6 +432,7 @@ impl PanelWidget {
         data: &crate::simple_sensors::MemoryData,
         config: &crate::minimon_config::MemoryConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -426,10 +464,18 @@ impl PanelWidget {
             items.push(canvas(ring).width(36).height(36).into());
         }
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Render memory metric with icon + ring (value centered inside) - DEPRECATED, use render_memory_metric_with_data
@@ -438,6 +484,7 @@ impl PanelWidget {
         value: f32,
         config: &crate::minimon_config::MemoryConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -458,10 +505,18 @@ impl PanelWidget {
         let ring = RingChart::new(value, &colors);
         items.push(canvas(ring).width(36).height(36).into());
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Render GPU group with data object (shows GB used for VRAM, not percentage)
@@ -470,6 +525,7 @@ impl PanelWidget {
         gpu_data: &crate::simple_sensors::GpuData,
         gpu_config: &crate::minimon_config::GpuConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -532,10 +588,18 @@ impl PanelWidget {
             }
         }
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Render network metrics - only text (no chart)
@@ -544,6 +608,7 @@ impl PanelWidget {
         tx_kbps: f64,
         config: &crate::minimon_config::NetworkConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -563,33 +628,44 @@ impl PanelWidget {
         let rx_formatted = crate::utils::formatting::format_throughput_adaptive(rx_kbps);
         let tx_formatted = crate::utils::formatting::format_throughput_adaptive(tx_kbps);
 
-        items.push(
-            column(vec![
-                {
-                    let mut rx_text = text(format!("↓{}", rx_formatted))
-                        .size(display.value_size.saturating_sub(2).max(7));
-                    if display.monospace {
-                        rx_text = rx_text.font(cosmic::iced::Font::MONOSPACE);
-                    }
-                    rx_text.into()
-                },
-                {
-                    let mut tx_text = text(format!("↑{}", tx_formatted))
-                        .size(display.value_size.saturating_sub(2).max(7));
-                    if display.monospace {
-                        tx_text = tx_text.font(cosmic::iced::Font::MONOSPACE);
-                    }
-                    tx_text.into()
-                },
-            ])
-            .spacing(1)
-            .into(),
-        );
+        let text_size = display.value_size.saturating_sub(2).max(7);
+        let text_col = column(vec![
+            {
+                let mut rx_text = text(format!("↓{}", rx_formatted)).size(text_size);
+                if display.monospace {
+                    rx_text = rx_text.font(cosmic::iced::Font::MONOSPACE);
+                }
+                rx_text.into()
+            },
+            {
+                let mut tx_text = text(format!("↑{}", tx_formatted)).size(text_size);
+                if display.monospace {
+                    tx_text = tx_text.font(cosmic::iced::Font::MONOSPACE);
+                }
+                tx_text.into()
+            },
+        ])
+        .spacing(1);
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            let fixed_width = (text_size as f32 * 6.0) as f32;
+            items.push(container(text_col).width(Length::Fixed(fixed_width)).into());
+        } else {
+            items.push(text_col.into());
+        }
+
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Render disk metrics — icon + stacked W/R throughput text (mirrors network layout)
@@ -598,6 +674,7 @@ impl PanelWidget {
         read_kbps: f64,
         config: &crate::minimon_config::DisksConfig,
         display: &GlobalDisplayConfig,
+        is_horizontal: bool,
     ) -> cosmic::Element<'static, AppMessage> {
         let mut items: Vec<cosmic::Element<'static, AppMessage>> = Vec::new();
 
@@ -617,32 +694,43 @@ impl PanelWidget {
         let write_formatted = crate::utils::formatting::format_throughput_adaptive(write_kbps);
         let read_formatted = crate::utils::formatting::format_throughput_adaptive(read_kbps);
 
-        items.push(
-            column(vec![
-                {
-                    let mut write_text = text(format!("W{}", write_formatted))
-                        .size(display.value_size.saturating_sub(2).max(7));
-                    if display.monospace {
-                        write_text = write_text.font(cosmic::iced::Font::MONOSPACE);
-                    }
-                    write_text.into()
-                },
-                {
-                    let mut read_text = text(format!("R{}", read_formatted))
-                        .size(display.value_size.saturating_sub(2).max(7));
-                    if display.monospace {
-                        read_text = read_text.font(cosmic::iced::Font::MONOSPACE);
-                    }
-                    read_text.into()
-                },
-            ])
-            .spacing(1)
-            .into(),
-        );
+        let text_size = display.value_size.saturating_sub(2).max(7);
+        let text_col = column(vec![
+            {
+                let mut write_text = text(format!("W{}", write_formatted)).size(text_size);
+                if display.monospace {
+                    write_text = write_text.font(cosmic::iced::Font::MONOSPACE);
+                }
+                write_text.into()
+            },
+            {
+                let mut read_text = text(format!("R{}", read_formatted)).size(text_size);
+                if display.monospace {
+                    read_text = read_text.font(cosmic::iced::Font::MONOSPACE);
+                }
+                read_text.into()
+            },
+        ])
+        .spacing(1);
 
-        row(items)
-            .spacing(display.spacing.max(2))
-            .align_y(cosmic::iced::Alignment::Center)
-            .into()
+        if is_horizontal {
+            let fixed_width = (text_size as f32 * 6.0) as f32;
+            items.push(container(text_col).width(Length::Fixed(fixed_width)).into());
+        } else {
+            items.push(text_col.into());
+        }
+
+        if is_horizontal {
+            row(items)
+                .spacing(display.spacing.max(2))
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(items)
+                .spacing(display.spacing.max(2))
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 }

@@ -3541,7 +3541,6 @@ dependencies = [
  "procfs",
  "rkyv",
  "rustix 1.1.4",
- "serde",
 ]
 
 [[package]]

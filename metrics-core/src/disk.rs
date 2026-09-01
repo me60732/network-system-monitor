@@ -8,14 +8,13 @@
 
 use procfs::mounts;
 use rustix::fs::statvfs;
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::ffi::CString;
 use std::io::BufRead;
 use std::os::unix::fs::MetadataExt;
 
 /// Disk partition statistics for one mount point.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct PartitionStat {
     /// Mount point path (e.g., "/", "/home", "/boot").
     pub mount: String,
@@ -28,7 +27,7 @@ pub struct PartitionStat {
 /// Disk IO statistics (cumulative since boot).
 ///
 /// DEPRECATED: Use [`DiskIoCollector`] instead which returns deltas per-interval.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct DiskIoStats {
     /// Total bytes read from all disks since boot.
     pub read_bytes: u64,
@@ -37,7 +36,7 @@ pub struct DiskIoStats {
 }
 
 /// Aggregate disk statistics across all mounted partitions.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct DiskStats {
     /// One entry per detected mount point with usage data.
     pub partitions: Vec<PartitionStat>,

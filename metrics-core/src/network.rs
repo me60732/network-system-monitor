@@ -7,11 +7,10 @@
 //! This matches minimon-applet's collection pattern using `received()` and `transmitted()` deltas.
 
 use procfs::net::dev_status;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Network statistics for a single interface.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct InterfaceStat {
     /// Interface name (e.g., "eth0", "wlan0", "lo").
     pub name: String,
@@ -30,7 +29,7 @@ pub struct InterfaceStat {
 }
 
 /// Aggregate network statistics across all interfaces.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct NetworkStats {
     /// One entry per detected network interface with byte counters.
     pub interfaces: Vec<InterfaceStat>,

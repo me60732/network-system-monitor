@@ -53,6 +53,7 @@ pub mod utils;
 
 // Import types from submodules
 use crate::config::manager::ConfigManager;
+use crate::remote_machine::RemoteMachine;
 use crate::ui::SettingsWindow;
 use cosmic::iced::Limits;
 
@@ -145,6 +146,11 @@ pub enum AppMessage {
     /// Navigation: open machine sensor config menu for a specific machine
     OpenMachineSensorConfig(String),
 
+    /// Move a machine up in the display order (session-only, not persisted)
+    MoveMachineUp(String),
+    /// Move a machine down in the display order (session-only, not persisted)
+    MoveMachineDown(String),
+
     // CPU sensor configuration toggles
     ToggleCpuShowChart(bool),
     ToggleCpuShowValue(bool),
@@ -215,10 +221,10 @@ pub struct AppState {
     pub current_view: View,
     /// Settings window for general configuration (always created during init)
     pub settings_window: SettingsWindow,
-    /// Remote machines with live metric data (HashMap<machine_name, RemoteMachine>)
-    pub machines: std::collections::HashMap<String, crate::remote_machine::RemoteMachine>,
-    /// Local machine always present - collected directly via nmd_service::MetricsAggregator
-    pub local_machine: crate::remote_machine::RemoteMachine,
+    /// Remote machines with live metric data, ordered list with local machine at index 0
+    pub machines: Vec<std::sync::Arc<std::sync::RwLock<crate::remote_machine::RemoteMachine>>>,
+    /// Local machine - Arc clone pointing to the same heap object as machines[0]
+    pub local_machine: std::sync::Arc<std::sync::RwLock<crate::remote_machine::RemoteMachine>>,
     /// Receiver for local metrics packets (from background thread running MetricsAggregator)
     local_metrics_rx: std::sync::Mutex<std::sync::mpsc::Receiver<nmd_service::MetricPacket>>,
     /// Local machine config (127.0.0.1, hostname-based name)
@@ -286,6 +292,7 @@ impl AppState {
     pub fn new_debug() -> Self {
         use crate::config::manager::MachineConfig;
         use crate::remote_machine::RemoteMachine;
+        use std::sync::{Arc, RwLock};
 
         let mut config = ConfigManager::default();
 
@@ -302,28 +309,39 @@ impl AppState {
         // Load saved MinimonConfig from COSMIC config system
         let minimon_config = Self::load_minimon_config();
 
-        // Create RemoteMachine instances from config with fake debug data
-        let config_read = config_manager.read().unwrap();
-        let mut machines = std::collections::HashMap::new();
-        for machine_config in &config_read.machines {
-            machines.insert(
-                machine_config.name.clone(),
-                RemoteMachine::new_debug(machine_config.name.clone()),
-            );
-        }
-        drop(config_read);
-
         // ── Local machine setup for debug mode ───────────────────────────────
         let hostname = std::fs::read_to_string("/proc/sys/kernel/hostname")
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|_| "local".to_string());
         let local_machine_config =
             crate::config::manager::MachineConfig::new(hostname.clone(), "127.0.0.1".to_string());
-        let local_machine = RemoteMachine::new_debug(hostname.clone());
+
+        // Create machines Vec with Arc<RwLock<RemoteMachine>>
+        // Local machine at index 0, then remotes from config alphabetically
+        let local = Arc::new(RwLock::new(RemoteMachine::new_local(hostname.clone())));
+        let mut machines: Vec<Arc<RwLock<RemoteMachine>>> = vec![Arc::clone(&local)];
+
+        // Add remotes from config alphabetically
+        let config_read = config_manager.read().unwrap();
+        let mut remote_names: Vec<String> = config_read
+            .machines
+            .iter()
+            .filter(|m| m.host != "127.0.0.1" && m.host != "localhost")
+            .map(|m| m.name.clone())
+            .collect();
+        remote_names.sort();
+        for name in remote_names {
+            machines.push(Arc::new(RwLock::new(RemoteMachine::new_debug(name))));
+        }
+        drop(config_read);
+
         let (_tx, local_rx) = std::sync::mpsc::channel::<nmd_service::MetricPacket>();
         let local_metrics_rx = std::sync::Mutex::new(local_rx);
 
         let pairing_manager = Self::create_pairing_manager();
+
+        // local_machine is the same Arc as machines[0]
+        let local_machine = Arc::clone(&machines[0]);
 
         let mut settings_window = SettingsWindow::new(settings_window_config);
         settings_window.update_config(minimon_config);
@@ -346,6 +364,7 @@ impl AppState {
 impl Default for AppState {
     fn default() -> Self {
         use crate::remote_machine::RemoteMachine;
+        use std::sync::{Arc, RwLock};
 
         // Production: ~/.config/cosmic-applet/config.toml
         // Development fallback: ./config.toml (when running from project dir)
@@ -393,20 +412,27 @@ impl Default for AppState {
             }
         }
 
-        // Create RemoteMachine instances from config (skip localhost)
+        // ── Machines Vec setup ───────────────────────────────────────────────────
+        // Local machine at index 0, then remotes from config alphabetically
+        let local = Arc::new(RwLock::new(RemoteMachine::new_local(hostname.clone())));
+        let mut machines: Vec<Arc<RwLock<RemoteMachine>>> = vec![Arc::clone(&local)];
+
+        // Add remotes from config alphabetically (skip localhost)
         let config_read = config_manager.read().unwrap();
-        let mut machines = std::collections::HashMap::new();
-        for machine_config in &config_read.machines {
-            // Skip localhost entries — local machine is now always collected directly
-            if machine_config.host == "127.0.0.1" || machine_config.host == "localhost" {
-                continue;
-            }
-            machines.insert(
-                machine_config.name.clone(),
-                RemoteMachine::new(machine_config.name.clone()),
-            );
+        let mut remote_names: Vec<String> = config_read
+            .machines
+            .iter()
+            .filter(|m| m.host != "127.0.0.1" && m.host != "localhost")
+            .map(|m| m.name.clone())
+            .collect();
+        remote_names.sort();
+        for name in remote_names {
+            machines.push(Arc::new(RwLock::new(RemoteMachine::new(name))));
         }
         drop(config_read);
+
+        // local_machine is the same Arc as machines[0]
+        let local_machine = Arc::clone(&machines[0]);
 
         // Initialize settings_window with config before reading refresh rate for thread
         let mut settings_window = SettingsWindow::new(settings_window_config);
@@ -429,9 +455,6 @@ impl Default for AppState {
                 std::thread::sleep(std::time::Duration::from_millis(local_refresh_ms));
             }
         });
-
-        // Initialize local_machine with default zero data — first real data arrives within 1s
-        let local_machine = crate::remote_machine::RemoteMachine::new(hostname.clone());
 
         let pairing_manager = Self::create_pairing_manager();
 
@@ -459,11 +482,14 @@ fn main() -> Result<(), cosmic::iced::Error> {
     use env_logger::Builder;
     use std::fs::OpenOptions;
 
+    let log_path = std::env::var("HOME")
+        .map(|h| format!("{}/cosmic-applet.log", h))
+        .unwrap_or_else(|_| "/tmp/cosmic-applet.log".to_string());
     let log_file = OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
-        .open("cosmic-applet.log")
+        .open(&log_path)
         .expect("Failed to open log file");
 
     Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
@@ -606,13 +632,25 @@ impl Application for PanelApplet {
 
             // Spawn UDP receiver in a background task — updates app state in real-time.
             std::thread::spawn(move || {
-                let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+                log::info!("[UDP-THREAD] Thread spawned (dev)");
+                let rt = match tokio::runtime::Runtime::new() {
+                    Ok(rt) => {
+                        log::info!("[UDP-THREAD] Tokio runtime created (dev)");
+                        rt
+                    }
+                    Err(e) => {
+                        log::error!("[UDP-THREAD] Failed to create tokio runtime: {}", e);
+                        return;
+                    }
+                };
                 rt.block_on(async move {
+                    log::info!("[UDP-THREAD] Entering async context (dev)");
                     crate::network::udp_receiver::UdpReceiver::start_listening_with_pairing(
                         state_clone,
                         pairing_manager_clone,
                     )
                     .await;
+                    log::warn!("[UDP-THREAD] listen loop returned — UDP receiver stopped (dev)");
                 });
             });
 
@@ -666,13 +704,25 @@ impl Application for PanelApplet {
 
         // Spawn UDP receiver in a background task — updates app state in real-time.
         std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+            log::info!("[UDP-THREAD] Thread spawned");
+            let rt = match tokio::runtime::Runtime::new() {
+                Ok(rt) => {
+                    log::info!("[UDP-THREAD] Tokio runtime created");
+                    rt
+                }
+                Err(e) => {
+                    log::error!("[UDP-THREAD] Failed to create tokio runtime: {}", e);
+                    return;
+                }
+            };
             rt.block_on(async move {
+                log::info!("[UDP-THREAD] Entering async context");
                 crate::network::udp_receiver::UdpReceiver::start_listening_with_pairing(
                     state_clone,
                     pairing_manager_clone,
                 )
                 .await;
+                log::warn!("[UDP-THREAD] listen loop returned — UDP receiver stopped");
             });
         });
 
@@ -761,21 +811,25 @@ impl Application for PanelApplet {
                     };
                     // Update local machine with collected packets (no lock needed)
                     for packet in packets {
-                        let mut state = self.shared_state.write().unwrap();
-                        state.local_machine.update_from_packet(&packet);
+                        let state = self.shared_state.write().unwrap();
+                        state
+                            .local_machine
+                            .write()
+                            .unwrap()
+                            .update_from_packet(&packet);
                     }
                 }
 
                 // Periodic refresh - just trigger a view update by returning Task::none().
                 // The view() function will read the latest data from shared_state.
                 let state = self.shared_state.read().unwrap();
-                if let Some((name, machine)) = state.machines.iter().next() {
+                if let Some(machine) = state.machines.iter().find(|m| !m.read().unwrap().is_local) {
                     log::debug!(
                         "🔄 RefreshMetrics: machine '{}' CPU={:.1}%, mem={}/{}",
-                        name,
-                        machine.sensors.cpu.usage_percent,
-                        machine.sensors.memory.used_bytes,
-                        machine.sensors.memory.total_bytes
+                        machine.read().unwrap().name,
+                        machine.read().unwrap().sensors.cpu.usage_percent,
+                        machine.read().unwrap().sensors.memory.used_bytes,
+                        machine.read().unwrap().sensors.memory.total_bytes
                     );
                 }
                 drop(state);
@@ -843,6 +897,34 @@ impl Application for PanelApplet {
                 app_state.current_view = View::MachineSensorConfig(machine_name);
                 Task::none()
             }
+            AppMessage::MoveMachineUp(name) => {
+                let mut state = self.shared_state.write().unwrap();
+                // Swap Arcs directly in the Vec - no index tracking needed
+                if let Some(pos) = state
+                    .machines
+                    .iter()
+                    .position(|m| m.read().unwrap().name == name)
+                {
+                    if pos > 0 {
+                        state.machines.swap(pos, pos - 1);
+                    }
+                }
+                Task::none()
+            }
+            AppMessage::MoveMachineDown(name) => {
+                let mut state = self.shared_state.write().unwrap();
+                // Swap Arcs directly in the Vec - no index tracking needed
+                if let Some(pos) = state
+                    .machines
+                    .iter()
+                    .position(|m| m.read().unwrap().name == name)
+                {
+                    if pos < state.machines.len() - 1 {
+                        state.machines.swap(pos, pos + 1);
+                    }
+                }
+                Task::none()
+            }
             AppMessage::Back => {
                 // Go back to previous view.
                 let mut app_state = self.shared_state.write().unwrap();
@@ -865,8 +947,11 @@ impl Application for PanelApplet {
             AppMessage::RemoveMachine(machine_name) => {
                 let mut app_state = self.shared_state.write().unwrap();
 
-                // Remove from live machines map (stops showing in UI immediately)
-                app_state.machines.remove(&machine_name);
+                // Remove from live machines vec (stops showing in UI immediately)
+                // Guard against removing local machine (is_local = true); the destructive "Remove" button is hidden for local
+                app_state
+                    .machines
+                    .retain(|m| m.read().unwrap().name != machine_name);
 
                 // Remove from pairing manager so future packets trigger re-pairing
                 {
@@ -941,15 +1026,12 @@ impl Application for PanelApplet {
                             if added {
                                 let _ = state.config_manager.read().unwrap().save();
                             }
-                            // Add to live machines map so the UI shows it immediately
+                            // Add to live machines vec so the UI shows it immediately (sorted alphabetically)
+                            let new_machine =
+                                crate::remote_machine::RemoteMachine::new(machine_id_str.clone());
                             state
                                 .machines
-                                .entry(machine_id_str.clone())
-                                .or_insert_with(|| {
-                                    crate::remote_machine::RemoteMachine::new(
-                                        machine_id_str.clone(),
-                                    )
-                                });
+                                .push(std::sync::Arc::new(std::sync::RwLock::new(new_machine)));
                             // Copy local machine's sensor config as the default for new machines
                             let local_sensor_config =
                                 state.settings_window.minimon_config.sensor_config.clone();
@@ -1076,7 +1158,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1097,7 +1179,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1118,7 +1200,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1139,7 +1221,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1162,7 +1244,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuTempShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1183,7 +1265,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuTempShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1204,7 +1286,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuTempShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1225,7 +1307,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleCpuTempShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1248,7 +1330,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1269,7 +1351,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryShowAllocated(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1290,7 +1372,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1311,7 +1393,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1332,7 +1414,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1353,7 +1435,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleMemoryAsPercentage(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1376,7 +1458,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleNetworkCombine(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     if enabled {
                         state
@@ -1412,7 +1494,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleNetworkShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1433,7 +1515,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleNetworkShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1454,7 +1536,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleNetworkShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1475,7 +1557,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleNetworkShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1498,7 +1580,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskCombine(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     if enabled {
                         state
@@ -1534,7 +1616,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1555,7 +1637,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1576,7 +1658,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskWriteShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1597,7 +1679,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskWriteShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1618,7 +1700,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskReadShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1639,7 +1721,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleDiskReadShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1662,7 +1744,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuShowLabel(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1684,7 +1766,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuShowIcon(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1706,7 +1788,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuLoadShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1728,7 +1810,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuLoadShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1750,7 +1832,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuVramShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1772,7 +1854,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuVramAsPercentage(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1794,7 +1876,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuTempShowChart(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1816,7 +1898,7 @@ impl Application for PanelApplet {
             AppMessage::ToggleGpuTempShowValue(enabled) => {
                 let mut state = self.shared_state.write().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 if editing.as_deref() == Some(&local_name) || editing.is_none() {
                     state
                         .settings_window
@@ -1894,24 +1976,67 @@ impl Application for PanelApplet {
             }
         }
 
-        // Always use local_machine — it's always present and always up-to-date
-        let (local_machine, pending_count, minimon_config) = {
+        // Get top-ordered machine from machines vec
+        let (pending_count, minimon_config, top_machine, top_sensor_config, machine_count) = {
             let state = self.shared_state.read().unwrap();
-            let local_machine = state.local_machine.clone();
             let pending_count = state.pending_pairings.len();
             let minimon_config = state.settings_window.minimon_config.clone();
-            (local_machine, pending_count, minimon_config)
+            let top_machine = state.machines[0].read().unwrap().clone();
+            let machine_count = state.machines.len();
+            let local_name = state.local_machine.read().unwrap().name.clone();
+
+            // Use per-machine sensor config: local machine uses settings_window config,
+            // remote machines use config_manager entry.
+            let top_sensor_config = if top_machine.name == local_name {
+                minimon_config.sensor_config.clone()
+            } else {
+                let config_guard = state.config_manager.read().unwrap();
+                config_guard
+                    .machines
+                    .iter()
+                    .find(|m| m.name == top_machine.name)
+                    .map(|m| m.sensor_config.clone())
+                    .unwrap_or_else(|| minimon_config.sensor_config.clone())
+            };
+
+            (
+                pending_count,
+                minimon_config,
+                top_machine,
+                top_sensor_config,
+                machine_count,
+            )
         };
 
-        // Panel always shows local machine sensor readings
+        // Panel shows top machine with its own per-machine sensor config
         let display = crate::ui::panel_widget::GlobalDisplayConfig::from_minimon(&minimon_config);
-        let inner: Element<'_, Self::Message> =
+        let sensor_panel: Element<'_, Self::Message> =
             crate::ui::panel_widget::PanelWidget::view_from_machines(
-                &[local_machine],
+                &[top_machine.clone()],
                 &minimon_config.content_order,
-                &minimon_config.sensor_config, // local machine's sensor config
+                &top_sensor_config,
                 &display,
+                is_horizontal,
             );
+
+        // Prepend machine name when multiple machines are configured
+        let inner: Element<'_, Self::Message> = if machine_count > 1 {
+            let name_label =
+                cosmic::widget::text(top_machine.name.clone()).size(display.value_size.min(13));
+            if is_horizontal {
+                cosmic::widget::row(vec![name_label.into(), sensor_panel])
+                    .spacing(6)
+                    .align_y(cosmic::iced::Alignment::Center)
+                    .into()
+            } else {
+                cosmic::widget::column(vec![name_label.into(), sensor_panel])
+                    .spacing(4)
+                    .align_x(cosmic::iced::Alignment::Center)
+                    .into()
+            }
+        } else {
+            sensor_panel
+        };
 
         // Add pending pairing badge if needed
         let panel_content: Element<'_, Self::Message> = if pending_count > 0 {
@@ -2002,16 +2127,14 @@ impl Application for PanelApplet {
         let content: Element<'_, Self::Message> = match current_view {
             View::Panel | View::MachineList => {
                 let state = self.shared_state.read().unwrap();
-                let local_machine = state.local_machine.clone();
-                let local_machine_name = state.local_machine.name.clone();
-                let remote_machines: Vec<_> = state.machines.values().cloned().collect();
+                let all_machines: Vec<RemoteMachine> = state
+                    .machines
+                    .iter()
+                    .map(|m| m.read().unwrap().clone())
+                    .collect();
+                let local_machine_name = state.local_machine.read().unwrap().name.clone();
                 let content_order = state.settings_window.minimon_config.content_order.clone();
                 let minimon_config = state.settings_window.minimon_config.clone();
-                drop(state);
-
-                // Build machines list with their sensor configs
-                let mut all_machines = vec![local_machine];
-                all_machines.extend(remote_machines);
 
                 crate::ui::machine_list::view(
                     &all_machines,
@@ -2024,18 +2147,22 @@ impl Application for PanelApplet {
             }
             View::MachineSensorConfig(ref machine_name) => {
                 let state = self.shared_state.read().unwrap();
-                let local_machine = state.local_machine.clone();
 
-                if local_machine.name == *machine_name {
+                if state.local_machine.read().unwrap().name == *machine_name {
+                    let local_machine_clone = state.local_machine.read().unwrap().clone();
                     let sensor_config = state.settings_window.minimon_config.sensor_config.clone();
                     drop(state);
                     crate::ui::machine_sensor_config_menu::view(
                         machine_name,
-                        Some(&local_machine),
+                        Some(&local_machine_clone),
                         &sensor_config,
                     )
                 } else {
-                    let machine_opt = state.machines.get(machine_name).cloned();
+                    let machine_opt = state
+                        .machines
+                        .iter()
+                        .find(|m| m.read().unwrap().name == *machine_name)
+                        .map(|m| m.read().unwrap().clone());
                     let sensor_config = config
                         .machines
                         .iter()
@@ -2052,18 +2179,28 @@ impl Application for PanelApplet {
             }
             View::MachineDetail(ref machine_name) => {
                 let state = self.shared_state.read().unwrap();
-                let local_machine = state.local_machine.clone();
                 let local_machine_config = state.local_machine_config.clone();
                 let minimon_config = state.settings_window.minimon_config.clone();
 
-                if local_machine.name == *machine_name {
+                if state.local_machine.read().unwrap().name == *machine_name {
                     // Local machine detail — no Remove button
                     // Use saved sensor config from settings window
+                    let local_machine_clone = state.local_machine.read().unwrap().clone();
                     let mut lmc = local_machine_config.clone();
                     lmc.sensor_config = minimon_config.sensor_config.clone();
                     drop(state);
-                    crate::ui::machine_detail::view(&lmc, &local_machine, &minimon_config, true)
-                } else if let Some(remote_machine) = state.machines.get(machine_name).cloned() {
+                    crate::ui::machine_detail::view(
+                        &lmc,
+                        &local_machine_clone,
+                        &minimon_config,
+                        true,
+                    )
+                } else if let Some(remote_machine) = state
+                    .machines
+                    .iter()
+                    .find(|m| m.read().unwrap().name == *machine_name)
+                    .map(|m| m.read().unwrap().clone())
+                {
                     let config_entry = config
                         .machines
                         .iter()
@@ -2101,7 +2238,7 @@ impl Application for PanelApplet {
             View::CpuConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()
@@ -2121,7 +2258,7 @@ impl Application for PanelApplet {
             View::CpuTempConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()
@@ -2141,7 +2278,7 @@ impl Application for PanelApplet {
             View::MemoryConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()
@@ -2161,7 +2298,7 @@ impl Application for PanelApplet {
             View::NetworkConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()
@@ -2181,7 +2318,7 @@ impl Application for PanelApplet {
             View::DiskConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()
@@ -2201,7 +2338,7 @@ impl Application for PanelApplet {
             View::GpuConfig => {
                 let state = self.shared_state.read().unwrap();
                 let editing = state.editing_machine_name.clone();
-                let local_name = state.local_machine.name.clone();
+                let local_name = state.local_machine.read().unwrap().name.clone();
                 let sensor_config = if editing.as_deref() == Some(&local_name) || editing.is_none()
                 {
                     state.settings_window.minimon_config.sensor_config.clone()

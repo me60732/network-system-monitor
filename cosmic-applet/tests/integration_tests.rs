@@ -26,12 +26,12 @@ fn make_state() -> Arc<RwLock<AppState>> {
         )),
     ));
     // Use Default to get a valid AppState with all required fields
-    let mut state: AppState = Default::default();
+    let state: AppState = Default::default();
     // Replace with our custom config and pairing manager
-    state.config_manager = config_manager;
-    state.pairing_manager = pairing_manager;
-    state.machines.clear(); // Remove any default machines
-    Arc::new(RwLock::new(state))
+    let mut new_state = state;
+    new_state.config_manager = config_manager;
+    new_state.pairing_manager = pairing_manager;
+    Arc::new(RwLock::new(new_state))
 }
 
 /// Build a PairingManager with the given machine IDs pre-paired so integration tests
@@ -131,8 +131,9 @@ async fn test_multi_machine_simultaneous_packets() {
             let st = state.read().unwrap();
             names.iter().all(|n| {
                 st.machines
-                    .get(*n)
-                    .is_some_and(|m| m.sensors.cpu.usage_percent == 50.0)
+                    .iter()
+                    .find(|m| m.read().unwrap().name == *n)
+                    .is_some_and(|m| m.read().unwrap().sensors.cpu.usage_percent == 50.0)
             })
         },
         5_000,
@@ -145,13 +146,16 @@ async fn test_multi_machine_simultaneous_packets() {
 
     {
         let st = state.read().unwrap();
-        assert_eq!(
-            st.machines.len(),
-            3,
-            "exactly 3 machines in AppState.machines"
-        );
+        let machine_count: usize = st.machines.len();
+        assert_eq!(machine_count, 3, "exactly 3 machines in AppState.machines");
         for name in names {
-            let m = st.machines.get(name).expect("machine present");
+            let m = st
+                .machines
+                .iter()
+                .find(|machine| machine.read().unwrap().name == *name)
+                .expect("machine present")
+                .read()
+                .unwrap();
             // memory_used = seq * 1MB proves the seq-5 packet arrived uncorrupted.
             assert_eq!(
                 m.sensors.memory.used_bytes, 5_000_000,
@@ -169,8 +173,14 @@ async fn test_multi_machine_simultaneous_packets() {
     tokio::time::sleep(Duration::from_millis(300)).await;
     {
         let st = state.read().unwrap();
+        let spark_machine = st
+            .machines
+            .iter()
+            .find(|m| m.read().unwrap().name == "spark")
+            .expect("spark machine present");
         assert_eq!(
-            st.machines["spark"].sensors.cpu.usage_percent, 50.0,
+            spark_machine.read().unwrap().sensors.cpu.usage_percent,
+            50.0,
             "stale sequence 3 after 5 must be rejected — sequence tracking is per-machine monotonic"
         );
     }
@@ -194,11 +204,16 @@ async fn test_machine_offline_online_transition() {
             .write()
             .unwrap()
             .machines
-            .insert("spark".to_string(), machine);
+            .push(std::sync::Arc::new(std::sync::RwLock::new(machine)));
     }
     {
         let st = state.read().unwrap();
-        let m = &st.machines["spark"];
+        let spark_machine = st
+            .machines
+            .iter()
+            .find(|m| m.read().unwrap().name == "spark")
+            .expect("spark machine present");
+        let m = spark_machine.read().unwrap();
         assert!(
             m.is_offline(OFFLINE_TIMEOUT_SECS),
             "35s-stale machine must report offline"
@@ -214,7 +229,10 @@ async fn test_machine_offline_online_transition() {
     let ok = wait_for(
         || {
             let st = state.read().unwrap();
-            st.machines["spark"].sensors.cpu.usage_percent == 77.0
+            st.machines
+                .iter()
+                .find(|m| m.read().unwrap().name == "spark")
+                .is_some_and(|m| m.read().unwrap().sensors.cpu.usage_percent == 77.0)
         },
         5_000,
     )
@@ -223,7 +241,12 @@ async fn test_machine_offline_online_transition() {
 
     {
         let st = state.read().unwrap();
-        let m = &st.machines["spark"];
+        let spark_machine = st
+            .machines
+            .iter()
+            .find(|m| m.read().unwrap().name == "spark")
+            .expect("spark machine present");
+        let m = spark_machine.read().unwrap();
         assert!(
             !m.is_offline(OFFLINE_TIMEOUT_SECS),
             "machine must be online after fresh packet"
@@ -257,7 +280,10 @@ async fn test_config_changes_with_live_data() {
     let ok = wait_for(
         || {
             let st = state.read().unwrap();
-            st.machines.contains_key("alpha") && st.machines.contains_key("beta")
+            st.machines
+                .iter()
+                .any(|m| m.read().unwrap().name == "alpha")
+                && st.machines.iter().any(|m| m.read().unwrap().name == "beta")
         },
         5_000,
     )
@@ -274,8 +300,9 @@ async fn test_config_changes_with_live_data() {
             "192.168.1.50".to_string(),
         ));
         let mut st = state.write().unwrap();
-        st.machines
-            .insert("gamma".to_string(), RemoteMachine::new("gamma".to_string()));
+        st.machines.push(std::sync::Arc::new(std::sync::RwLock::new(
+            RemoteMachine::new("gamma".to_string()),
+        )));
     }
 
     // Remove the 1st machine (mirrors the RemoveMachine handler: config retain + machines remove).
@@ -287,22 +314,30 @@ async fn test_config_changes_with_live_data() {
             .machines
             .retain(|m| m.name != "alpha");
         drop(st);
-        state.write().unwrap().machines.remove("alpha");
+        state
+            .write()
+            .unwrap()
+            .machines
+            .retain(|m| m.read().unwrap().name != "alpha");
     }
 
     // Grid data source must reflect the changes: beta + gamma present, alpha gone.
     {
         let st = state.read().unwrap();
         assert!(
-            !st.machines.contains_key("alpha"),
+            !st.machines
+                .iter()
+                .any(|m| m.read().unwrap().name == "alpha"),
             "removed machine gone from grid state"
         );
         assert!(
-            st.machines.contains_key("beta"),
+            st.machines.iter().any(|m| m.read().unwrap().name == "beta"),
             "untouched machine still present"
         );
         assert!(
-            st.machines.contains_key("gamma"),
+            st.machines
+                .iter()
+                .any(|m| m.read().unwrap().name == "gamma"),
             "added machine present in grid state"
         );
 
@@ -322,7 +357,10 @@ async fn test_config_changes_with_live_data() {
     let ok = wait_for(
         || {
             let st = state.read().unwrap();
-            st.machines["beta"].sensors.cpu.usage_percent == 44.0
+            st.machines
+                .iter()
+                .find(|m| m.read().unwrap().name == "beta")
+                .is_some_and(|m| m.read().unwrap().sensors.cpu.usage_percent == 44.0)
         },
         5_000,
     )
@@ -332,7 +370,12 @@ async fn test_config_changes_with_live_data() {
         "beta should keep receiving live updates after config changes"
     );
     assert!(
-        !state.read().unwrap().machines.contains_key("alpha"),
+        !state
+            .read()
+            .unwrap()
+            .machines
+            .iter()
+            .any(|m| m.read().unwrap().name == "alpha"),
         "alpha must not reappear without new packets"
     );
 

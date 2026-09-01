@@ -4,10 +4,9 @@
 //! (which reads from `/proc/uptime` and `/proc/loadavg`).
 
 use procfs::{Current, LoadAverage, Uptime};
-use serde::{Deserialize, Serialize};
 
 /// Uptime and load average statistics.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct UptimeStats {
     /// System uptime in seconds since boot.
     pub seconds: u64,

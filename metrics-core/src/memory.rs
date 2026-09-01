@@ -13,10 +13,9 @@
 //! 4. Swap usage percentage is computed as `(swap_used / swap_total) * 100.0`, or 0.0 if no swap exists.
 
 use procfs::{Current, Meminfo};
-use serde::{Deserialize, Serialize};
 
 /// Memory and swap utilization statistics.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct MemoryStats {
     /// Total physical RAM in bytes.
     pub total: u64,

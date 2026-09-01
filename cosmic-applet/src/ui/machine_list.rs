@@ -58,8 +58,9 @@ pub fn view(
     items.push(header_row.into());
     items.push(divider::horizontal::default().into());
 
-    // Add a row for each machine
-    for machine in machines {
+    // Add a row for each machine (machines already ordered: local at index 0, remotes alphabetically)
+    let total = machines.len();
+    for (index, machine) in machines.iter().enumerate() {
         let sensor_config = if machine.name == local_machine_name {
             local_sensor_config.clone()
         } else {
@@ -71,7 +72,14 @@ pub fn view(
                 .unwrap_or_default()
         };
         let display = crate::ui::panel_widget::GlobalDisplayConfig::from_minimon(minimon_config);
-        let machine_row = create_machine_row(machine, content_order, &sensor_config, &display);
+        let machine_row = create_machine_row(
+            machine,
+            content_order,
+            &sensor_config,
+            &display,
+            index,
+            total,
+        );
         items.push(machine_row);
         items.push(divider::horizontal::default().into());
     }
@@ -92,8 +100,42 @@ fn create_machine_row(
     content_order: &ContentOrder,
     sensor_config: &MachineSensorConfig,
     display: &crate::ui::panel_widget::GlobalDisplayConfig,
+    index: usize,
+    total: usize,
 ) -> Element<'static, AppMessage> {
     let machine_name = machine.name.clone();
+
+    // Create up/down buttons based on position in ordered list
+    let name_for_up = machine_name.clone();
+    let name_for_down = machine_name.clone();
+
+    let up_btn = if index > 0 {
+        button::icon(icon::from_name("go-up-symbolic"))
+            .on_press(AppMessage::MoveMachineUp(name_for_up))
+    } else {
+        button::icon(icon::from_name("go-up-symbolic")) // no on_press = disabled
+    };
+
+    let down_btn = if index < total - 1 {
+        button::icon(icon::from_name("go-down-symbolic"))
+            .on_press(AppMessage::MoveMachineDown(name_for_down))
+    } else {
+        button::icon(icon::from_name("go-down-symbolic")) // no on_press = disabled
+    };
+
+    let name_row = container(
+        row(vec![
+            text(machine_name.clone())
+                .size(14)
+                .width(Length::Fill)
+                .into(),
+            up_btn.into(),
+            down_btn.into(),
+        ])
+        .spacing(4)
+        .align_y(cosmic::iced::Alignment::Center),
+    )
+    .padding([4, 12, 0, 12]);
 
     // Get the clickable sensor panel for this machine (with hover effect)
     let sensor_panel = PanelWidget::view_single_machine_clickable(
@@ -106,9 +148,7 @@ fn create_machine_row(
 
     // Build the row with machine name above the sensor panel
     column(vec![
-        container(text(machine_name).size(14))
-            .padding([4, 12, 0, 12])
-            .into(),
+        name_row.into(),
         container(sensor_panel)
             .padding([4, 0])
             .center_x(Length::Fill)

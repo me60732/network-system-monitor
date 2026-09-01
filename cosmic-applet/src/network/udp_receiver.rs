@@ -359,6 +359,11 @@ impl UdpReceiver {
 
         // Check sequence number for replay detection (SEC-03: keyed by session_id)
         let machine_id_str = Self::machine_id_to_str(&archived.machine_id);
+        log::info!(
+            "🔍 Packet decoded — machine_id='{}' from {}",
+            machine_id_str,
+            src
+        );
         let session_id_str = Self::session_id_to_str(&archived.sender_session_id);
         if !Self::check_sequence(
             sequence_map,
@@ -530,8 +535,15 @@ impl UdpReceiver {
         // spans the `.await` below (even only on unwind paths) breaks tokio::spawn.
         {
             let mut state = shared_state.write().unwrap();
-            if let Some(machine) = state.machines.get_mut(&machine_name) {
-                machine.update_from_packet(&metric_packet);
+            if let Some(machine_arc) = state
+                .machines
+                .iter()
+                .find(|m| m.read().unwrap().name == machine_name)
+            {
+                machine_arc
+                    .write()
+                    .unwrap()
+                    .update_from_packet(&metric_packet);
                 log::debug!(
                     "📊 Updated metrics for machine: {} (CPU: {:.1}%, Mem: {}/{} bytes)",
                     machine_name,
@@ -539,7 +551,7 @@ impl UdpReceiver {
                     metric_packet.memory.used_bytes,
                     metric_packet.memory.total_bytes
                 );
-            } else if state.local_machine.name == machine_name {
+            } else if state.local_machine.read().unwrap().name == machine_name {
                 // This is the local machine — metrics collected directly, ignore UDP packets for it
                 log::debug!(
                     "Ignoring UDP packet for local machine '{}' (collected directly)",
@@ -547,10 +559,10 @@ impl UdpReceiver {
                 );
             } else {
                 // New remote machine — create it dynamically
-                let mut new_machine =
-                    crate::remote_machine::RemoteMachine::new(machine_name.clone());
-                new_machine.update_from_packet(&metric_packet);
-                state.machines.insert(machine_name.clone(), new_machine);
+                let new_machine = crate::remote_machine::RemoteMachine::new(machine_name.clone());
+                state
+                    .machines
+                    .push(std::sync::Arc::new(std::sync::RwLock::new(new_machine)));
                 log::info!("📍 Added new remote machine from UDP: {}", machine_name);
             }
         }
