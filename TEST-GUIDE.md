@@ -1,18 +1,19 @@
 # Network System Monitor - Test Guide
 
-## Quick Start
+> **Status**: Outdated - Multi-sender stress test scripts moved to `test-scripts/` folder.
+> Last updated: 2026-09-02
 
-The test environment simulates a complete network monitoring setup on localhost:
+This guide describes legacy multi-sender stress testing. For current single-machine testing:
 
 ```bash
-# 1. Initialize test environment (one time)
-./test-debug.sh
+# Build both binaries
+cargo build --release -p nmd-service -p cosmic-applet
 
-# 2. Terminal 1 - Start the metrics sender
-./run-sender.sh
+# Terminal 1 - Start sender (config at ~/.config/nmd/config.toml)
+./target/release/nmd-service --config ~/.config/nmd/config.toml &
 
-# 3. Terminal 2 - Start the applet receiver (or use COSMIC panel)
-./run-receiver.sh
+# Terminal 2 - Start applet in test mode
+./target/release/cosmic-applet --test
 ```
 
 ## What to Look For

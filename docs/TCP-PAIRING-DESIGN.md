@@ -1,90 +1,303 @@
-# TCP Pairing Handshake — Future Design
+# TCP Pairing Design
 
-## Motivation
+## Overview
 
-The current pairing workflow requires manual steps:
-1. Open the receiver applet, go to Settings, copy the Receiver Public Key (hex)
-2. Paste it into the sender's `/etc/nmd/config.toml` as `receiver_pubkey = "..."`
-3. Restart nmd-service
-4. Accept the pairing request in the applet UI
+TCP pairing is the Phase 2 extension to the TOFU pairing system. It enables automatic sender setup after receiver acceptance, eliminating manual configuration of `receiver_pubkey` in the nmd-service config file.
 
-A TCP-based pairing handshake would eliminate steps 1–3, enabling zero-touch setup.
+### Why TCP?
 
-## Proposed Design
+UDP is push-based (senders push to receiver), but we need a pull-based channel for:
+1. Receiver sending its X25519 public key to sender
+2. Sender receiving and storing this pubkey for ECDH key derivation
 
-### Overview
+TCP provides reliable, ordered delivery with connection handshake — perfect for this setup phase.
+
+---
+
+## Architecture
 
 ```
-Sender first start (no receiver_pubkey configured):
-  TCP connect to receiver:51057 → sends PairingHello { machine_id, sender_x25519_pubkey }
-  Receiver UI shows: "Machine 'pluto' (192.168.1.x) wants to connect — Accept / Deny"
-  User accepts → receiver sends PairingAccept { receiver_x25519_pubkey } over TCP
-  Sender saves receiver_pubkey to /etc/nmd/config.toml, closes TCP connection
-  Sender derives ECDH key, begins UDP metrics stream
-
-All subsequent starts (receiver_pubkey already configured):
-  Skip TCP entirely — goes straight to UDP with ECDH key
+┌─────────────────────────────────────────────────────────────────┐
+│                    Desktop Machine                              │
+│  ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│  │  cosmic-applet       │    │  TCP Listener (nmd-service)  │   │
+│  │  - UdpReceiver       │    │  - Listens on port 51058     │   │
+│  │  - PairingManager    │    │  - Accepts connections       │   │
+│  │  - Panel UI          │    │  - Sends receiver pubkey     │   │
+│  └──────────┬───────────┘    └───────────────▲──────────────┘   │
+│             │                                 │                  │
+│             │ UDP packets (push)              │ TCP connection  │
+│             │ ChaCha20-Poly1305               │ (pull, setup)   │
+│             ▼                                 │                  │
+└──────────────────────────────────────────────┼──────────────────┘
+                                               │
+                                               │ TCP handshake + pubkey transfer
+                                               │ Port: 51058 (configurable)
+                                               │
+┌──────────────────────────────────────────────┼──────────────────┐
+│                   Remote Machine              │                  │
+│  ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│  │  nmd-service         │    │  TCP Client (cosmic-applet)  │   │
+│  │  - UdpSender         │    │  - Connects to desktop:51058 │   │
+│  │  - ConfigManager     │    │  - Receives receiver pubkey  │   │
+│  │  - Systemd service   │    │  - Stores in config.toml     │   │
+│  └──────────┬───────────┘    └───────────────▲──────────────┘   │
+│             │                                 │                  │
+│             │ UDP packets (push)              │ TCP connection  │
+│             │ ChaCha20-Poly1305               │ (pull, setup)   │
+│             ▼                                 │                  │
+└──────────────────────────────────────────────┴──────────────────┘
 ```
 
-### Port Usage
+---
 
-TCP and UDP are independent protocols at the OS level. Both can use port 51057 simultaneously:
-- `51057/TCP` — pairing handshake (connect, exchange pubkeys, disconnect)
-- `51057/UDP` — ongoing metrics stream (always active)
+## Protocol Message Format
 
-The receiver binds both in parallel at startup.
+### Request (Sender → Receiver)
 
-### Wire Protocol (TCP)
-
-All messages are length-prefixed JSON for simplicity.
-
-**PairingHello** (sender → receiver):
 ```json
-{ "type": "hello", "machine_id": "pluto", "sender_pubkey": "hex-encoded-32-bytes" }
+{
+  "type": "pubkey_request",
+  "machine_id": "pluto",      // Sender's machine ID
+  "sender_pubkey_hex": "..."  // Sender's X25519 public key (64 hex chars)
+}
 ```
 
-**PairingAccept** (receiver → sender, after user approval):
+### Response (Receiver → Sender)
+
 ```json
-{ "type": "accept", "receiver_pubkey": "hex-encoded-32-bytes" }
+{
+  "type": "pubkey_response",
+  "receiver_pubkey_hex": "..."  // Receiver's X25519 public key (64 hex chars)
+}
 ```
 
-**PairingDeny** (receiver → sender, after user denial):
-```json
-{ "type": "deny" }
+---
+
+## Flow Details
+
+### Step 1: Initial UDP Packet (TOFU Detection)
+
+```
+Sender → Receiver:
+[sender_x25519_pubkey][nonce][encrypted_packet]
+
+Receiver detects unknown sender → Shows pairing UI
 ```
 
-### Sender Behaviour
+### Step 2: User Accepts Pairing
 
-- On startup, if `receiver_pubkey` is absent from config:
-  - Attempt TCP connect to `host:port` with 5s timeout
-  - Send PairingHello
-  - Wait up to 120s for PairingAccept or PairingDeny
-  - On Accept: write `receiver_pubkey` to config file, derive ECDH key, start UDP
-  - On Deny or timeout: log error, exit (systemd will retry after RestartSec)
-- If `receiver_pubkey` is present: skip TCP, go straight to UDP
+```
+PairingManager.add_pairing(
+    machine_id = "pluto",
+    sender_pubkey = <from packet>,
+    host = "192.168.1.100"
+)
 
-### Receiver Behaviour
+Generate ECDH shared key using:
+- Sender's pubkey (from packet)
+- Receiver's Ed25519 privkey → converted to X25519
 
-- TCP listener runs in a separate tokio task alongside the UDP listener
-- On incoming TCP connection: read PairingHello, push to `pending_pairings` (same queue as today)
-- When user accepts in UI: send PairingAccept over the held TCP connection, close it
-- When user denies: send PairingDeny, close connection
+Store in pairing.toml
+```
 
-### Implementation Notes
+### Step 3: TCP Connection Initiated by Sender
 
-- The TCP connection should be held open while awaiting user approval (up to 120s)
-- Use `tokio::net::TcpListener` alongside existing `tokio::net::UdpSocket`
-- The pairing queue and UI are unchanged — TCP just provides a new path into `pending_pairings`
-- After pairing, all communication remains UDP — TCP is only used once per machine per installation
+```
+Sender (nmd-service) connects to Receiver (cosmic-applet):
+TCP socket → desktop:51058
 
-### Security Notes
+Send request:
+{
+  "type": "pubkey_request",
+  "machine_id": "pluto",
+  "sender_pubkey_hex": "<sender's X25519 pubkey hex>"
+}
+```
 
-- The TCP PairingHello is unauthenticated — anyone on the LAN can send one
-- This is acceptable because the user must explicitly approve each request in the UI
-- The `receiver_pubkey` sent in PairingAccept is not secret (it's a public key)
-- The ECDH-derived shared key is never transmitted — each side derives it independently
+### Step 4: Receiver Validates & Responds
 
-## Status
+```
+Receiver validates:
+- machine_id matches paired entry
+- sender_pubkey matches paired entry
 
-Not yet implemented. Tracked here for future reference.
-Prerequisite: ECDH-only UDP path (completed — TEMP_SHARED_KEY removed).
+If valid → respond with receiver's X25519 pubkey:
+
+{
+  "type": "pubkey_response",
+  "receiver_pubkey_hex": "<receiver's X25519 pubkey hex>"
+}
+
+Close TCP connection (one-time exchange)
+```
+
+### Step 5: Sender Stores & Derives Shared Key
+
+```
+Sender receives response:
+receiver_pubkey = <from JSON>
+
+Store in config.toml:
+receiver_pubkey = "<64-char hex>"
+
+Derive ECDH shared key:
+ecdh_key = sender_privkey.diffie_hellman(&receiver_pubkey)
+
+Subsequent packets encrypted with this key
+```
+
+---
+
+## Security Considerations
+
+### Authentication
+
+TCP pairing uses the same TOFU trust model:
+
+1. **Initial UDP packet**: Establishes machine_id + sender_pubkey baseline
+2. **TCP request**: Includes same machine_id + sender_pubkey for verification
+3. **Receiver validates**: Matches against pairing.toml entry
+
+If attacker intercepts TCP connection:
+- Cannot forge receiver pubkey (only legitimate receiver has privkey)
+- Sender would reject wrong pubkey during ECDH key derivation
+
+### Confidentiality
+
+TCP connection is local network only:
+- No encryption needed (UDP packets already encrypted with ChaCha20-Poly1305)
+- One-time exchange (pubkey sent, connection closed)
+
+### Replay Protection
+
+TCP pairing is one-shot:
+- Each sender connects once during first-pairing setup
+- No ongoing TCP session needed
+- Re-pairing requires new UDP packet → new TOFU detection
+
+---
+
+## Error Handling
+
+### Invalid machine_id or sender_pubkey
+
+```
+Receiver response:
+{
+  "type": "error",
+  "code": "unpaired_machine",
+  "message": "Machine ID 'pluto' not in pairing registry"
+}
+
+TCP connection closed immediately
+```
+
+Sender behavior:
+- Log error to debug output
+- Continue sending UDP packets (TOFU UI will show again)
+- No config update (receiver_pubkey remains unset)
+
+### Connection Timeout
+
+Receiver timeout: 5 seconds per TCP connection
+
+If no request received:
+- Close connection silently
+- No error logged (normal cleanup)
+
+### Invalid JSON
+
+Both sides validate message format:
+
+```rust
+// Receiver validates request
+match serde_json::from_str::<PubkeyRequest>(&buffer) {
+    Ok(req) => {
+        if req.type != "pubkey_request" { /* reject */ }
+        // Validate machine_id + sender_pubkey
+    }
+    Err(e) => {
+        log::warn!("Invalid TCP pairing request: {}", e);
+        close_connection();
+    }
+}
+```
+
+---
+
+## Configuration
+
+### Port Configuration (Optional)
+
+Default port: `51058` (distinct from UDP port `51057`)
+
+#### Receiver (cosmic-applet config.toml)
+
+```toml
+tcp_pairing_port = 51058  # Optional, default is 51058
+```
+
+#### Sender (nmd-service config.toml)
+
+No configuration needed — sender connects to receiver's UDP destination IP + TCP port.
+
+---
+
+## Implementation Notes
+
+### Receiver Side (cosmic-applet/src/tcp_pairing.rs)
+
+```rust
+pub struct TcpPairingListener {
+    socket: std::net::TcpListener,
+}
+
+impl TcpPairingListener {
+    pub fn new(port: u16) -> Result<Self, io::Error> {
+        let socket = std::net::TcpListener::bind(("0.0.0.0", port))?;
+        Ok(TcpPairingListener { socket })
+    }
+
+    pub fn accept(&self, pairing_manager: &RwLock<PairingManager>) {
+        while let Ok((stream, addr)) = self.socket.accept() {
+            handle_tcp_pairing(stream, addr, pairing_manager);
+        }
+    }
+}
+```
+
+### Sender Side (nmd-service/src/tcp_pairing.rs)
+
+```rust
+pub fn fetch_receiver_pubkey(
+    host: &str,
+    port: u16,
+    machine_id: &str,
+    sender_pubkey_hex: &str,
+) -> Result<String, io::Error> {
+    let mut stream = std::net::TcpStream::connect((host, port))?;
+    
+    // Send request
+    let request = serde_json::json!({
+        "type": "pubkey_request",
+        "machine_id": machine_id,
+        "sender_pubkey_hex": sender_pubkey_hex
+    });
+    serde_json::to_writer(&mut stream, &request)?;
+    
+    // Receive response
+    let response: PubkeyResponse = serde_json::from_reader(stream)?;
+    
+    Ok(response.receiver_pubkey_hex)
+}
+```
+
+---
+
+## Future Enhancements
+
+- [ ] Multiple TCP ports for load balancing (Phase 3)
+- [ ] TLS encryption for TCP channel (if cross-network pairing needed)
+- [ ] Automatic re-pairing when keys expire
+- [ ] Multi-factor approval (PIN code over TCP)

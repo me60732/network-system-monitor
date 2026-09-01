@@ -1132,7 +1132,7 @@ dependencies = [
 
 [[package]]
 name = "cosmic-applet"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "bounded-vec-deque",
@@ -3533,7 +3533,7 @@ dependencies = [
 
 [[package]]
 name = "metrics-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "criterion",
  "log",
@@ -3683,7 +3683,7 @@ dependencies = [
 
 [[package]]
 name = "nmd-service"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chacha20poly1305",
  "clap",
