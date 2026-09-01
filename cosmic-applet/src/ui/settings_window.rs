@@ -17,12 +17,6 @@ use cosmic::widget::{button, checkbox, column, container, row, slider, text};
 pub enum SettingsMessage {
     /// Close the settings window and return to panel view.
     CloseWindow,
-    /// Update refresh rate (in seconds as f64, will be converted to milliseconds u32)
-    UpdateRefreshRate(f64),
-    /// Increment refresh rate by 0.1 seconds
-    IncrementRefreshRate,
-    /// Decrement refresh rate by 0.1 seconds
-    DecrementRefreshRate,
     /// Update value size
     UpdateValueSize(u16),
     /// Increment value size
@@ -99,25 +93,6 @@ pub fn view_with_config(minimon_config: &MinimonConfig) -> Element<'static, Sett
 
     // Version info
     let version_row = text("Network System Monitor for COSMIC.").size(14);
-
-    // Refresh rate control (seconds with decimal)
-    let refresh_seconds = minimon_config.refresh_rate as f64 / 1000.0;
-    let refresh_row = row(vec![
-        text("Refresh rate (seconds)")
-            .width(cosmic::iced::Length::Fill)
-            .into(),
-        button::text("−")
-            .on_press(SettingsMessage::DecrementRefreshRate)
-            .into(),
-        text(format!("{:.2}", refresh_seconds))
-            .width(cosmic::iced::Length::Fixed(60.0))
-            .into(),
-        button::text("+")
-            .on_press(SettingsMessage::IncrementRefreshRate)
-            .into(),
-    ])
-    .spacing(8)
-    .align_y(Alignment::Center);
 
     // Value size control
     let value_size_row = row(vec![
@@ -215,7 +190,6 @@ pub fn view_with_config(minimon_config: &MinimonConfig) -> Element<'static, Sett
         title.into(),
         version_row.into(),
         divider::horizontal::default().into(),
-        refresh_row.into(),
         value_size_row.into(),
         monospace_row.into(),
         spacing_section.into(),

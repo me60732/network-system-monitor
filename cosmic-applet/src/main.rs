@@ -408,7 +408,14 @@ impl Default for AppState {
         }
         drop(config_read);
 
-        // Spawn background thread that owns MetricsAggregator — collects local metrics every 1s
+        // Initialize settings_window with config before reading refresh rate for thread
+        let mut settings_window = SettingsWindow::new(settings_window_config);
+        settings_window.update_config(minimon_config);
+
+        // Read refresh rate from settings_window config before spawning thread
+        let local_refresh_ms = settings_window.minimon_config.refresh_rate as u64;
+
+        // Spawn background thread that owns MetricsAggregator — collects local metrics at configured interval
         let (local_tx, local_rx) = std::sync::mpsc::channel::<nmd_service::MetricPacket>();
         let local_metrics_rx = std::sync::Mutex::new(local_rx);
         let hostname_for_thread = hostname.clone();
@@ -419,7 +426,7 @@ impl Default for AppState {
                 if local_tx.send(packet).is_err() {
                     break; // Receiver dropped — applet shut down
                 }
-                std::thread::sleep(std::time::Duration::from_secs(1));
+                std::thread::sleep(std::time::Duration::from_millis(local_refresh_ms));
             }
         });
 
@@ -427,9 +434,6 @@ impl Default for AppState {
         let local_machine = crate::remote_machine::RemoteMachine::new(hostname.clone());
 
         let pairing_manager = Self::create_pairing_manager();
-
-        let mut settings_window = SettingsWindow::new(settings_window_config);
-        settings_window.update_config(minimon_config);
 
         AppState {
             config_manager,
@@ -1002,27 +1006,7 @@ impl Application for PanelApplet {
                     crate::ui::settings_window::SettingsMessage::CloseWindow => {
                         app_state.current_view = View::MachineList;
                     }
-                    crate::ui::settings_window::SettingsMessage::UpdateRefreshRate(seconds) => {
-                        app_state.settings_window.minimon_config.refresh_rate =
-                            (seconds * 1000.0) as u32;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::IncrementRefreshRate => {
-                        let current =
-                            app_state.settings_window.minimon_config.refresh_rate as f64 / 1000.0;
-                        let new_val = (current + 0.1).min(10.0);
-                        app_state.settings_window.minimon_config.refresh_rate =
-                            (new_val * 1000.0) as u32;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
-                    crate::ui::settings_window::SettingsMessage::DecrementRefreshRate => {
-                        let current =
-                            app_state.settings_window.minimon_config.refresh_rate as f64 / 1000.0;
-                        let new_val = (current - 0.1).max(0.1);
-                        app_state.settings_window.minimon_config.refresh_rate =
-                            (new_val * 1000.0) as u32;
-                        AppState::save_minimon_config(&app_state.settings_window.minimon_config);
-                    }
+
                     crate::ui::settings_window::SettingsMessage::UpdateValueSize(size) => {
                         app_state.settings_window.minimon_config.value_size_default = size;
                         AppState::save_minimon_config(&app_state.settings_window.minimon_config);
