@@ -176,12 +176,20 @@ impl PanelWidget {
 
         log::debug!("Total panel items rendered: {}", metrics_items.len());
 
-        let metrics_row = row(metrics_items)
-            .spacing(2 + display.spacing * 2)
-            .padding([4, 8])
-            .align_y(cosmic::iced::Alignment::Center);
-
-        metrics_row.into()
+        if is_horizontal {
+            row(metrics_items)
+                .spacing(2 + display.spacing * 2)
+                .padding([4, 8])
+                .align_y(cosmic::iced::Alignment::Center)
+                .into()
+        } else {
+            use cosmic::widget::column;
+            column(metrics_items)
+                .spacing(2 + display.spacing * 2)
+                .padding([8, 4])
+                .align_x(cosmic::iced::Alignment::Center)
+                .into()
+        }
     }
 
     /// Render a single machine's panel widget as a clickable button (for machine list)
