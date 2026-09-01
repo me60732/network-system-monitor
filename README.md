@@ -107,11 +107,12 @@ Desktop machine
 
 ## Configuration
 
-All configuration is done from within the applet — no config file editing needed.
+Most configuration is done from within the applet, but refresh rate requires editing the service config file.
 
 | Setting | Where |
 |---------|-------|
-| Refresh rate, font, spacing, content order | Popup → **General Settings** |
+| Font, spacing, content order | Popup → **General Settings** |
+| Refresh rate | Edit `/etc/nmd/config.toml` on each remote machine |
 | Which sensors appear in a machine's row | Machine detail view → **⚙ gear icon** |
 | Machine display order | Machine list → **↑ ↓ buttons** (session only) |
 
