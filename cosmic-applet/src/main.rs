@@ -211,6 +211,8 @@ pub struct PanelApplet {
     pub shared_state: std::sync::Arc<std::sync::RwLock<AppState>>,
     /// Popup window ID when open
     popup: Option<WindowId>,
+    /// Actual rendered size of the panel button area — used to center the popup correctly.
+    panel_size: Option<cosmic::iced::Size>,
 }
 
 /// Global application state shared across all UI components via `std::sync::Arc<std::sync::RwLock<>>`.
@@ -683,6 +685,7 @@ impl Application for PanelApplet {
                 core,
                 shared_state, // Use the same Arc instance
                 popup: None,
+                panel_size: None,
             },
             Task::none(),
         )
@@ -751,6 +754,7 @@ impl Application for PanelApplet {
                 core,
                 shared_state, // Use the same Arc instance
                 popup: None,
+                panel_size: None,
             },
             Task::none(),
         )
@@ -1943,6 +1947,17 @@ impl Application for PanelApplet {
                                 .max_width(460.0)
                                 .min_height(100.0)
                                 .max_height(700.0);
+                            // Expand anchor_rect to the actual rendered panel size so the
+                            // compositor centres the popup over the full applet widget rather
+                            // than a default 1×1 slot (same technique as minimon-applet).
+                            if let Some(size) = app.panel_size {
+                                let anchor = &mut popup_settings.positioner.anchor_rect;
+                                if app.core.applet.is_horizontal() {
+                                    anchor.width = anchor.width.max(size.width.round() as i32);
+                                } else {
+                                    anchor.height = anchor.height.max(size.height.round() as i32);
+                                }
+                            }
                             popup_settings
                         },
                         None,
@@ -2376,6 +2391,12 @@ impl Application for PanelApplet {
 
     fn on_close_requested(&self, id: WindowId) -> Option<Self::Message> {
         Some(AppMessage::PopupClosed(id))
+    }
+
+    fn on_window_resize(&mut self, id: WindowId, width: f32, height: f32) {
+        if self.core.main_window_id() == Some(id) {
+            self.panel_size = Some(cosmic::iced::Size::new(width, height));
+        }
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
