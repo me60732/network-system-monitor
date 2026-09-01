@@ -11,6 +11,7 @@
 Install the applet once on your desktop. Install a tiny systemd service on each remote machine. That's it — live metrics from all your machines appear directly in the COSMIC panel, with a click-to-expand detail view.
 
 ![Popup showing machine list with Neptune, Saturn, and pluto](docs/screenshots/popup.png)
+![Machine detail view showing charts for one machine](docs/screenshots/machine_detail.png)
 
 ---
 
