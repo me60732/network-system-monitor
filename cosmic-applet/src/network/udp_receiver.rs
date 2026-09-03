@@ -30,6 +30,10 @@ const MAX_PACKET_SIZE: usize = 2048;
 /// Timestamp freshness window in seconds — packets older than this are rejected as replays.
 const TIMESTAMP_FRESHNESS_SECS: u64 = 10;
 
+/// Tolerance for sender clocks running slightly ahead of the receiver's — integer-second
+/// truncation plus normal NTP jitter can make a healthy, synced sender appear ~1s "in the future".
+const FORWARD_SKEW_TOLERANCE_SECS: u64 = 2;
+
 /// Payload types that can be sent from the UDP receiver to the iced application.
 #[derive(Debug, Clone)]
 pub enum UdpPayload {
@@ -619,11 +623,12 @@ impl UdpReceiver {
             .collect::<String>()
     }
 
-    /// Check if a packet's timestamp is fresh enough to be accepted (< TIMESTAMP_FRESHNESS_SECS old).
+    /// Check if a packet's timestamp is fresh enough to be accepted (< TIMESTAMP_FRESHNESS_SECS old,
+    /// and no more than FORWARD_SKEW_TOLERANCE_SECS ahead of the receiver's clock).
     fn check_timestamp_freshness(timestamp: u64, now: u64) -> bool {
-        // Reject packets older than TIMESTAMP_FRESHNESS_SECS (replay protection) or from the future.
+        // Reject packets older than TIMESTAMP_FRESHNESS_SECS (replay protection) or too far in the future.
         let age = now.saturating_sub(timestamp);
-        age < TIMESTAMP_FRESHNESS_SECS && timestamp <= now // No forward clock skew tolerance — prevents replay.
+        age < TIMESTAMP_FRESHNESS_SECS && timestamp <= now + FORWARD_SKEW_TOLERANCE_SECS
     }
 
     /// Check sequence number for replay detection — returns true if this is a new/expected sequence,
@@ -1132,21 +1137,35 @@ mod tests {
     }
 
     /// Validates future-timestamp rejection: a packet stamped 30s ahead of local time must be
-    /// rejected — accepting future timestamps would let an attacker pre-date packets for replay.
+    /// rejected — accepting arbitrary future timestamps would let an attacker pre-date packets
+    /// for replay. Small forward skew (within FORWARD_SKEW_TOLERANCE_SECS) is tolerated since
+    /// integer-second truncation plus normal clock jitter can make a healthy sender look ~1s ahead.
     #[test]
     fn test_future_timestamp_rejection() {
         let now = unix_now();
 
-        // 30 seconds in the future — rejected (timestamp <= now required, no forward skew allowed).
+        // 30 seconds in the future — rejected, well beyond the skew tolerance.
         assert!(
             !UdpReceiver::check_timestamp_freshness(now + 30, now),
             "Packet with timestamp 30s in the future should be rejected"
         );
 
-        // Even 1 second in the future is rejected — zero forward clock-skew tolerance.
+        // 1 second ahead — within tolerance, must be accepted (this was the real-world bug).
         assert!(
-            !UdpReceiver::check_timestamp_freshness(now + 1, now),
-            "Packet with any future timestamp should be rejected"
+            UdpReceiver::check_timestamp_freshness(now + 1, now),
+            "Packet 1s ahead (within skew tolerance) should be accepted"
+        );
+
+        // Exactly at the tolerance boundary — still accepted.
+        assert!(
+            UdpReceiver::check_timestamp_freshness(now + FORWARD_SKEW_TOLERANCE_SECS, now),
+            "Packet at the forward-skew boundary should be accepted"
+        );
+
+        // Just past the tolerance boundary — rejected.
+        assert!(
+            !UdpReceiver::check_timestamp_freshness(now + FORWARD_SKEW_TOLERANCE_SECS + 1, now),
+            "Packet just past the forward-skew boundary should be rejected"
         );
 
         // A timestamp of exactly now is valid.

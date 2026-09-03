@@ -7,7 +7,7 @@
 //! ## Unit File Structure (pop-os Template)
 //!
 //! The unit follows standard systemd conventions:
-//! - `[Unit]`: Description, dependencies (network-online.target)
+//! - `[Unit]`: Description, dependencies (network-online.target, time-sync.target)
 //! - `[Service]`: ExecStart with config path, Restart=always, User=nobody for least privilege
 //! - `[Install]`: WantedBy=multi-user.target
 
@@ -33,8 +33,8 @@ pub const SERVICE_USER: &str = "nobody";
 pub const UNIT_FILE_CONTENT: &str = r#"[Unit]
 Description=Network System Monitor — Remote Metrics Service
 Documentation=https://github.com/mark/network-system-monitor
-After=network-online.target
-Wants=network-online.target
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
 
 [Service]
 Type=simple
@@ -136,8 +136,8 @@ chmod 755 "$BINARY_PATH"
 cat > "$UNIT_FILE" << 'UNITEOF'
 [Unit]
 Description=Network System Monitor — Remote Metrics Service
-After=network-online.target
-Wants=network-online.target
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
 
 [Service]
 Type=simple
@@ -173,7 +173,7 @@ mod tests {
     fn test_unit_file_has_required_sections() {
         assert!(UNIT_FILE_CONTENT.contains("[Unit]"));
         assert!(UNIT_FILE_CONTENT.contains("Description="));
-        assert!(UNIT_FILE_CONTENT.contains("After=network-online.target"));
+        assert!(UNIT_FILE_CONTENT.contains("After=network-online.target time-sync.target"));
 
         assert!(UNIT_FILE_CONTENT.contains("[Service]"));
         assert!(UNIT_FILE_CONTENT.contains("ExecStart="));

@@ -8,7 +8,8 @@
 //! ## Lifecycle (systemd entry point)
 //!
 //! ```text
-//! main() → parse CLI args (--config path) → load ServiceConfig
+//! main() → parse CLI args (--config path) → wait for NTP clock sync (bounded)
+//!   → load ServiceConfig
 //!   → init UdpSender (loads/generates Ed25519 identity keypair) + MetricsAggregator
 //!   → install SIGTERM/SIGINT handler for graceful shutdown
 //!   → loop: aggregate() → udp_sender.send() every interval_ms
@@ -82,6 +83,74 @@ struct Cli {
 /// Global shutdown flag set by the signal handler. Checked each loop iteration.
 static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
 
+/// Max total time to wait for `timedatectl` to report NTP sync before giving up.
+const CLOCK_SYNC_MAX_WAIT_SECS: u64 = 30;
+/// Poll interval while waiting for NTP sync.
+const CLOCK_SYNC_POLL_INTERVAL_SECS: u64 = 2;
+
+/// Outcome of one `timedatectl` sync check, used to drive [`wait_for_clock_sync`]'s poll loop.
+#[derive(Debug, PartialEq, Eq)]
+enum ClockSyncCheck {
+    /// Clock is confirmed NTP-synchronized — stop polling.
+    Synced,
+    /// Not synced yet, but the command itself works — keep polling until the timeout.
+    NotYetSynced,
+    /// `timedatectl` is unavailable or failed — no point retrying, proceed immediately.
+    Unavailable,
+}
+
+/// Classify raw `timedatectl show -p NTPSynchronized --value` output.
+/// Split out from the polling loop so the decision logic is unit-testable without shelling out.
+fn classify_ntp_output(result: Option<&str>) -> ClockSyncCheck {
+    match result.map(str::trim) {
+        Some("yes") => ClockSyncCheck::Synced,
+        Some(_) => ClockSyncCheck::NotYetSynced,
+        None => ClockSyncCheck::Unavailable,
+    }
+}
+
+/// Wait (bounded) for the system clock to be NTP-synchronized before we start sending
+/// timestamped packets — the receiver drops anything more than 10s stale (replay protection),
+/// which after a cold boot with an unsynced RTC would otherwise silently drop every packet.
+/// Distro-agnostic (works with timesyncd, chrony, ntpd — anything `timedatectl` reflects),
+/// unlike systemd `After=time-sync.target` which is a no-op unless a wait-service is enabled.
+fn wait_for_clock_sync() {
+    let deadline = std::time::Instant::now() + Duration::from_secs(CLOCK_SYNC_MAX_WAIT_SECS);
+    loop {
+        let output = std::process::Command::new("timedatectl")
+            .args(["show", "-p", "NTPSynchronized", "--value"])
+            .output();
+
+        let check = match &output {
+            Ok(o) if o.status.success() => {
+                classify_ntp_output(Some(&String::from_utf8_lossy(&o.stdout)))
+            }
+            _ => classify_ntp_output(None),
+        };
+
+        match check {
+            ClockSyncCheck::Synced => {
+                log::info!("System clock is NTP-synchronized");
+                return;
+            }
+            ClockSyncCheck::Unavailable => {
+                log::debug!("timedatectl unavailable — proceeding without clock-sync wait");
+                return;
+            }
+            ClockSyncCheck::NotYetSynced => {
+                if std::time::Instant::now() >= deadline {
+                    log::warn!(
+                        "Clock not NTP-synchronized after {}s — proceeding anyway (packets may be dropped by receiver until sync completes)",
+                        CLOCK_SYNC_MAX_WAIT_SECS
+                    );
+                    return;
+                }
+                std::thread::sleep(Duration::from_secs(CLOCK_SYNC_POLL_INTERVAL_SECS));
+            }
+        }
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Parse CLI arguments (--config path).
     let cli = Cli::parse();
@@ -91,6 +160,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("nmd-service starting up");
     log::info!("Config file: {}", cli.config);
+
+    // Avoid sending stale-clock timestamps that the receiver's freshness check would drop.
+    wait_for_clock_sync();
 
     let mut config = ServiceConfig::load(&cli.config);
     log::info!(
@@ -349,10 +421,30 @@ fn install_signal_handlers() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     /// Main function compiles and entry point exists (integration tested via cargo run).
     #[test]
     fn test_main_compiles() {
         // If this module compiles, main.rs structure is correct.
         assert!(true);
+    }
+
+    #[test]
+    fn test_classify_ntp_output_synced() {
+        assert_eq!(classify_ntp_output(Some("yes\n")), ClockSyncCheck::Synced);
+    }
+
+    #[test]
+    fn test_classify_ntp_output_not_yet_synced() {
+        assert_eq!(
+            classify_ntp_output(Some("no\n")),
+            ClockSyncCheck::NotYetSynced
+        );
+    }
+
+    #[test]
+    fn test_classify_ntp_output_unavailable() {
+        assert_eq!(classify_ntp_output(None), ClockSyncCheck::Unavailable);
     }
 }
