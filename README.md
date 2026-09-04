@@ -137,4 +137,6 @@ network-system-monitor/
 
 ## License
 
-MIT OR Apache-2.0
+This project is licensed under the GNU General Public License v3.0.
+
+See the [LICENSE](LICENSE) file for details.
