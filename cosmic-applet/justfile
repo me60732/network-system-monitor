@@ -10,11 +10,17 @@ default = ["check"]
 build-release:
 	cargo build --release
 
-## Install the compiled applet binary to ~/.local/bin.
+## Install the compiled applet binary and its icons to ~/.local.
 install: build-release
 	@mkdir -p $(HOME)/.local/bin
-	cp target/release/cosmic-applet $(HOME)/.local/bin/
-	@echo "Installed cosmic-applet to $(HOME)/.local/bin/"
+	# Recipes run in this justfile's directory, but the crate is a workspace member, so
+	# cargo writes the binary to the workspace-root target/, not ./target/.
+	cp ../target/release/cosmic-applet $(HOME)/.local/bin/
+	# Sensor icons are looked up by freedesktop icon name, so they must be on the
+	# icon theme path too — the binary alone leaves the panel rendering blanks.
+	@mkdir -p $(HOME)/.local/share/icons/hicolor/scalable/apps
+	cp res/icons/*.svg $(HOME)/.local/share/icons/hicolor/scalable/apps/
+	@echo "Installed cosmic-applet to $(HOME)/.local/bin/ (+ icons to ~/.local/share/icons)"
 
 ## Vendor all dependencies for offline builds (cosmic-utils standard).
 vendor:

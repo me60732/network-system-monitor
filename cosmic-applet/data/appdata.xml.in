@@ -14,8 +14,9 @@
   <!-- Translators: This is the applet's short description shown in software centers -->
   <summary>Monitor all machines on your network from a single Cosmic panel</summary>
 
-  <metadata_license>MIT OR Apache-2.0</metadata_license>
-  <project_license>MIT OR Apache-2.0</project_license>
+  <!-- metadata_license covers this AppData document, not the project (AppStream convention: CC0) -->
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
 
   <!-- The desktop entry file that registers the applet with the system -->
   <desktopid>network-system-monitor.desktop</desktopid>

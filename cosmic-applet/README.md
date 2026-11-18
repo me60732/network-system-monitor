@@ -84,4 +84,33 @@ This crate integrates with the rest of the workspace as follows:
 
 ## License
 
-MIT OR Apache-2.0
+GPL-3.0-only — see [LICENSE](../LICENSE).
+
+Everything now agrees on that: the workspace `license` in `Cargo.toml` (inherited by
+`metrics-core`, `nmd-service` and `cosmic-applet` through `license.workspace = true`), the
+AppStream `project_license` in `data/appdata.xml.in`, and the root README.
+`metadata_license` in the AppData file is `CC0-1.0` rather than GPL because it licenses that
+XML document, not the code — the same split upstream COSMIC applets use.
+
+It is `-only`, not `or-later`: this crate incorporates material that upstream grants under
+GPL version 3 only (minimon's icons, and the minimon-derived config in
+`src/minimon_config.rs`), and downstream cannot be offered "any later version" of terms the
+upstream holder never granted.
+
+### Vendored icons (GPL-3)
+
+The five panel sensor icons in `res/icons/` — `-cpu`, `-temperature`, `-ram`, `-gpu`,
+`-network` — are copied verbatim from
+[minimon-applet](https://github.com/cosmic-utils/cosmic-ext-applet-minimon), which is
+GPL-3.0. Only the filenames changed, to this applet's own `com.cosmic.network_system_monitor-*`
+namespace; path data is untouched and each file carries its own provenance header.
+
+They are vendored rather than referenced because the panel resolves icons by freedesktop
+icon *name* at render time. Under minimon's names the lookup only succeeded while minimon's
+own package was installed and had exported those SVGs onto the icon theme path — removing
+minimon left the panel rendering another applet's app icon (libcosmic falls back to the name
+truncated at each `-`). Each installer in this repo therefore copies every `res/icons/*.svg`
+to `hicolor/scalable/apps/`.
+
+`drive-harddisk-symbolic` (disk) is deliberately *not* vendored: it comes from the desktop's
+own icon theme and is unaffected by which applets are installed.

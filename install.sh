@@ -184,12 +184,27 @@ _extract() {
   tar -xzf "${tmpdir}/${asset}" -C "${tmpdir}"
 }
 
+# GPLv3 s4/s6: conveying a binary requires conveying a copy of its license with it.
+# Guarded because releases published before this change carry no LICENSE inside, and
+# `set -e` would otherwise abort the install on a missing file.
+_convey_license() {
+  local src="$1" doc_name="$2" doc_root="${3:-/usr/share/doc}"
+  if [ -f "$src" ]; then
+    install -Dm644 "$src" "${doc_root}/${doc_name}/LICENSE"
+  else
+    warn "No LICENSE found next to the ${doc_name} binary."
+    warn "  The binary is still GPL-3.0-only; fetch the license from the repository:"
+    warn "  https://github.com/${REPO}"
+  fi
+}
+
 install_sender_binary() {
   local arch="$1"
   local tmpdir; tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
   _extract "nmd-service-${arch}-linux.tar.gz" "$tmpdir"
   install -m 755 "${tmpdir}/nmd-service" /usr/local/bin/nmd-service
+  _convey_license "${tmpdir}/LICENSE" "nmd-service"
   log "nmd-service installed to /usr/local/bin/nmd-service"
 }
 
@@ -198,7 +213,7 @@ install_receiver_binary() {
   local tmpdir; tmpdir=$(mktemp -d)
   trap 'rm -rf "$tmpdir"' RETURN
   _extract "cosmic-applet-${arch}-linux.tar.gz" "$tmpdir"
-  _install_receiver_files "${tmpdir}/cosmic-applet" "${tmpdir}/res"
+  _install_receiver_files "${tmpdir}/cosmic-applet" "${tmpdir}/res" "${tmpdir}/LICENSE"
 }
 
 # ── Source builds ─────────────────────────────────────────────────────────
@@ -220,26 +235,28 @@ install_from_source() {
       info "Building nmd-service..."
       cargo build --release -p nmd-service
       install -m 755 target/release/nmd-service /usr/local/bin/nmd-service
+      _convey_license "LICENSE" "nmd-service"
       log "nmd-service built and installed."
       ;;
     receiver)
       info "Building cosmic-applet (this takes a while on first build)..."
       cargo build --release -p cosmic-applet
-      _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res"
+      _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res" "LICENSE"
       ;;
     both)
       info "Building nmd-service and cosmic-applet..."
       cargo build --release -p nmd-service -p cosmic-applet
       install -m 755 target/release/nmd-service /usr/local/bin/nmd-service
+      _convey_license "LICENSE" "nmd-service"
       log "nmd-service installed."
-      _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res"
+      _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res" "LICENSE"
       ;;
   esac
 }
 
 # ── Shared receiver file installation ────────────────────────────────────
 _install_receiver_files() {
-  local binary="$1" res_dir="$2"
+  local binary="$1" res_dir="$2" license_src="$3"
   local INSTALL_BIN="/usr/local/bin"
   local INSTALL_DESKTOP="/usr/share/applications"
   local INSTALL_ICONS="/usr/share/icons/hicolor/scalable/apps"
@@ -251,10 +268,19 @@ _install_receiver_files() {
     "${INSTALL_DESKTOP}/${APP_ID}.desktop"
 
   mkdir -p "$INSTALL_ICONS"
-  install -m 644 "${res_dir}/icons/${APP_ID}.svg" "${INSTALL_ICONS}/${APP_ID}.svg"
+  # The panel resolves sensor icons by freedesktop icon name, so every SVG in res/icons/
+  # has to be installed — the app icon plus the per-sensor icons panel_widget.rs looks up.
+  # Installing only the app icon leaves the panel sensors resolving against another
+  # applet's exported icons and disappearing when that applet is removed.
+  for svg in "${res_dir}"/icons/*.svg; do
+    install -m 644 "$svg" "${INSTALL_ICONS}/$(basename "$svg")"
+  done
 
   gtk-update-icon-cache /usr/share/icons/hicolor/ 2>/dev/null || true
   update-desktop-database "$INSTALL_DESKTOP" 2>/dev/null || true
+
+  # GPLv3 s4/s6: conveying the binary requires conveying a copy of the license.
+  _convey_license "$license_src" "$APP_ID"
 
   log "cosmic-applet installed to ${INSTALL_BIN}/${APP_ID}"
 }

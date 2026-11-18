@@ -4,12 +4,21 @@ use crate::minimon_config::{ChartColors, ChartKind, ContentOrder, ContentType, D
 use cosmic::iced::Length;
 use cosmic::widget::{button, canvas, container, icon, row, text};
 
-const CPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-cpu";
-const TEMP_ICON: &str = "io.github.cosmic_utils.minimon-applet-temperature";
-const RAM_ICON: &str = "io.github.cosmic_utils.minimon-applet-ram";
-const GPU_ICON: &str = "io.github.cosmic_utils.minimon-applet-gpu";
-const NETWORK_ICON: &str = "io.github.cosmic_utils.minimon-applet-network";
+// Sensor icons ship in res/icons/ under our own app ID so icon lookup does not
+// depend on another applet being installed. Artwork is GPL-3, copied verbatim from
+// minimon-applet (https://github.com/cosmic-utils/cosmic-ext-applet-minimon).
+pub const CPU_ICON: &str = "com.cosmic.network_system_monitor-cpu";
+pub const TEMP_ICON: &str = "com.cosmic.network_system_monitor-temperature";
+pub const RAM_ICON: &str = "com.cosmic.network_system_monitor-ram";
+pub const GPU_ICON: &str = "com.cosmic.network_system_monitor-gpu";
+pub const NETWORK_ICON: &str = "com.cosmic.network_system_monitor-network";
+// Provided by the desktop's own icon theme, not by us.
 const DISK_ICON: &str = "drive-harddisk-symbolic";
+
+/// Sensor icons this applet ships itself, as `res/icons/<id>.svg`.
+/// Guarded by tests/icon_assets.rs: a name here with no file installed beside it renders
+/// as a blank in the panel, which is how relying on another applet's icons shows up.
+pub const OWN_SENSOR_ICONS: &[&str] = &[CPU_ICON, TEMP_ICON, RAM_ICON, GPU_ICON, NETWORK_ICON];
 
 /// Global display settings threaded into all render helpers.
 #[derive(Clone, Copy)]

@@ -51,7 +51,11 @@ jobs:
       - name: Package
         run: |
           ASSET="nmd-service-${{ matrix.arch }}-linux.tar.gz"
-          tar -czf "$ASSET" -C target/release nmd-service
+          # GPLv3 s4: a conveyed binary must carry a copy of its license.
+          mkdir -p _pkg
+          cp target/release/nmd-service _pkg/
+          cp LICENSE _pkg/
+          tar -czf "$ASSET" -C _pkg .
           echo "ASSET=$ASSET" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
@@ -110,6 +114,8 @@ jobs:
           mkdir -p _pkg
           cp target/release/cosmic-applet _pkg/
           cp -r cosmic-applet/res/. _pkg/res/
+          # GPLv3 s4: a conveyed binary must carry a copy of its license.
+          cp LICENSE _pkg/
           tar -czf "$ASSET" -C _pkg .
           echo "ASSET=$ASSET" >> "$GITHUB_ENV"
 
