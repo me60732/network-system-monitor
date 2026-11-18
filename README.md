@@ -58,6 +58,20 @@ What the script does:
 3. If compiling from source, installs Rust via `rustup` if it isn't already present
 4. Installs the chosen component and (for the sender) configures `/etc/nmd/config.toml`
 
+#### Updating or removing
+
+`install.sh` is also the updater and the uninstaller — pass the mode after `bash -s --`:
+
+```bash
+# Replace the binaries of whatever is installed here, keeping config, the nmd user and pairing keys
+curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --update
+
+# Remove it again — asks before deleting config, the service user or the pairing data
+curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --uninstall
+```
+
+Both detect which components this machine actually has, so the same line works on the desktop and on every remote machine. After updating the receiver, restart the panel with `kill $(pgrep -o cosmic-panel)` to load the new applet.
+
 After installing on your desktop, right-click the COSMIC panel → **Add Applet** → **Network System Monitor**.
 
 On first contact from a remote machine the applet shows a **pairing request** — accept it. The X25519 key exchange happens automatically over TCP; after that all traffic is encrypted UDP.

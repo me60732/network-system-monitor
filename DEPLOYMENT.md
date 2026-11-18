@@ -393,28 +393,52 @@ The nmd service runs with restricted privileges:
 - Consider binding to LAN-only interface by editing config
 - Firewall: allow UDP 51057 only from local network
 
+## Updating
+
+Run the installer in update mode on each machine. It detects what that machine has installed,
+replaces only the files the installer owns, and leaves config, the `nmd` service user and the
+pairing keys alone:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --update
+```
+
+Then:
+
+- **Remote machines:** the sender's service is stopped, swapped and restarted for you (a service
+  that was already stopped stays stopped).
+- **Desktop:** restart the panel so the applet reloads — `kill $(pgrep -o cosmic-panel)`.
+
+New config options are never written into `/etc/nmd/config.toml` automatically; check
+[CONFIGURATION.md](CONFIGURATION.md) after a release that adds any.
+
 ## Uninstallation
 
-### Remove from remote machine
-
 ```bash
-sudo ./nmd-service/install-scripts/uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --uninstall
 ```
 
-This will:
-- Stop and disable nmd service
-- Remove binary and systemd unit
-- Optionally remove config directory
+Or, from a clone of the repository: `sudo ./install.sh --uninstall`.
 
-### Remove from desktop
+The uninstaller stops and disables the service, then removes the binaries, the systemd unit
+(under both the current `nmd-service.service` name and the older `nmd.service`), the desktop
+entry and this app's icons. It asks before deleting anything that is yours rather than the
+package's:
 
-```bash
-# Stop applet (if running as systemd service)
-# TODO: proper uninstall procedure
+| Prompt                        | If you decline                                                    |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `/etc/nmd/`                   | Sender config survives, so a reinstall reuses the machine's setup  |
+| user `nmd` + `/var/lib/nmd/`  | The sender's identity keypair and paired receiver key survive      |
+| `~/.config/cosmic-applet/`    | Applet settings and `pairing.toml` survive — no re-pairing needed  |
 
-# Remove config
-rm -rf ~/.config/cosmic-applet/pairing.toml  # pairing data
-```
+It never removes build dependencies installed for a source build, and never touches files that
+belong to another app (icons are removed only when named after this app).
+
+`nmd-service/install-scripts/uninstall.sh` removes only the sender, and only under the older
+`nmd.service` unit name — prefer `install.sh --uninstall`, which handles both naming schemes.
+
+Afterwards, drop the applet from the panel (COSMIC Settings → Desktop → Panel) and restart the
+panel with `kill $(pgrep -o cosmic-panel)`.
 
 ## Advanced Configuration
 

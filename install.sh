@@ -4,11 +4,18 @@
 # Usage (one-line):
 #   curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash
 #
+# To update what is already on this machine, or remove it again, pass a mode after 'bash -s --':
+#   curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --update
+#   curl -fsSL https://raw.githubusercontent.com/me60732/network-system-monitor/main/install.sh | sudo bash -s -- --uninstall
+#
 # Note: use 'curl ... | sudo bash' NOT 'sudo curl ... | bash'
 # The pipe always runs bash as a new process — sudo must be on bash, not curl.
 #
 # Or locally from the project root:
-#   sudo ./install.sh
+#   sudo ./install.sh              # install (same as no argument)
+#   sudo ./install.sh --update     # replace binaries in place, keep config
+#   sudo ./install.sh --uninstall  # remove what this script installs
+#   sudo ./install.sh --help       # modes and options
 
 set -euo pipefail
 
@@ -16,12 +23,35 @@ set -euo pipefail
 REPO="me60732/network-system-monitor"
 GITHUB_RELEASES="https://github.com/${REPO}/releases/latest/download"
 GITHUB_API="https://api.github.com/repos/${REPO}/releases/latest"
+RAW_INSTALL_URL="https://raw.githubusercontent.com/${REPO}/main/install.sh"
 APP_ID="com.cosmic.network_system_monitor"
 NMD_CONFIG_DIR="/etc/nmd"
 NMD_CONFIG_FILE="${NMD_CONFIG_DIR}/config.toml"
 NMD_SYSTEMD_UNIT="/etc/systemd/system/nmd-service.service"
 NMD_HOME="/var/lib/nmd"
 NMD_USER="nmd"
+
+# Install destinations — shared by the install, update and uninstall paths.
+INSTALL_BIN="/usr/local/bin"
+INSTALL_DESKTOP="/usr/share/applications"
+INSTALL_ICONS="/usr/share/icons/hicolor/scalable/apps"
+INSTALL_DOC="/usr/share/doc"
+SENDER_BIN="${INSTALL_BIN}/nmd-service"
+RECEIVER_BIN="${INSTALL_BIN}/${APP_ID}"
+
+# The app has shipped under a second set of paths, and an install may have been done by either
+# installer, so update and uninstall both have to account for each of these:
+#  - cosmic-applet/install-local.sh installs the receiver as /usr/local/bin/cosmic-applet while
+#    this script installs it as /usr/local/bin/<app-id>; whichever ran last owns the desktop
+#    Exec= line and the other copy stays behind unreferenced.
+#  - nmd-service/install-scripts/install.sh writes the unit as nmd.service (service name 'nmd'),
+#    this script writes nmd-service.service.
+RECEIVER_BIN_ALT="${INSTALL_BIN}/cosmic-applet"
+NMD_SYSTEMD_UNIT_ALT="/etc/systemd/system/nmd.service"
+
+# Per-user receiver state (config + TOFU pairing keys + receiver identity). Relative to the
+# invoking user's home, because the installer only ever writes system-wide paths.
+USER_STATE_RECEIVER=".config/cosmic-applet"
 
 # ── Colors (only when stdout is a real terminal) ──────────────────────────
 if [ -t 1 ]; then
@@ -42,18 +72,52 @@ blank(){ echo ""; }
 # ── Helpers ───────────────────────────────────────────────────────────────
 has() { command -v "$1" &>/dev/null; }
 
+# Temporary directories, removed once by the EXIT trap. A `trap ... RETURN` set inside a function
+# stays armed for the enclosing function's return too, so referencing a function-local there fails
+# with "unbound variable" under set -u — which made a successful install exit non-zero.
+CLEANUP_DIRS=()
+cleanup_dirs() {
+  local dir
+  if [[ ${#CLEANUP_DIRS[@]} -gt 0 ]]; then
+    for dir in "${CLEANUP_DIRS[@]}"; do
+      if [[ -n "$dir" && -d "$dir" ]]; then rm -rf -- "$dir"; fi
+    done
+  fi
+  return 0
+}
+trap cleanup_dirs EXIT
+
+list_contains() {
+  local needle="$1" item
+  shift
+  for item in "$@"; do
+    if [[ "$item" == "$needle" ]]; then return 0; fi
+  done
+  return 1
+}
+
 need_root() {
   if [[ $EUID -ne 0 ]]; then
     err "This script must run as root."
     blank
     echo -e "  ${BOLD}Run with:${NC}"
-    echo -e "  ${CYAN}curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | sudo bash${NC}"
+    echo -e "  ${CYAN}$(one_line_cmd)${NC}"
     blank
     echo -e "  ${YELLOW}Note:${NC} 'sudo curl ... | bash' only gives sudo to curl, not bash."
     echo -e "       Use 'curl ... | sudo bash' so the script itself runs as root."
     blank
     exit 1
   fi
+}
+
+# The copy-paste invocation for the current mode. Arguments for a piped script go after 'bash -s --'.
+one_line_cmd() {
+  local suffix=""
+  case "$MODE" in
+    update)    suffix=" -s -- --update"    ;;
+    uninstall) suffix=" -s -- --uninstall" ;;
+  esac
+  echo "curl -fsSL ${RAW_INSTALL_URL} | sudo bash${suffix}"
 }
 
 download() {
@@ -75,11 +139,115 @@ detect_arch() {
   esac
 }
 
+# Default to yes/no on the prompt; reads from the tty because this script is commonly piped
+# (curl … | sudo bash), which occupies stdin.
+confirm() {
+  local prompt="$1" def="${2:-N}" reply
+  read -rp "  ${prompt} [${def}/n]: " reply </dev/tty || reply="$def"
+  [[ "${reply:-$def}" =~ ^[Yy] ]]
+}
+
+# ── What is already on this machine ───────────────────────────────────────
+# Both components are detected from the filesystem rather than from a manifest the installer
+# writes, so an install done by any of this repo's three scripts is recognised.
+sender_installed() {
+  [[ -e "$SENDER_BIN" || -e "$NMD_SYSTEMD_UNIT" || -e "$NMD_SYSTEMD_UNIT_ALT" || -d "$NMD_CONFIG_DIR" ]]
+}
+
+receiver_installed() {
+  [[ -e "$RECEIVER_BIN" || -e "$RECEIVER_BIN_ALT" || -e "${INSTALL_DESKTOP}/${APP_ID}.desktop" ]]
+}
+
+# Unit names the sender may be installed under, as "name:unit-file".
+SENDER_UNITS=("nmd-service:${NMD_SYSTEMD_UNIT}" "nmd:${NMD_SYSTEMD_UNIT_ALT}")
+
+# Sender version, or empty. Only ever run against nmd-service — it is the one binary with a
+# --version flag; cosmic-applet takes no arguments and would start the applet instead.
+sender_version() {
+  local out=""
+  if [[ -x "$SENDER_BIN" ]]; then
+    out=$("$SENDER_BIN" --version 2>/dev/null | head -n1) || out=""
+  fi
+  printf '%s' "$out"
+}
+
+# Best-effort latest release tag (e.g. v0.1.3); empty when the API is unreachable.
+latest_release_tag() {
+  local tmp tag=""
+  tmp=$(mktemp)
+  if download "$GITHUB_API" "$tmp" 2>/dev/null; then
+    tag=$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$tmp" | head -n1)
+  fi
+  rm -f "$tmp"
+  printf '%s' "$tag"
+}
+
+# Home directory of whoever invoked sudo, since the receiver keeps per-user state and root's own
+# home does not contain it. Falls back to $HOME when the lookup yields nothing.
+state_user_home() {
+  local user="${SUDO_USER:-}" home=""
+  if [[ -n "$user" && "$user" != "root" ]] && has getent; then
+    home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
+  fi
+  if [[ -z "$home" ]]; then
+    home="${HOME:-/root}"
+  fi
+  printf '%s' "$home"
+}
+
+# ── Modes ─────────────────────────────────────────────────────────────────
+MODE="install"
+
+usage() {
+  cat <<EOF
+Network System Monitor — installer
+
+Usage: install.sh [MODE]
+
+  (no mode)     Same as --install.
+  --install     Install the sender, the receiver, or both (asks which).
+  --update      Replace the files of whatever is already on this machine with the latest
+                release, keeping config, the nmd system user and the pairing keys.
+  --uninstall   Remove the installed components, offering to delete config and state too.
+  -h, --help    Show this help.
+
+Must run as root. For a piped run, mode flags go after 'bash -s --':
+
+  ${RAW_INSTALL_URL} | sudo bash
+  ${RAW_INSTALL_URL} | sudo bash -s -- --update
+  ${RAW_INSTALL_URL} | sudo bash -s -- --uninstall
+EOF
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --install)            MODE="install"   ;;
+      --update|-u)          MODE="update"    ;;
+      --uninstall|--remove) MODE="uninstall" ;;
+      -h|--help)            usage; exit 0 ;;
+      *)
+        err "Unknown option: $1"
+        blank
+        usage >&2
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
+
 # ── Header ────────────────────────────────────────────────────────────────
 print_header() {
+  local title
+  case "$MODE" in
+    install)   title="Installer"   ;;
+    update)    title="Updater"     ;;
+    uninstall) title="Uninstaller" ;;
+  esac
   blank
   echo -e "${BOLD}${BLUE}  ╔════════════════════════════════════════════╗"
-  echo -e "  ║   Network System Monitor — Installer      ║"
+  echo -e "  ║   Network System Monitor — ${title}$(printf '%*s' $(( 16 - ${#title} )))║${NC}"
   echo -e "  ╚════════════════════════════════════════════╝${NC}"
   blank
   echo -e "  ${CYAN}https://github.com/${REPO}${NC}"
@@ -188,7 +356,7 @@ _extract() {
 # Guarded because releases published before this change carry no LICENSE inside, and
 # `set -e` would otherwise abort the install on a missing file.
 _convey_license() {
-  local src="$1" doc_name="$2" doc_root="${3:-/usr/share/doc}"
+  local src="$1" doc_name="$2" doc_root="${3:-$INSTALL_DOC}"
   if [ -f "$src" ]; then
     install -Dm644 "$src" "${doc_root}/${doc_name}/LICENSE"
   else
@@ -201,17 +369,17 @@ _convey_license() {
 install_sender_binary() {
   local arch="$1"
   local tmpdir; tmpdir=$(mktemp -d)
-  trap 'rm -rf "$tmpdir"' RETURN
+  CLEANUP_DIRS+=("$tmpdir")
   _extract "nmd-service-${arch}-linux.tar.gz" "$tmpdir"
-  install -m 755 "${tmpdir}/nmd-service" /usr/local/bin/nmd-service
+  install -m 755 "${tmpdir}/nmd-service" "$SENDER_BIN"
   _convey_license "${tmpdir}/LICENSE" "nmd-service"
-  log "nmd-service installed to /usr/local/bin/nmd-service"
+  log "nmd-service installed to ${SENDER_BIN}"
 }
 
 install_receiver_binary() {
   local arch="$1"
   local tmpdir; tmpdir=$(mktemp -d)
-  trap 'rm -rf "$tmpdir"' RETURN
+  CLEANUP_DIRS+=("$tmpdir")
   _extract "cosmic-applet-${arch}-linux.tar.gz" "$tmpdir"
   _install_receiver_files "${tmpdir}/cosmic-applet" "${tmpdir}/res" "${tmpdir}/LICENSE"
 }
@@ -224,7 +392,7 @@ install_from_source() {
   install_build_deps "$component"
 
   local tmpdir; tmpdir=$(mktemp -d)
-  trap 'cd / && rm -rf "$tmpdir"' RETURN
+  CLEANUP_DIRS+=("$tmpdir")
 
   info "Cloning repository..."
   git clone --depth=1 "https://github.com/${REPO}.git" "${tmpdir}/repo"
@@ -234,7 +402,7 @@ install_from_source() {
     sender)
       info "Building nmd-service..."
       cargo build --release -p nmd-service
-      install -m 755 target/release/nmd-service /usr/local/bin/nmd-service
+      install -m 755 target/release/nmd-service "$SENDER_BIN"
       _convey_license "LICENSE" "nmd-service"
       log "nmd-service built and installed."
       ;;
@@ -246,20 +414,20 @@ install_from_source() {
     both)
       info "Building nmd-service and cosmic-applet..."
       cargo build --release -p nmd-service -p cosmic-applet
-      install -m 755 target/release/nmd-service /usr/local/bin/nmd-service
+      install -m 755 target/release/nmd-service "$SENDER_BIN"
       _convey_license "LICENSE" "nmd-service"
       log "nmd-service installed."
       _install_receiver_files "target/release/cosmic-applet" "cosmic-applet/res" "LICENSE"
       ;;
   esac
+
+  # Leave the clone behind before its directory is deleted by the EXIT trap.
+  cd /
 }
 
 # ── Shared receiver file installation ────────────────────────────────────
 _install_receiver_files() {
   local binary="$1" res_dir="$2" license_src="$3"
-  local INSTALL_BIN="/usr/local/bin"
-  local INSTALL_DESKTOP="/usr/share/applications"
-  local INSTALL_ICONS="/usr/share/icons/hicolor/scalable/apps"
 
   install -m 755 "$binary" "${INSTALL_BIN}/${APP_ID}"
 
@@ -357,7 +525,7 @@ EOF
 install_systemd_service() {
   if ! has systemctl; then
     warn "systemd not found — skipping service installation."
-    warn "Start manually: /usr/local/bin/nmd-service --config ${NMD_CONFIG_FILE}"
+    warn "Start manually: ${SENDER_BIN} --config ${NMD_CONFIG_FILE}"
     return
   fi
 
@@ -455,11 +623,325 @@ print_receiver_done() {
   blank
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────
-main() {
-  print_header
-  need_root
+# ── Update ────────────────────────────────────────────────────────────────
+# An update replaces the files this installer owns and nothing else: the sender's config, the
+# nmd system user, the receiver's pairing keys and the per-user applet config are all left
+# exactly as they were found.
+sender_service_active() {
+  local entry name
+  for entry in "${SENDER_UNITS[@]}"; do
+    name="${entry%%:*}"
+    if systemctl is-active --quiet "$name" 2>/dev/null; then
+      printf '%s' "$name"
+      return 0
+    fi
+  done
+}
 
+# active_unit is whatever was running before the swap; "" means the service was not running and
+# stays not running.
+restore_sender_service() {
+  local active_unit="$1"
+
+  # An update leaves ownership alone; the account only has to exist for the unit to run.
+  if ! id -u "$NMD_USER" >/dev/null 2>&1; then
+    warn "System user '${NMD_USER}' is missing — recreating it."
+    ensure_nmd_user
+  fi
+
+  if [[ ! -f "$NMD_CONFIG_FILE" ]]; then
+    warn "No config at ${NMD_CONFIG_FILE} — an update never overwrites one, but this machine has none."
+    if confirm "Create it now?" Y; then
+      setup_sender_config
+    fi
+  else
+    log "Kept existing config: ${NMD_CONFIG_FILE}"
+    info "Options added since the last release are listed in CONFIGURATION.md; none are written automatically."
+  fi
+
+  if ! has systemctl; then
+    warn "systemd not found — start the new binary yourself:"
+    warn "  ${SENDER_BIN} --config ${NMD_CONFIG_FILE}"
+    return
+  fi
+
+  systemctl daemon-reload
+  if [[ -n "$active_unit" ]]; then
+    systemctl start "$active_unit"
+    sleep 2
+    if systemctl is-active --quiet "$active_unit"; then
+      log "${active_unit} restarted."
+    else
+      warn "${active_unit} did not start — check: journalctl -u ${active_unit} -n 30"
+    fi
+  else
+    info "Service was not running before the update, so it was left stopped."
+    info "Start it with: systemctl start nmd-service"
+  fi
+}
+
+run_update() {
+  local components=()
+  if sender_installed;   then components+=("sender");   fi
+  if receiver_installed; then components+=("receiver"); fi
+
+  if [[ ${#components[@]} -eq 0 ]]; then
+    die "Nothing to update — neither the sender nor the receiver is installed here. Run install.sh without --update to install."
+  fi
+
+  local arch
+  arch=$(detect_arch)
+  info "Installed: ${BOLD}${components[*]}${NC}"
+
+  local latest
+  latest=$(latest_release_tag)
+  if [[ -n "$latest" ]]; then
+    info "Latest release: ${BOLD}${latest}${NC}"
+  else
+    warn "Could not read the latest release tag from GitHub — continuing regardless."
+  fi
+  if list_contains "sender" "${components[@]}"; then
+    local current
+    current=$(sender_version)
+    if [[ -n "$current" ]]; then
+      info "Installed sender reports: ${BOLD}${current}${NC}"
+    fi
+  fi
+
+  local method method_label
+  if [[ "$arch" == "unsupported" ]]; then
+    # There is no release asset for this architecture, so a source build is the only option.
+    method="source"
+    method_label="source build"
+    info "No pre-built binary for $(uname -m) — compiling from source."
+  else
+    prompt_method "$arch"
+    method="$SELECTED_METHOD"
+    method_label="pre-built binary"
+    if [[ "$method" == "source" ]]; then method_label="source build"; fi
+  fi
+
+  blank
+  if ! confirm "Update ${components[*]} via ${method_label}?" Y; then
+    info "Cancelled."
+    exit 0
+  fi
+
+  # Stop the daemon before swapping the binary under it, so nothing keeps running the old code
+  # with files changing underneath it.
+  local active_unit=""
+  if list_contains "sender" "${components[@]}" && has systemctl; then
+    active_unit=$(sender_service_active)
+    if [[ -n "$active_unit" ]]; then
+      info "Stopping ${active_unit}..."
+      systemctl stop "$active_unit"
+    fi
+  fi
+
+  blank
+  if [[ "$method" == "binary" ]]; then
+    local component
+    for component in "${components[@]}"; do
+      case "$component" in
+        sender)   install_sender_binary   "$arch" ;;
+        receiver) install_receiver_binary "$arch" ;;
+      esac
+    done
+  else
+    local target="${components[0]}"
+    if [[ ${#components[@]} -eq 2 ]]; then target="both"; fi
+    install_from_source "$target"
+  fi
+
+  if list_contains "sender" "${components[@]}"; then
+    restore_sender_service "$active_unit"
+  fi
+
+  if list_contains "receiver" "${components[@]}"; then
+    blank
+    echo -e "  ${BOLD}Restart the COSMIC panel to load the new applet:${NC}"
+    echo -e "  ${CYAN}kill \$(pgrep -o cosmic-panel)${NC}"
+    if [[ -e "$RECEIVER_BIN_ALT" ]]; then
+      warn "${RECEIVER_BIN_ALT} was left in place — the desktop file now launches ${RECEIVER_BIN}."
+      warn "  Run --uninstall and reinstall if you want a single copy."
+    fi
+  fi
+
+  blank
+  echo -e "${BOLD}${GREEN}  Update complete.${NC}"
+  local after
+  after=$(sender_version)
+  if list_contains "sender" "${components[@]}" && [[ -n "$after" ]]; then
+    echo -e "  ${CYAN}nmd-service now reports:${NC} ${after}"
+  fi
+  blank
+}
+
+# ── Uninstall ─────────────────────────────────────────────────────────────
+_rm() {
+  local path="$1"
+  if [[ -L "$path" || -e "$path" ]]; then
+    rm -f -- "$path"
+    log "Removed ${path}"
+  fi
+}
+
+# Refuses anything that is not a real directory path, because this runs as root and the callers
+# build their arguments from a resolved home directory.
+_rm_tree() {
+  local path="$1"
+  case "$path" in
+    ""|/|//) err "Refusing to remove '${path}'"; return 1 ;;
+  esac
+  if [[ "${path#/}" == "$path" ]]; then
+    err "Refusing to remove relative path '${path}'"
+    return 1
+  fi
+  if [[ -d "$path" ]]; then
+    rm -rf -- "$path"
+    log "Removed ${path}/"
+  fi
+}
+
+uninstall_sender() {
+  blank
+  info "Removing sender (nmd-service)..."
+
+  if has systemctl; then
+    local entry name path
+    for entry in "${SENDER_UNITS[@]}"; do
+      name="${entry%%:*}"
+      path="${entry#*:}"
+      if systemctl is-active --quiet "$name" 2>/dev/null; then
+        systemctl stop "$name"
+        log "Stopped ${name}."
+      fi
+      if systemctl is-enabled --quiet "$name" 2>/dev/null; then
+        systemctl disable "$name"
+        log "Disabled ${name}."
+      fi
+      _rm "$path"
+    done
+    systemctl daemon-reload
+    systemctl reset-failed >/dev/null 2>&1 || true
+    log "systemd reloaded."
+  fi
+
+  _rm "$SENDER_BIN"
+  _rm "${INSTALL_DOC}/nmd-service/LICENSE"
+  rmdir "${INSTALL_DOC}/nmd-service" 2>/dev/null || true
+
+  if [[ -d "$NMD_CONFIG_DIR" ]]; then
+    warn "Config directory ${NMD_CONFIG_DIR} holds: $(ls -1 "$NMD_CONFIG_DIR" 2>/dev/null | tr '\n' ' ')"
+    if confirm "Delete ${NMD_CONFIG_DIR}?" N; then
+      _rm_tree "$NMD_CONFIG_DIR"
+    else
+      info "Kept ${NMD_CONFIG_DIR}."
+    fi
+  fi
+
+  if id -u "$NMD_USER" >/dev/null 2>&1; then
+    warn "System user '${NMD_USER}' owns ${NMD_HOME}/.config/nmd — the sender's identity keypair"
+    warn "  and the receiver pubkey it paired with. Deleting the user breaks re-pairing."
+    if confirm "Delete user '${NMD_USER}' and ${NMD_HOME}?" N; then
+      if has userdel; then
+        userdel "$NMD_USER" 2>/dev/null || warn "userdel '${NMD_USER}' failed — remove the account manually."
+      else
+        warn "userdel not found — the account itself was left in place."
+      fi
+      _rm_tree "$NMD_HOME"
+    else
+      info "Kept user '${NMD_USER}' and ${NMD_HOME}."
+    fi
+  fi
+}
+
+uninstall_receiver() {
+  blank
+  info "Removing receiver (cosmic-applet)..."
+
+  # Both names the applet ships under: this script installs the app id, cosmic-applet/install-local.sh
+  # installs the bare binary name. Only files named after this app are touched, so icons belonging
+  # to other applets in the same directory stay put.
+  _rm "$RECEIVER_BIN"
+  _rm "$RECEIVER_BIN_ALT"
+  _rm "${INSTALL_DESKTOP}/${APP_ID}.desktop"
+  _rm "${INSTALL_DOC}/${APP_ID}/LICENSE"
+  rmdir "${INSTALL_DOC}/${APP_ID}" 2>/dev/null || true
+
+  local svg
+  for svg in "${INSTALL_ICONS}/${APP_ID}"*.svg; do
+    if [[ -e "$svg" ]]; then _rm "$svg"; fi
+  done
+
+  gtk-update-icon-cache /usr/share/icons/hicolor/ 2>/dev/null || true
+  update-desktop-database "$INSTALL_DESKTOP" 2>/dev/null || true
+  log "Icon and desktop caches refreshed."
+
+  local home state
+  home=$(state_user_home)
+  state="${home}/${USER_STATE_RECEIVER}"
+  if [[ -d "$state" ]]; then
+    warn "Per-user state ${state} holds config.toml, receiver.key and pairing.toml."
+    warn "  pairing.toml is the list of machines allowed to talk to this desktop — deleting it"
+    warn "  means every remote machine has to pair again."
+    if confirm "Delete ${state}?" N; then
+      _rm_tree "$state"
+    else
+      info "Kept ${state}."
+    fi
+  fi
+
+  blank
+  echo -e "  ${BOLD}If the panel is still running, restart it to drop the removed applet:${NC}"
+  echo -e "  ${CYAN}kill \$(pgrep -o cosmic-panel)${NC}"
+  blank
+  echo -e "  ${BOLD}Also remove the applet from the panel config${NC} (COSMIC Settings → Desktop → Panel)"
+  echo -e "  so it is not offered again after a reinstall."
+}
+
+run_uninstall() {
+  local have_sender=0 have_receiver=0
+  if sender_installed;   then have_sender=1;   fi
+  if receiver_installed; then have_receiver=1; fi
+
+  if [[ $have_sender -eq 0 && $have_receiver -eq 0 ]]; then
+    warn "Nothing found to remove — this machine has neither sender nor receiver installed."
+    exit 0
+  fi
+
+  blank
+  echo -e "${BOLD}  Detected on this machine:${NC}"
+  if [[ $have_sender -eq 1 ]]; then
+    echo -e "  ${YELLOW}sender${NC}    ${SENDER_BIN}"
+    echo -e "            ${NMD_SYSTEMD_UNIT}"
+    echo -e "            ${NMD_SYSTEMD_UNIT_ALT} ${CYAN}(legacy)${NC}"
+    echo -e "            ${NMD_CONFIG_DIR}/"
+  fi
+  if [[ $have_receiver -eq 1 ]]; then
+    echo -e "  ${YELLOW}receiver${NC}  ${RECEIVER_BIN}"
+    echo -e "            ${INSTALL_DESKTOP}/${APP_ID}.desktop"
+    echo -e "            ${INSTALL_ICONS}/${APP_ID}*.svg"
+  fi
+  blank
+  echo -e "  ${BOLD}Never removed:${NC} build packages installed for a source build, and any file"
+  echo -e "  that does not belong to this app. Config and keys are confirmed individually below."
+  blank
+
+  if [[ $have_sender -eq 1 ]] && confirm "Remove the sender (nmd-service)?" Y; then
+    uninstall_sender
+  fi
+  if [[ $have_receiver -eq 1 ]] && confirm "Remove the receiver (cosmic-applet)?" Y; then
+    uninstall_receiver
+  fi
+
+  blank
+  echo -e "${BOLD}${GREEN}  Uninstall complete.${NC}"
+  blank
+}
+
+# ── Install ───────────────────────────────────────────────────────────────
+run_install() {
   local arch
   arch=$(detect_arch)
   if [[ "$arch" == "unsupported" ]]; then
@@ -517,6 +999,19 @@ main() {
 
   echo -e "${BOLD}${GREEN}  Installation complete.${NC}"
   blank
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────
+main() {
+  parse_args "$@"
+  print_header
+  need_root
+
+  case "$MODE" in
+    install)   run_install ;;
+    update)    run_update ;;
+    uninstall) run_uninstall ;;
+  esac
 }
 
 main "$@"
